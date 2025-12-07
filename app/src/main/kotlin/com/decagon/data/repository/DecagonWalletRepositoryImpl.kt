@@ -38,13 +38,13 @@ class DecagonWalletRepositoryImpl(
         mnemonic: String,
         accountIndex: Int,
         activity: FragmentActivity
-    ): Result<DecagonWallet> = withContext(Dispatchers.Main) {  // ✅ Changed from IO
+    ): Result<DecagonWallet> = withContext(Dispatchers.Main) {
         Timber.d("Creating wallet: $name")
 
         try {
             require(mnemonicHelper.validatePhrase(mnemonic)) { "Invalid mnemonic" }
 
-            // ✅ Offload crypto operations explicitly
+            // Crypto operations on Default dispatcher
             val seed = withContext(Dispatchers.Default) {
                 mnemonicHelper.deriveSeed(mnemonic)
             }
@@ -60,7 +60,7 @@ class DecagonWalletRepositoryImpl(
 
             Timber.i("Requesting biometric authentication...")
 
-            // ✅ Now on Main thread
+            // Biometric auth on Main thread
             val encryptedSeed = suspendCancellableCoroutine<ByteArray> { continuation ->
                 biometricAuthenticator.authenticateForEncryption(
                     activity = activity,
@@ -85,10 +85,23 @@ class DecagonWalletRepositoryImpl(
                 createdAt = System.currentTimeMillis()
             )
 
-            // ✅ DB write on IO
+            // ✅ FIX: Database operations on IO dispatcher
             withContext(Dispatchers.IO) {
                 val entity = wallet.toEntity(encryptedSeed)
                 walletDao.insert(entity)
+                Timber.i("Wallet created: $walletId")
+            }
+
+            // ✅ FIX: Auto-activate AFTER insert completes
+            val walletCount = withContext(Dispatchers.IO) {
+                walletDao.getCount().first()
+            }
+
+            if (walletCount == 1) {
+                Timber.i("First wallet detected, setting as active")
+                withContext(Dispatchers.IO) {
+                    walletDao.setActive(walletId)
+                }
             }
 
             Timber.i("Wallet secured: $walletId")

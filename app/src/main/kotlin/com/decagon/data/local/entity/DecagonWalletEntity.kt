@@ -33,7 +33,9 @@ data class DecagonWalletEntity(
      * Base58 encoded Solana public key.
      */
     val publicKey: String,
-    
+
+    val address: String, // ✅ Store the Base58 address
+
     /**
      * BIP44 account index (default: 0).
      */
@@ -52,18 +54,15 @@ data class DecagonWalletEntity(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
-        
         other as DecagonWalletEntity
-        
-        if (id != other.id) return false
-        if (name != other.name) return false
-        if (!encryptedSeed.contentEquals(other.encryptedSeed)) return false
-        if (publicKey != other.publicKey) return false
-        if (accountIndex != other.accountIndex) return false
-        if (createdAt != other.createdAt) return false
-        if (isActive != other.isActive) return false
-        
-        return true
+        return id == other.id &&
+                name == other.name &&
+                encryptedSeed.contentEquals(other.encryptedSeed) &&
+                publicKey == other.publicKey &&
+                address == other.address &&
+                accountIndex == other.accountIndex &&
+                createdAt == other.createdAt &&
+                isActive == other.isActive
     }
     
     override fun hashCode(): Int {

@@ -26,7 +26,7 @@ val decagonCoreModule = module {
             DecagonDatabase::class.java,
             DecagonDatabase.DATABASE_NAME
         )
-            .fallbackToDestructiveMigration() // Only for 0.1, remove in production
+            .addMigrations(DecagonDatabase.MIGRATION_1_2) // ✅ Add migration
             .build()
     }
     

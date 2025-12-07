@@ -1,0 +1,79 @@
+package com.decagon.data.local.entity
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+/**
+ * Room entity for wallet storage.
+ * 
+ * Storage:
+ * - id: Unique wallet identifier
+ * - name: User-friendly name
+ * - encryptedSeed: AES-GCM encrypted seed (IV + ciphertext)
+ * - publicKey: Solana public key (Base58)
+ * - accountIndex: BIP44 account index
+ * - createdAt: Timestamp
+ * 
+ * Security: encryptedSeed never stored as plaintext.
+ */
+@Entity(tableName = "decagon_wallets")
+data class DecagonWalletEntity(
+    @PrimaryKey
+    val id: String,
+    
+    val name: String,
+    
+    /**
+     * Encrypted seed (IV + ciphertext).
+     * NEVER store as plaintext.
+     */
+    val encryptedSeed: ByteArray,
+    
+    /**
+     * Base58 encoded Solana public key.
+     */
+    val publicKey: String,
+    
+    /**
+     * BIP44 account index (default: 0).
+     */
+    val accountIndex: Int = 0,
+    
+    /**
+     * Creation timestamp (millis).
+     */
+    val createdAt: Long = System.currentTimeMillis(),
+    
+    /**
+     * Is this the active wallet?
+     */
+    val isActive: Boolean = false
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        
+        other as DecagonWalletEntity
+        
+        if (id != other.id) return false
+        if (name != other.name) return false
+        if (!encryptedSeed.contentEquals(other.encryptedSeed)) return false
+        if (publicKey != other.publicKey) return false
+        if (accountIndex != other.accountIndex) return false
+        if (createdAt != other.createdAt) return false
+        if (isActive != other.isActive) return false
+        
+        return true
+    }
+    
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + encryptedSeed.contentHashCode()
+        result = 31 * result + publicKey.hashCode()
+        result = 31 * result + accountIndex
+        result = 31 * result + createdAt.hashCode()
+        result = 31 * result + isActive.hashCode()
+        return result
+    }
+}

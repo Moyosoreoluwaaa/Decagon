@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- ✅ Base config: Allow cleartext globally (for now) -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <!-- DEBUG ONLY: Remove in production -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- ✅ Specific domains with full trust -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Local testing -->
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+
+        <!-- Analytics (might use HTTP redirects) -->
+        <domain includeSubdomains="true">google-analytics.com</domain>
+        <domain includeSubdomains="true">googletagmanager.com</domain>
+
+        <!-- RPC endpoints (some use HTTP) -->
+        <domain includeSubdomains="true">rpc.ankr.com</domain>
+        <domain includeSubdomains="true">rpcpool.com</domain>
+        <domain includeSubdomains="true">mainnet-beta.solana.com</domain>
+        <domain includeSubdomains="true">solana.com</domain>
+        <domain includeSubdomains="true">projectserum.com</domain>
+        <domain includeSubdomains="true">quicknode.pro</domain>
+        <domain includeSubdomains="true">helius-rpc.com</domain>
+    </domain-config>
+
+    <!-- ✅ DeFi platforms with relaxed SSL/CORS -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">raydium.io</domain>
+        <domain includeSubdomains="true">drift.trade</domain>
+        <domain includeSubdomains="true">jupiter.ag</domain>
+        <domain includeSubdomains="true">marinade.finance</domain>
+        <domain includeSubdomains="true">orca.so</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

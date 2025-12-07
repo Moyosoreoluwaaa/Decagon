@@ -1,0 +1,275 @@
+[versions]
+# Build & Kotlin
+agp = "8.9.3"
+coilNetworkOkhttp = "3.0.4"
+kotlin = "2.2.21"
+ksp = "2.3.1"  # UPDATED - correct KSP version for Kotlin 2.0.21
+kotlinxCollectionsImmutable = "0.3.7"
+androidDesugarJdkLibs = "2.1.4"
+androidTools = "31.7.3"
+# Room
+room = "2.8.3"
+# WebKit version
+androidx-webkit = "1.14.0"
+
+# AndroidX Core
+coreKtx = "1.17.0"
+appcompat = "1.7.1"
+material = "1.13.0"
+
+# Compose & Lifecycle
+composeBom = "2025.11.01"
+composeIcons = "1.7.8"
+navigation-compose = "2.9.6"
+activityCompose = "1.11.0"
+lifecycleRuntimeKtx = "2.9.4"
+lifecycleViewmodelCompose = "2.9.4"
+
+# Networking (KMP Compatible)
+ktor = "3.3.2"
+ktorfit = "2.6.4"  # Latest version with automatic KSP dependency handling
+youtubedlJunkFood = "0.18.1"
+okhttp = "5.3.0"
+jsoup = "1.17.2"
+fetch = "3.4.1" # For the download manager
+
+# NEW: Retrofit for REST API access
+retrofit = "2.9.0"
+
+# Serialization
+kotlinxSerialization = "1.9.0"
+kotlinxCoroutines = "1.10.2"
+kotlinxDateTime = "0.7.0"
+
+# Timber
+timber = "5.0.1"
+
+# Dependency Injection (KMP Compatible)
+koin = "4.0.1"
+koinCompose = "4.0.1"
+koinComposeMultiplatform = "4.0.1"
+
+# Image Loading (KMP Compatible)
+kamel = "1.0.3"
+coil = "3.0.4"
+
+# Security & Crypto
+biometric = "1.2.0-alpha05"
+androidxSecurityCrypto = "1.1.0"  # Latest stable; deprecated but still usable for encrypted backups/preferences
+
+# Blockchain & Web3 (JVM/Android libraries - wrap with expect/actual)
+web3j = "4.12.3"
+bitcoinj = "0.17.1"
+bouncycastle = "1.79"
+sol4k = "0.6.0"
+solanaMobileWalletAdapter = "2.0.0-rc.2"  # Latest release candidate for Solana-native wallet integration
+solanaKotlin = "1.0.0"
+eddsa = "0.3.0"
+kotlinBip39 = "1.0.6"
+bitcoinjCore = "0.16.2"
+
+# QR Code
+zxing = "3.5.3"
+# NEW: Version for zxing-android-embedded
+zxingAndroidEmbedded = "4.3.0"
+
+# Logging (KMP Compatible)
+napier = "2.7.1"
+kermit = "2.0.5"
+krypto = "4.0.10"
+
+# Testing
+junit = "4.13.2"
+junitVersion = "1.3.0"
+espressoCore = "3.7.0"
+kotlinTest = "2.0.21"
+turbine = "1.2.0"
+mockk = "1.13.14"
+
+# Other KMP Utilities
+settings = "1.2.0"
+
+# NEW: AndroidX Additions (from checklist/Octane needs)
+androidxPaging = "3.3.6"  # For large lists (e.g., transaction history, NFTs)
+androidxStartup = "1.2.0"  # For app startup performance
+androidxDataStore = "1.1.7"  # For preferences/user settings (alternative to Multiplatform Settings)
+androidxWork = "2.11.0"  # For background tasks (e.g., scheduled transactions, offline sync, bots)
+androidxBenchmarkMacro = "1.3.3"  # For macrobenchmark testing
+
+# NEW: Firebase Additions (for push notifications, crash reporting, remote config/flags)
+firebaseBom = "33.13.0"  # Latest BoM for Firebase
+firebaseMessaging = "24.1.0"  # For push notifications (e.g., transaction confirms, whale alerts); KTX deprecated, use main
+firebaseCrashlytics = "19.4.4"  # For crash reporting; KTX deprecated, use main
+firebaseRemoteConfig = "22.1.1"  # For feature flags/remote config; KTX deprecated, use main
+
+# NEW: Security & Compliance Additions
+rootBeer = "0.1.0"  # For root/jailbreak detection
+playIntegrity = "1.4.0"  # For Play Integrity API (device integrity checks)
+leakCanary = "3.0-alpha-8"  # For memory leak detection in debug
+
+# NEW: Wallet & Blockchain Additions (for WalletConnect v2, dApps, multi-chain)
+walletConnectCore = "1.35.2"  # For WalletConnect integration (dApp connects, e.g., Raydium/Orca/Magic Eden)
+
+[libraries]
+# Build tools
+android-desugarJdkLibs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "androidDesugarJdkLibs" }
+android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
+android-tools-common = { group = "com.android.tools", name = "common", version.ref = "androidTools" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilNetworkOkhttp" }
+kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
+compose-gradlePlugin = { group = "org.jetbrains.kotlin", name = "compose-compiler-gradle-plugin", version.ref = "kotlin" }
+
+# AndroidX Core
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# WebKit
+androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "androidx-webkit" }
+
+androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
+
+# Compose BOM
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+compose-animation = { group = "androidx.compose.animation", name = "animation" }  # Version managed by BOM
+navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "composeIcons" }
+
+# Compose Activity & Lifecycle
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
+
+# Ktor Client (KMP)
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin", version.ref = "ktor" }
+ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
+ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
+ktor-client-serialization = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-websockets = { group = "io.ktor", name = "ktor-client-websockets", version.ref = "ktor" }
+ktor-client-encoding = { group = "io.ktor", name = "ktor-client-encoding", version.ref = "ktor" }
+
+# Ktorfit (Retrofit-like for KMP)
+ktorfit-lib = { group = "de.jensklingenberg.ktorfit", name = "ktorfit-lib", version.ref = "ktorfit" }
+ktorfit-ksp = { group = "de.jensklingenberg.ktorfit", name = "ktorfit-ksp", version.ref = "ktorfit" }
+video-extraction-junkfood-library = { group = "io.github.junkfood02.youtubedl-android", name = "library", version.ref = "youtubedlJunkFood" }
+video-extraction-junkfood-ffmpeg = { group = "io.github.junkfood02.youtubedl-android", name = "ffmpeg", version.ref = "youtubedlJunkFood" }
+
+# NEW: Retrofit for REST API access
+squareup-retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+squareup-retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+
+# Network/Parsing (already corrected based on our last chat)
+network-okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+parsing-jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+download-manager-fetch2 = { group = "com.github.tonyofrancis.Fetch", name = "fetch2", version.ref = "fetch" }
+download-manager-fetch2okhttp = { group = "com.github.tonyofrancis.Fetch", name = "fetch2okhttp", version.ref = "fetch" }
+
+# Kotlinx Serialization
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "kotlinxSerialization" }
+
+# Kotlinx Coroutines
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+
+# Kotlinx DateTime
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDateTime" }
+kotlinx-collections-immutable = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref = "kotlinxCollectionsImmutable" }
+
+# Timber
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+
+# Security
+leakcanary-android = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakCanary" }  # Memory leak detection (debug only)
+
+# Koin (KMP)
+koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
+koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
+koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compose", version.ref = "koinCompose" }
+koin-compose = { group = "io.insert-koin", name = "koin-compose", version.ref = "koinComposeMultiplatform" }
+koin-compose-viewmodel = { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koinComposeMultiplatform" }
+koin-test = { group = "io.insert-koin", name = "koin-test", version.ref = "koin" }
+
+# Image Loading (KMP)
+kamel-image = { group = "media.kamel", name = "kamel-image", version.ref = "kamel" }
+coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-network-ktor = { group = "io.coil-kt.coil3", name = "coil-network-ktor", version.ref = "coil" }
+
+# Multiplatform Settings (KMP SharedPreferences/UserDefaults wrapper)
+multiplatform-settings = { group = "com.russhwolf", name = "multiplatform-settings", version.ref = "settings" }
+multiplatform-settings-no-arg = { group = "com.russhwolf", name = "multiplatform-settings-no-arg", version.ref = "settings" }
+multiplatform-settings-coroutines = { group = "com.russhwolf", name = "multiplatform-settings-coroutines", version.ref = "settings" }
+
+# Logging (KMP)
+napier = { group = "io.github.aakira", name = "napier", version.ref = "napier" }
+kermit = { group = "co.touchlab", name = "kermit", version.ref = "kermit" }
+
+# Crypto (KMP)
+krypto = { group = "com.soywiz.korlibs.krypto", name = "krypto", version.ref = "krypto" }
+
+# Security - Android Biometric
+androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
+
+# Blockchain Libraries (Android/JVM - wrap with expect/actual for KMP)
+web3j-core = { group = "org.web3j", name = "core", version.ref = "web3j" }
+eddsa = { module = "net.i2p.crypto:eddsa", version.ref = "eddsa" }
+kotlin-bip39 = { module = "cash.z.ecc.android:kotlin-bip39", version.ref = "kotlinBip39" }
+bitcoinj-core = { module = "org.bitcoinj:bitcoinj-core", version.ref = "bitcoinjCore" }
+sol4k = { group = "org.sol4k", name = "sol4k", version.ref = "sol4k" }
+bouncycastle-bcprov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
+
+# QR Code
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+# Updated to use the new version reference for consistency
+zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingAndroidEmbedded" }
+
+# Testing
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlinTest" }
+turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+
+# NEW: AndroidX Additions (from checklist/Octane needs)
+androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "androidxPaging" }  # Paging for Compose lists (e.g., transaction history, NFTs)
+androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime", version.ref = "androidxStartup" }  # App startup optimization
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "androidxDataStore" }  # Preferences storage (e.g., user settings, RPC configs)
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "androidxWork" }  # Background tasks (e.g., scheduled txns, DCA, offline sync)
+androidx-benchmark-macro = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "androidxBenchmarkMacro" }  # Macrobenchmark testing for performance
+
+# NEW: Security & Compliance Additions
+scottyab-rootbeer-lib = { group = "com.scottyab", name = "rootbeer-lib", version.ref = "rootBeer" }  # Root/jailbreak detection
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "androidxSecurityCrypto" }  # Encrypted storage (e.g., cloud backups, private keys; deprecated but usable)
+
+# NEW: Wallet & Blockchain Additions (for WalletConnect v2, dApps, multi-chain)
+#walletconnect-core = { group = "com.walletconnect", name = "android-core", version.ref = "walletConnectCore" }  # Core SDK for WalletConnect (dApp connects)
+#solana-mobile-wallet-adapter = { group = "com.solanamobile", name = "mobilewalletadapter-clientlib-ktx", version.ref = "solanaMobileWalletAdapter" }  # Solana Mobile Wallet Adapter for Solana-native integration
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+ktorfit = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }

@@ -100,6 +100,9 @@ dependencies {
     implementation(libs.ktor.client.logging)
     ksp(libs.ktorfit.ksp)
 
+    // Solana (0.2)
+    implementation(libs.sol4k)
+
     // Specific Utilities for browser tasks
     implementation(libs.network.okhttp) // Direct OkHttp usage
     implementation(libs.parsing.jsoup) // HTML parsing/scraping

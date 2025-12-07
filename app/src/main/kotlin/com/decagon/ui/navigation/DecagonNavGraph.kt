@@ -8,12 +8,14 @@ import com.decagon.ui.screen.onboarding.DecagonOnboardingScreen
 import com.decagon.ui.screen.wallet.DecagonWalletScreen
 
 @Composable
-fun DecagonNavGraph() {
+fun DecagonNavGraph(
+    startDestination: String, // Pass from MainActivity
+) {
     val navController = rememberNavController()
-    
+
     NavHost(
         navController = navController,
-        startDestination = "onboarding"
+        startDestination = startDestination
     ) {
         composable("onboarding") {
             DecagonOnboardingScreen(
@@ -24,7 +26,7 @@ fun DecagonNavGraph() {
                 }
             )
         }
-        
+
         composable("wallet") {
             DecagonWalletScreen()
         }

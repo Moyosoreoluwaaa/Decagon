@@ -10,12 +10,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import timber.log.Timber // Import added
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
-// DecagonWalletViewModel.kt
 class DecagonWalletViewModel(
     private val repository: DecagonWalletRepository,
-    private val rpcClient: SolanaRpcClient // ← ADD THIS
+    private val rpcClient: SolanaRpcClient
 ) : ViewModel() {
 
     init {
@@ -28,14 +28,14 @@ class DecagonWalletViewModel(
                 if (wallet != null) {
                     Timber.d("Active wallet loaded: ${wallet.id}")
 
-                    // ✅ FETCH REAL BALANCE
+                    // Fetch real balance
                     val balanceResult = rpcClient.getBalance(wallet.address)
                     val balanceSol = balanceResult.getOrNull()?.let { it / 1_000_000_000.0 } ?: 0.0
 
                     Timber.i("Wallet balance: $balanceSol SOL")
 
                     DecagonLoadingState.Success(
-                        wallet.copy(balance = balanceSol) // Update balance
+                        wallet.copy(balance = balanceSol)
                     )
                 } else {
                     Timber.e("No active wallet found in repository.")
@@ -50,4 +50,19 @@ class DecagonWalletViewModel(
                 started = SharingStarted.WhileSubscribed(5000),
                 initialValue = DecagonLoadingState.Loading
             )
+
+    val allWallets: StateFlow<List<DecagonWallet>> =
+        repository.getAllWallets()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+
+    fun switchWallet(walletId: String) {
+        Timber.i("Switching to wallet: $walletId")
+        viewModelScope.launch {
+            repository.setActiveWallet(walletId)
+        }
+    }
 }

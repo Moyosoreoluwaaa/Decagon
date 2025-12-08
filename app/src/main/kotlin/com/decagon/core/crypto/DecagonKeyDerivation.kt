@@ -36,12 +36,13 @@ class DecagonKeyDerivation {
      */
     fun deriveSolanaKeypair(seed: ByteArray, accountIndex: Int = 0): Pair<ByteArray, ByteArray> {
         Timber.d("Deriving Solana keypair for account index: $accountIndex")
-        // Solana derivation path: m/44'/501'/accountIndex'/0'
+
+        // ✅ CORRECT: m/44'/501'/accountIndex'/0' (last 0 is non-hardened)
         val path = listOf(
             44 + HARDENED_OFFSET,      // Purpose (BIP44)
             501 + HARDENED_OFFSET,     // Coin type (Solana)
-            accountIndex + HARDENED_OFFSET,
-            0 + HARDENED_OFFSET
+            accountIndex + HARDENED_OFFSET,  // Account index
+            0                           // ✅ Change index (non-hardened)
         )
 
         val privateKey = derivePrivateKey(seed, path)

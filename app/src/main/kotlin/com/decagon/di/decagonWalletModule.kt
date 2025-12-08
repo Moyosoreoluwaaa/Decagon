@@ -3,7 +3,9 @@ package com.decagon.di
 import com.decagon.data.repository.DecagonWalletRepositoryImpl
 import com.decagon.domain.repository.DecagonWalletRepository
 import com.decagon.domain.usecase.DecagonCreateWalletUseCase
+import com.decagon.domain.usecase.DecagonImportWalletUseCase
 import com.decagon.ui.screen.onboarding.DecagonOnboardingViewModel
+import com.decagon.ui.screen.settings.DecagonSettingsViewModel
 import com.decagon.ui.screen.wallet.DecagonWalletViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -23,8 +25,16 @@ val decagonWalletModule = module {
     
     // UseCases
     factory { DecagonCreateWalletUseCase(get(), get()) }
-    
+    factory { DecagonImportWalletUseCase(get(), get()) }
+
     // ViewModels
-    viewModel { DecagonOnboardingViewModel(get(), get()) }
+    viewModel { DecagonOnboardingViewModel(get(), get(), get()) }
     viewModel { DecagonWalletViewModel(get(), get()) }
+    // UiModule.kt
+    viewModel {
+        DecagonSettingsViewModel(
+            repository = get(),
+            mnemonic = get()
+        )
+    }
 }

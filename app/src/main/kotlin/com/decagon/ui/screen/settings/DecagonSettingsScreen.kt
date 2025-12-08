@@ -2,6 +2,8 @@ package com.decagon.ui.screen.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -10,8 +12,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import com.decagon.domain.model.DecagonWallet
+import org.koin.androidx.compose.koinViewModel
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -20,10 +27,22 @@ fun DecagonSettingsScreen(
     onBackClick: () -> Unit,
     onShowRecoveryPhrase: () -> Unit,
     onShowPrivateKey: () -> Unit,
-    onEditWallet: () -> Unit,
-    onRemoveWallet: () -> Unit
+    viewModel: DecagonSettingsViewModel = koinViewModel()
 ) {
+    val context = LocalContext.current
+    val activity = context as? FragmentActivity
+
+    DisposableEffect(activity) {
+        Timber.d("SettingsScreen: Setting activity")
+        activity?.let { viewModel.setActivity(it) }
+        onDispose {
+            viewModel.setActivity(null)
+            Timber.d("SettingsScreen: Cleared activity")
+        }
+    }
+
     var showRemoveDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -53,7 +72,6 @@ fun DecagonSettingsScreen(
                     modifier = Modifier.padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Avatar
                     Surface(
                         modifier = Modifier.size(80.dp),
                         shape = MaterialTheme.shapes.extraLarge,
@@ -88,7 +106,7 @@ fun DecagonSettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Edit,
                     title = "Edit Account Name",
-                    onClick = onEditWallet
+                    onClick = { showEditDialog = true }
                 )
             }
 
@@ -97,7 +115,7 @@ fun DecagonSettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Lock,
                     title = "Show Recovery Phrase",
-                    subtitle = "Recovery Phrase ${wallet.accountIndex + 1}",
+                    subtitle = "View your 12-word recovery phrase",
                     onClick = onShowRecoveryPhrase,
                     destructive = false
                 )
@@ -107,6 +125,7 @@ fun DecagonSettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Key,
                     title = "Show Private Key",
+                    subtitle = "Export private key (advanced)",
                     onClick = onShowPrivateKey,
                     destructive = false
                 )
@@ -117,11 +136,24 @@ fun DecagonSettingsScreen(
                 SettingsItem(
                     icon = Icons.Default.Delete,
                     title = "Remove Account",
+                    subtitle = "Permanently remove from this device",
                     onClick = { showRemoveDialog = true },
                     destructive = true
                 )
             }
         }
+    }
+
+    // Edit name dialog
+    if (showEditDialog) {
+        EditNameDialog(
+            currentName = wallet.name,
+            onDismiss = { showEditDialog = false },
+            onConfirm = { newName ->
+                viewModel.updateWalletName(wallet.id, newName)
+                showEditDialog = false
+            }
+        )
     }
 
     // Remove confirmation dialog
@@ -137,7 +169,9 @@ fun DecagonSettingsScreen(
                 TextButton(
                     onClick = {
                         showRemoveDialog = false
-                        onRemoveWallet()
+                        viewModel.removeWallet(wallet.id) {
+                            onBackClick()
+                        }
                     },
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
@@ -153,6 +187,45 @@ fun DecagonSettingsScreen(
             }
         )
     }
+}
+
+@Composable
+private fun EditNameDialog(
+    currentName: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var name by remember { mutableStateOf(currentName) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Account Name") },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Account Name") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = { if (name.isNotBlank()) onConfirm(name) }
+                )
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { if (name.isNotBlank()) onConfirm(name) },
+                enabled = name.isNotBlank()
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
@@ -205,9 +278,9 @@ private fun SettingsItem(
             Icon(
                 icon,
                 contentDescription = null,
-                tint = if (destructive) 
-                    MaterialTheme.colorScheme.error 
-                else 
+                tint = if (destructive)
+                    MaterialTheme.colorScheme.error
+                else
                     MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -217,9 +290,9 @@ private fun SettingsItem(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = if (destructive) 
-                        MaterialTheme.colorScheme.error 
-                    else 
+                    color = if (destructive)
+                        MaterialTheme.colorScheme.error
+                    else
                         MaterialTheme.colorScheme.onSurface
                 )
                 if (subtitle != null) {

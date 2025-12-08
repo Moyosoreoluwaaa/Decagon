@@ -1,6 +1,8 @@
 package com.decagon.di
 
+import com.decagon.data.repository.DecagonSettingsRepositoryImpl
 import com.decagon.data.repository.DecagonWalletRepositoryImpl
+import com.decagon.domain.repository.DecagonSettingsRepository
 import com.decagon.domain.repository.DecagonWalletRepository
 import com.decagon.domain.usecase.DecagonCreateWalletUseCase
 import com.decagon.domain.usecase.DecagonImportWalletUseCase
@@ -22,6 +24,17 @@ val decagonWalletModule = module {
             biometricAuthenticator = get()
         )
     }
+
+    // Settings Repository
+    single<DecagonSettingsRepository> {
+        DecagonSettingsRepositoryImpl(
+            walletDao = get(),
+            enclaveManager = get(),
+            mnemonicHelper = get(),
+            keyDerivation = get(),
+            biometricAuthenticator = get()
+        )
+    }
     
     // UseCases
     factory { DecagonCreateWalletUseCase(get(), get()) }
@@ -30,11 +43,12 @@ val decagonWalletModule = module {
     // ViewModels
     viewModel { DecagonOnboardingViewModel(get(), get(), get()) }
     viewModel { DecagonWalletViewModel(get(), get()) }
-    // UiModule.kt
+
+    // Settings ViewModel
     viewModel {
         DecagonSettingsViewModel(
-            repository = get(),
-            mnemonic = get()
+            settingsRepository = get(),
+            walletRepository = get()
         )
     }
 }

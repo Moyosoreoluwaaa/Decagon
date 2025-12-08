@@ -11,10 +11,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import com.decagon.core.util.DecagonLoadingState
 import org.koin.androidx.compose.koinViewModel
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,12 +26,30 @@ fun DecagonRevealRecoveryScreen(
     onBackClick: () -> Unit,
     viewModel: DecagonSettingsViewModel = koinViewModel()
 ) {
+    val context = LocalContext.current
+    val activity = context as? FragmentActivity
+
+    DisposableEffect(activity) {
+        Timber.d("RevealRecoveryScreen: Setting activity")
+        activity?.let { viewModel.setActivity(it) }
+        onDispose {
+            viewModel.setActivity(null)
+            Timber.d("RevealRecoveryScreen: Cleared activity")
+        }
+    }
+
     val mnemonicState by viewModel.mnemonicState.collectAsState()
     val clipboardManager = LocalClipboardManager.current
     var showCopiedSnackbar by remember { mutableStateOf(false) }
 
     LaunchedEffect(walletId) {
         viewModel.loadMnemonic(walletId)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.resetMnemonicState()
+        }
     }
 
     Scaffold(
@@ -95,22 +116,52 @@ fun DecagonRevealRecoveryScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Mnemonic grid
-                    MnemonicGrid(mnemonic = state.data)
+                    // Check if this is the stub message or actual mnemonic
+                    if (state.data.contains("not stored separately")) {
+                        // Show info card for Version 0.2 limitation
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    "Version 0.2 Limitation",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    state.data,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    "Your wallet is still secure. You can export the private key instead, or recreate your wallet in a future version to enable recovery phrase backup.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+                        }
+                    } else {
+                        // Show actual mnemonic grid
+                        MnemonicGrid(mnemonic = state.data)
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
-                    // Copy button
-                    OutlinedButton(
-                        onClick = {
-                            clipboardManager.setText(AnnotatedString(state.data))
-                            showCopiedSnackbar = true
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.ContentCopy, null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Copy to Clipboard")
+                        // Copy button
+                        OutlinedButton(
+                            onClick = {
+                                clipboardManager.setText(AnnotatedString(state.data))
+                                showCopiedSnackbar = true
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.ContentCopy, null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Copy to Clipboard")
+                        }
                     }
                 }
             }
@@ -122,10 +173,19 @@ fun DecagonRevealRecoveryScreen(
                         .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        state.message,
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            state.message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Button(onClick = onBackClick) {
+                            Text("Go Back")
+                        }
+                    }
                 }
             }
 
@@ -144,7 +204,7 @@ fun DecagonRevealRecoveryScreen(
 @Composable
 private fun MnemonicGrid(mnemonic: String) {
     val words = mnemonic.split(" ")
-    
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         words.chunked(2).forEach { rowWords ->
             Row(

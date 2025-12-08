@@ -9,7 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import com.decagon.ui.screen.create.DecagonCreateWalletScreen
 import com.decagon.ui.screen.imports.DecagonImportWalletScreen
 import com.decagon.ui.screen.imports.DecagonWalletChoiceScreen
-import com.decagon.ui.screen.onboarding.*
+import com.decagon.ui.screen.settings.DecagonRevealPrivateKeyScreen
 import com.decagon.ui.screen.settings.DecagonRevealRecoveryScreen
 import com.decagon.ui.screen.settings.DecagonSettingsScreen
 import com.decagon.ui.screen.wallet.DecagonWalletScreen
@@ -118,11 +118,8 @@ fun DecagonNavGraph(
                     onShowRecoveryPhrase = {
                         navController.navigate("reveal_recovery/$walletId")
                     },
-                    onShowPrivateKey = { /* Not implemented */ },
-                    onEditWallet = { /* Not implemented */ },
-                    onRemoveWallet = {
-                        walletViewModel.switchWallet(walletId)
-                        navController.popBackStack()
+                    onShowPrivateKey = {
+                        navController.navigate("reveal_private_key/$walletId")
                     }
                 )
             }
@@ -134,6 +131,17 @@ fun DecagonNavGraph(
             Timber.d("NavGraph: Revealing recovery for $walletId")
 
             DecagonRevealRecoveryScreen(
+                walletId = walletId,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        // Reveal private key screen
+        composable("reveal_private_key/{walletId}") { backStackEntry ->
+            val walletId = backStackEntry.arguments?.getString("walletId")!!
+            Timber.d("NavGraph: Revealing private key for $walletId")
+
+            DecagonRevealPrivateKeyScreen(
                 walletId = walletId,
                 onBackClick = { navController.popBackStack() }
             )

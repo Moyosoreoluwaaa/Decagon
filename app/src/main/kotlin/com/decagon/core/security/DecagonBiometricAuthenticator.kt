@@ -214,6 +214,61 @@ class DecagonBiometricAuthenticator(
         biometricPrompt.authenticate(promptInfo)
     }
 
+
+    /**
+     * Authenticates user for seed decryption operations.
+     * Does NOT use CryptoObject - authentication happens BEFORE decrypt cipher creation.
+     *
+     * @param activity Host activity for biometric prompt
+     * @param title Prompt title
+     * @param subtitle Optional subtitle
+     * @param onSuccess Called on successful authentication
+     * @param onError Called on authentication failure
+     */
+    fun authenticateForDecryption(
+        activity: FragmentActivity,
+        title: String = "Unlock Wallet",
+        subtitle: String? = "Authenticate to access wallet data",
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        Timber.d("Starting biometric auth for decryption (non-crypto)")
+
+        val executor = ContextCompat.getMainExecutor(context)
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle(title)
+            .apply {
+                subtitle?.let { setSubtitle(it) }
+            }
+            .setNegativeButtonText("Cancel")
+            .setAllowedAuthenticators(AUTHENTICATORS)
+            .build()
+
+        val biometricPrompt = BiometricPrompt(
+            activity,
+            executor,
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    Timber.i("Decryption auth succeeded")
+                    onSuccess.invoke()
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    Timber.e("Decryption auth error: $errorCode - $errString")
+                    onError.invoke(errString.toString())
+                }
+
+                override fun onAuthenticationFailed() {
+                    Timber.w("Decryption auth failed (retry available)")
+                }
+            }
+        )
+
+        // No CryptoObject needed for decryption validation
+        biometricPrompt.authenticate(promptInfo)
+    }
+
     sealed class BiometricStatus {
         data object Available : BiometricStatus()
         data object NoHardware : BiometricStatus()

@@ -35,7 +35,7 @@ class MainActivity : FragmentActivity() {
                 val balanceResult = rpcClient.getBalance(it.address)
                 Timber.d("Balance check: ${balanceResult.getOrNull()} lamports")
             }
-            val startDestination = if (hasWallet) "wallet" else "onboarding"
+            val startDestination = if (hasWallet) "wallet" else "choice"
 
             setContent {
                 DecagonTheme {

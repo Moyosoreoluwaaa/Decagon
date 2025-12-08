@@ -24,17 +24,7 @@ class DecagonTransactionRepositoryImpl(
 
     override suspend fun insertTransaction(tx: DecagonTransaction) = withContext(Dispatchers.IO) {
         Timber.d("Inserting transaction: ${tx.id}")
-        val entity = TransactionEntity(
-            id = tx.id,
-            fromAddress = tx.from,
-            toAddress = tx.to,
-            amount = tx.amount,
-            lamports = tx.lamports,
-            signature = tx.signature,
-            status = tx.status.name,
-            timestamp = tx.timestamp,
-            fee = tx.fee
-        )
+        val entity = tx.toEntity()
         transactionDao.insert(entity)
         Timber.i("Transaction inserted: ${tx.id}")
     }
@@ -65,37 +55,14 @@ class DecagonTransactionRepositoryImpl(
     override fun getPendingTransactions(walletId: String): Flow<List<DecagonTransaction>> {
         Timber.d("Observing pending transactions for wallet: $walletId")
         return pendingTxDao.getByWallet(walletId).map { entities ->
-            entities.map { entity ->
-                DecagonTransaction(
-                    id = entity.id,
-                    from = entity.fromWalletId,
-                    to = entity.toAddress,
-                    amount = entity.amount,
-                    lamports = entity.lamports,
-                    signature = null,
-                    status = TransactionStatus.PENDING,
-                    timestamp = entity.createdAt
-                )
-            }
+            entities.map { it.toDomain() }
         }
     }
 
     override fun getTransactionHistory(address: String): Flow<List<DecagonTransaction>> {
         Timber.d("Observing transaction history for address: ${address.take(4)}...")
         return transactionDao.getByAddress(address).map { entities ->
-            entities.map { entity ->
-                DecagonTransaction(
-                    id = entity.id,
-                    from = entity.fromAddress,
-                    to = entity.toAddress,
-                    amount = entity.amount,
-                    lamports = entity.lamports,
-                    signature = entity.signature,
-                    status = TransactionStatus.valueOf(entity.status),
-                    timestamp = entity.timestamp,
-                    fee = entity.fee
-                )
-            }
+            entities.map { it.toDomain() }
         }
     }
 
@@ -108,4 +75,56 @@ class DecagonTransactionRepositoryImpl(
         transactionDao.updateStatus(txId, status, signature)
         Timber.i("Transaction status updated: $txId")
     }
+
+    // ✅ NEW: Get single transaction by ID
+    override fun getTransactionById(txId: String): Flow<DecagonTransaction?> {
+        Timber.d("Getting transaction by ID: $txId")
+        return transactionDao.getById(txId).map { it?.toDomain() }
+    }
+
+    // ✅ NEW: Get recent transactions
+    override fun getRecentTransactions(): Flow<List<DecagonTransaction>> {
+        Timber.d("Getting recent transactions")
+        return transactionDao.getRecent().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    // ✅ Extension: Entity to Domain
+    private fun TransactionEntity.toDomain() = DecagonTransaction(
+        id = id,
+        from = fromAddress,
+        to = toAddress,
+        amount = amount,
+        lamports = lamports,
+        signature = signature,
+        status = TransactionStatus.valueOf(status),
+        timestamp = timestamp,
+        fee = fee
+    )
+
+    // ✅ Extension: Domain to Entity
+    private fun DecagonTransaction.toEntity() = TransactionEntity(
+        id = id,
+        fromAddress = from,
+        toAddress = to,
+        amount = amount,
+        lamports = lamports,
+        signature = signature,
+        status = status.name,
+        timestamp = timestamp,
+        fee = fee
+    )
+
+    // ✅ Extension: PendingTxEntity to Domain
+    private fun PendingTxEntity.toDomain() = DecagonTransaction(
+        id = id,
+        from = fromWalletId,
+        to = toAddress,
+        amount = amount,
+        lamports = lamports,
+        signature = null,
+        status = TransactionStatus.PENDING,
+        timestamp = createdAt
+    )
 }

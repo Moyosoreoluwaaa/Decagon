@@ -10,4 +10,10 @@ interface DecagonTransactionRepository {
     fun getPendingTransactions(walletId: String): Flow<List<DecagonTransaction>>
     fun getTransactionHistory(address: String): Flow<List<DecagonTransaction>>
     suspend fun updateTransactionStatus(txId: String, signature: String, status: String)
+
+    // ✅ NEW: Get single transaction by ID
+    fun getTransactionById(txId: String): Flow<DecagonTransaction?>
+
+    // ✅ NEW: Get recent transactions (limit 50)
+    fun getRecentTransactions(): Flow<List<DecagonTransaction>>
 }

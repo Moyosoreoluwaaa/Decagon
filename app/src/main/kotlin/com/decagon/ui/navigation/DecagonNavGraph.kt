@@ -7,6 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.decagon.ui.screen.create.DecagonCreateWalletScreen
+import com.decagon.ui.screen.history.DecagonTransactionDetailScreen
+import com.decagon.ui.screen.history.DecagonTransactionHistoryScreen
 import com.decagon.ui.screen.imports.DecagonImportWalletScreen
 import com.decagon.ui.screen.imports.DecagonWalletChoiceScreen
 import com.decagon.ui.screen.settings.DecagonRevealPrivateKeyScreen
@@ -94,6 +96,40 @@ fun DecagonNavGraph(
                 onNavigateToSettings = { walletId ->
                     Timber.i("NavGraph: Settings for $walletId")
                     navController.navigate("settings/$walletId")
+                },
+                // ✅ NEW: Navigate to transaction history
+                onNavigateToHistory = {
+                    Timber.i("NavGraph: Navigate to transaction history")
+                    navController.navigate("transactions")
+                }
+            )
+        }
+
+        // ✅ NEW: Transaction history screen
+        composable("transactions") {
+            Timber.d("NavGraph: Showing transaction history")
+            DecagonTransactionHistoryScreen(
+                onBackClick = {
+                    Timber.i("NavGraph: Back from transactions")
+                    navController.popBackStack()
+                },
+                onTransactionClick = { txId ->
+                    Timber.i("NavGraph: Navigate to transaction detail: $txId")
+                    navController.navigate("transaction_detail/$txId")
+                }
+            )
+        }
+
+        // ✅ NEW: Transaction detail screen
+        composable("transaction_detail/{txId}") { backStackEntry ->
+            val txId = backStackEntry.arguments?.getString("txId")!!
+            Timber.d("NavGraph: Showing transaction detail: $txId")
+
+            DecagonTransactionDetailScreen(
+                transactionId = txId,
+                onBackClick = {
+                    Timber.i("NavGraph: Back from transaction detail")
+                    navController.popBackStack()
                 }
             )
         }

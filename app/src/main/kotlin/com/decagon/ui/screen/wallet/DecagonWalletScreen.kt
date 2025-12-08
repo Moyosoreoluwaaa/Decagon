@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,7 +21,8 @@ fun DecagonWalletScreen(
     viewModel: DecagonWalletViewModel = koinViewModel(),
     onCreateWallet: () -> Unit = {},
     onImportWallet: () -> Unit = {},
-    onNavigateToSettings: (String) -> Unit = {}
+    onNavigateToSettings: (String) -> Unit = {},
+    onNavigateToHistory: () -> Unit = {} // ✅ NEW
 ) {
     val walletState by viewModel.walletState.collectAsState()
     val allWallets by viewModel.allWallets.collectAsState()
@@ -46,6 +48,13 @@ fun DecagonWalletScreen(
                     }
                 },
                 actions = {
+                    // ✅ NEW: History button
+                    if (walletState is DecagonLoadingState.Success) {
+                        IconButton(onClick = onNavigateToHistory) {
+                            Icon(Icons.Default.History, "Transaction History")
+                        }
+                    }
+
                     // Avatar button
                     IconButton(
                         onClick = {
@@ -165,12 +174,12 @@ private fun WalletContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Version 0.2: Multi-wallet + Settings",
+            text = "Version 0.3: Transaction History",
             style = MaterialTheme.typography.bodyMedium
         )
 
         Text(
-            text = "Tap avatar to access settings",
+            text = "Tap history icon to view transactions",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

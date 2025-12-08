@@ -18,7 +18,7 @@ import com.decagon.data.local.entity.TransactionEntity
         PendingTxEntity::class,
         TransactionEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(DecagonTypeConverters::class)
@@ -64,6 +64,18 @@ abstract class DecagonDatabase : RoomDatabase() {
                         timestamp INTEGER NOT NULL,
                         fee INTEGER NOT NULL
                     )
+                """)
+            }
+        }
+
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // âœ… Add encryptedMnemonic column
+                // NOTE: Existing wallets will have NULL mnemonic (cannot recover)
+                // New wallets created after this migration will store mnemonic
+                db.execSQL("""
+                    ALTER TABLE decagon_wallets 
+                    ADD COLUMN encryptedMnemonic BLOB NOT NULL DEFAULT ''
                 """)
             }
         }

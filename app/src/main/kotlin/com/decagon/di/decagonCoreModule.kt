@@ -29,7 +29,8 @@ val decagonCoreModule = module {
         )
             .addMigrations(
                 DecagonDatabase.MIGRATION_1_2,
-                DecagonDatabase.MIGRATION_2_3 // Add new migration
+                DecagonDatabase.MIGRATION_2_3,
+                DecagonDatabase.MIGRATION_3_4 // Add new migration
             )
             .build()
     }

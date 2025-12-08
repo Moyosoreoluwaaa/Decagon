@@ -2,7 +2,6 @@ package com.decagon.data.repository
 
 import androidx.fragment.app.FragmentActivity
 import com.decagon.core.crypto.DecagonKeyDerivation
-import com.decagon.core.crypto.DecagonMnemonic
 import com.decagon.core.crypto.DecagonSecureEnclaveManager
 import com.decagon.core.security.DecagonBiometricAuthenticator
 import com.decagon.data.local.dao.DecagonWalletDao
@@ -18,7 +17,6 @@ import kotlin.coroutines.resumeWithException
 class DecagonSettingsRepositoryImpl(
     private val walletDao: DecagonWalletDao,
     private val enclaveManager: DecagonSecureEnclaveManager,
-    private val mnemonicHelper: DecagonMnemonic,
     private val keyDerivation: DecagonKeyDerivation,
     private val biometricAuthenticator: DecagonBiometricAuthenticator
 ) : DecagonSettingsRepository {
@@ -39,12 +37,22 @@ class DecagonSettingsRepositoryImpl(
                     ?: throw IllegalArgumentException("Wallet not found")
             }
 
-            // CRITICAL: Store mnemonic separately during wallet creation
-            // For Version 0.2, we'll return a stub message
-            // Full implementation requires storing encrypted mnemonic in DB
-            
-            val alias = DecagonSecureEnclaveManager.getWalletKeyAlias(walletId)
-            
+            // âœ… Check if mnemonic exists
+            if (entity.encryptedMnemonic == null) {
+                Timber.w("Mnemonic not available for wallet created before v0.2.1")
+                return@withContext Result.failure(
+                    IllegalStateException(
+                        "Recovery phrase not available.\n\n" +
+                                "This wallet was created before Version 0.2.1 when recovery phrases weren't stored.\n\n" +
+                                "You can:\n" +
+                                "• Export the private key instead\n" +
+                                "• Create a new wallet to enable recovery phrase backup"
+                    )
+                )
+            }
+
+            val mnemonicAlias = "${DecagonSecureEnclaveManager.getWalletKeyAlias(walletId)}_mnemonic"
+
             // Authenticate before decryption
             val authenticated = suspendCancellableCoroutine { continuation ->
                 biometricAuthenticator.authenticateForDecryption(
@@ -64,19 +72,15 @@ class DecagonSettingsRepositoryImpl(
                 throw SecurityException("Authentication required")
             }
 
-            // Decrypt seed
-            val seed = withContext(Dispatchers.Default) {
-                enclaveManager.decryptSeed(alias, entity.encryptedSeed)
+            // Decrypt mnemonic
+            val mnemonicBytes = withContext(Dispatchers.Default) {
+                enclaveManager.decryptSeed(mnemonicAlias, entity.encryptedMnemonic)
             }
 
-            // STUB: In production, mnemonic should be stored encrypted separately
-            // Cannot derive mnemonic from seed (one-way function)
-            Timber.w("Recovery phrase reveal: Mnemonic not stored separately (Version 0.2 limitation)")
-            
-            Result.success(
-                "Recovery phrase was not stored separately during wallet creation. " +
-                "This feature requires wallet recreation in Version 0.3+"
-            )
+            val mnemonic = String(mnemonicBytes, Charsets.UTF_8)
+
+            Timber.i("Recovery phrase revealed successfully")
+            Result.success(mnemonic)
         } catch (e: Exception) {
             Timber.e(e, "Failed to reveal recovery phrase")
             Result.failure(e)
@@ -96,7 +100,7 @@ class DecagonSettingsRepositoryImpl(
             }
 
             val alias = DecagonSecureEnclaveManager.getWalletKeyAlias(walletId)
-            
+
             // Authenticate before decryption
             val authenticated = suspendCancellableCoroutine { continuation ->
                 biometricAuthenticator.authenticateForDecryption(
@@ -127,7 +131,7 @@ class DecagonSettingsRepositoryImpl(
             }
 
             val privateKeyHex = privateKey.joinToString("") { "%02x".format(it) }
-            
+
             Timber.i("Private key revealed successfully")
             Result.success(privateKeyHex)
         } catch (e: Exception) {
@@ -188,13 +192,15 @@ class DecagonSettingsRepositoryImpl(
                     ?: throw IllegalArgumentException("Wallet not found")
             }
 
-            // Delete wallet and key
+            // Delete wallet and keys
             withContext(Dispatchers.IO) {
                 walletDao.delete(entity)
             }
 
             val alias = DecagonSecureEnclaveManager.getWalletKeyAlias(walletId)
+            val mnemonicAlias = "${alias}_mnemonic"
             enclaveManager.deleteKey(alias)
+            enclaveManager.deleteKey(mnemonicAlias)
 
             Timber.i("Wallet removed successfully")
             Result.success(Unit)

@@ -30,7 +30,7 @@ val decagonWalletModule = module {
         DecagonSettingsRepositoryImpl(
             walletDao = get(),
             enclaveManager = get(),
-            mnemonicHelper = get(),
+//            mnemonicHelper = get(),
             keyDerivation = get(),
             biometricAuthenticator = get()
         )

@@ -116,35 +116,9 @@ fun DecagonRevealRecoveryScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Check if this is the stub message or actual mnemonic
-                    if (state.data.contains("not stored separately")) {
-                        // Show info card for Version 0.2 limitation
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer
-                            )
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    "Version 0.2 Limitation",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    state.data,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    "Your wallet is still secure. You can export the private key instead, or recreate your wallet in a future version to enable recovery phrase backup.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                            }
-                        }
-                    } else {
+                    // Check if mnemonic is available (12/24 words)
+                    val words = state.data.trim().split("\\s+".toRegex())
+                    if (words.size == 12 || words.size == 24) {
                         // Show actual mnemonic grid
                         MnemonicGrid(mnemonic = state.data)
 
@@ -161,6 +135,27 @@ fun DecagonRevealRecoveryScreen(
                             Icon(Icons.Default.ContentCopy, null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Copy to Clipboard")
+                        }
+                    } else {
+                        // Show error/limitation message
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    "Recovery Phrase Unavailable",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    state.data,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
                         }
                     }
                 }

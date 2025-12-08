@@ -61,14 +61,24 @@ class DecagonWalletRepositoryImpl(
             Timber.i("Requesting biometric authentication...")
 
             // Biometric auth on Main thread
-            val encryptedSeed = suspendCancellableCoroutine<ByteArray> { continuation ->
+            val (encryptedSeed, encryptedMnemonic) = suspendCancellableCoroutine { continuation ->
                 biometricAuthenticator.authenticateForEncryption(
                     activity = activity,
                     alias = alias,
                     enclaveManager = enclaveManager,
                     seed = seed,
                     onSuccess = { encrypted ->
-                        continuation.resume(encrypted)
+                        // âœ… ALSO encrypt mnemonic
+                        val mnemonicBytes = mnemonic.toByteArray(Charsets.UTF_8)
+                        val mnemonicAlias = "${alias}_mnemonic"
+
+                        try {
+                            val cipher = enclaveManager.createEncryptCipher(mnemonicAlias)
+                            val encryptedMnemonic = enclaveManager.encryptSeedWithCipher(cipher, mnemonicBytes)
+                            continuation.resume(Pair(encrypted, encryptedMnemonic))
+                        } catch (e: Exception) {
+                            continuation.resumeWithException(e)
+                        }
                     },
                     onError = { error ->
                         continuation.resumeWithException(SecurityException("Auth failed: $error"))
@@ -85,14 +95,14 @@ class DecagonWalletRepositoryImpl(
                 createdAt = System.currentTimeMillis()
             )
 
-            // ✅ FIX: Database operations on IO dispatcher
+            // âœ… Database operations on IO dispatcher
             withContext(Dispatchers.IO) {
-                val entity = wallet.toEntity(encryptedSeed)
+                val entity = wallet.toEntity(encryptedSeed, encryptedMnemonic)
                 walletDao.insert(entity)
                 Timber.i("Wallet created: $walletId")
             }
 
-            // ✅ FIX: Auto-activate AFTER insert completes
+            // âœ… Auto-activate AFTER insert completes
             val walletCount = withContext(Dispatchers.IO) {
                 walletDao.getCount().first()
             }
@@ -138,7 +148,9 @@ class DecagonWalletRepositoryImpl(
         wallet?.let {
             walletDao.delete(it)
             val keyAlias = DecagonSecureEnclaveManager.getWalletKeyAlias(walletId)
+            val mnemonicAlias = "${keyAlias}_mnemonic"
             enclaveManager.deleteKey(keyAlias)
+            enclaveManager.deleteKey(mnemonicAlias)
             Timber.i("Wallet $walletId deleted.")
         } ?: Timber.w("Attempted to delete non-existent wallet: $walletId")
     }
@@ -156,6 +168,32 @@ class DecagonWalletRepositoryImpl(
             Result.success(seed)
         } catch (e: Exception) {
             Timber.e(e, "Failed to decrypt seed for wallet: $walletId")
+            Result.failure(e)
+        }
+    }
+
+    // âœ… NEW: Decrypt mnemonic
+    suspend fun decryptMnemonic(walletId: String): Result<String> {
+        Timber.d("Attempting to decrypt mnemonic for wallet: $walletId")
+        return try {
+            val entity = walletDao.getById(walletId).first()
+                ?: return Result.failure(IllegalArgumentException("Wallet not found"))
+
+            // Check if mnemonic exists (migration compatibility)
+            if (entity.encryptedMnemonic == null) {
+                return Result.failure(
+                    IllegalStateException("Mnemonic not available (wallet created before Version 0.2.1)")
+                )
+            }
+
+            val mnemonicAlias = "${DecagonSecureEnclaveManager.getWalletKeyAlias(walletId)}_mnemonic"
+            val mnemonicBytes = enclaveManager.decryptSeed(mnemonicAlias, entity.encryptedMnemonic)
+            val mnemonic = String(mnemonicBytes, Charsets.UTF_8)
+
+            Timber.i("Mnemonic successfully decrypted for wallet: $walletId")
+            Result.success(mnemonic)
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to decrypt mnemonic for wallet: $walletId")
             Result.failure(e)
         }
     }

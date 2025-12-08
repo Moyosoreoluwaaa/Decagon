@@ -1,12 +1,8 @@
 package com.decagon.data.mapper
 
 import com.decagon.data.local.entity.DecagonWalletEntity
-import com.decagon.data.mapper.DecagonWalletMapper.toDomain
 import com.decagon.domain.model.DecagonWallet
 
-/**
- * Maps between data and domain layers.
- */
 object DecagonWalletMapper {
 
     fun DecagonWalletEntity.toDomain(): DecagonWallet {
@@ -14,7 +10,7 @@ object DecagonWalletMapper {
             id = id,
             name = name,
             publicKey = publicKey,
-            address = address, // ✅ Use address field
+            address = address,
             accountIndex = accountIndex,
             balance = 0.0,
             createdAt = createdAt,
@@ -22,13 +18,17 @@ object DecagonWalletMapper {
         )
     }
 
-    fun DecagonWallet.toEntity(encryptedSeed: ByteArray): DecagonWalletEntity {
+    fun DecagonWallet.toEntity(
+        encryptedSeed: ByteArray,
+        encryptedMnemonic: ByteArray // âœ… NEW parameter
+    ): DecagonWalletEntity {
         return DecagonWalletEntity(
             id = id,
             name = name,
             encryptedSeed = encryptedSeed,
+            encryptedMnemonic = encryptedMnemonic, // âœ… Store encrypted mnemonic
             publicKey = publicKey,
-            address = address, // ✅ Store address
+            address = address,
             accountIndex = accountIndex,
             createdAt = createdAt,
             isActive = isActive

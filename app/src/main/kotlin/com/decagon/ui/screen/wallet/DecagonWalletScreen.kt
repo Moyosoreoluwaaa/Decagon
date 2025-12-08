@@ -111,7 +111,7 @@ private fun WalletContent(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = wallet.truncatedAddress,
+                    text = wallet.address,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

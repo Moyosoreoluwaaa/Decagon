@@ -1,7 +1,9 @@
 // domain/usecase/DecagonSendTokenUseCase.kt
 package com.decagon.domain.usecase
 
+import androidx.fragment.app.FragmentActivity
 import com.decagon.core.crypto.DecagonKeyDerivation
+import com.decagon.core.security.DecagonBiometricAuthenticator
 import com.decagon.data.remote.SolanaRpcClient
 import com.decagon.domain.model.DecagonTransaction
 import com.decagon.domain.model.TransactionStatus
@@ -21,7 +23,8 @@ class DecagonSendTokenUseCase(
     private val walletRepository: DecagonWalletRepository,
     private val transactionRepository: DecagonTransactionRepository,
     private val rpcClient: SolanaRpcClient,
-    private val keyDerivation: DecagonKeyDerivation
+    private val keyDerivation: DecagonKeyDerivation,
+    private val biometricAuthenticator: DecagonBiometricAuthenticator // ✅ ADD THIS
 ) {
 
     init {
@@ -31,7 +34,7 @@ class DecagonSendTokenUseCase(
     suspend operator fun invoke(
         toAddress: String,
         amountSol: Double,
-        // activity: FragmentActivity // Remove this if not used in decryptSeed
+        activity: FragmentActivity // ✅ NOW USED
     ): Result<DecagonTransaction> = withContext(Dispatchers.Default) {
         Timber.d("Executing send token: $amountSol SOL to ${toAddress.take(4)}...")
 
@@ -47,42 +50,65 @@ class DecagonSendTokenUseCase(
                     ?: throw IllegalStateException("No active wallet")
             }
 
+            // ✅ Calculate lamports early
+            val lamports = (amountSol * 1_000_000_000).toLong()
+
+            // ✅ Check balance before biometric auth
+            val balance = rpcClient.getBalance(wallet.address).getOrThrow()
+            val requiredLamports = lamports + 5000
+            require(balance >= requiredLamports) {
+                val balanceSol = balance / 1_000_000_000.0
+                val requiredSol = requiredLamports / 1_000_000_000.0
+                "Insufficient balance: $balanceSol SOL (need $requiredSol SOL)"
+            }
+
             Timber.d("Using wallet: ${wallet.id}")
 
-            // Decrypt seed
-            val seedResult = walletRepository.decryptSeed(wallet.id)
+            // ✅ FIX 1: Authenticate BEFORE decryption
+            Timber.i("Requesting biometric authentication for send...")
+            val authenticated = withContext(Dispatchers.Main) {
+                biometricAuthenticator.authenticate(
+                    activity = activity,
+                    title = "Authorize Transaction",
+                    subtitle = "Send $amountSol SOL",
+                    description = "Authenticate to sign transaction"
+                )
+            }
+
+            if (!authenticated) {
+                throw SecurityException("Authentication required to send transaction")
+            }
+
+            // ✅ FIX 2: Now decryption will succeed (user just authenticated)
+            val seedResult = withContext(Dispatchers.IO) {
+                walletRepository.decryptSeed(wallet.id)
+            }
             val seed = seedResult.getOrThrow()
 
             // Derive keypair
             val (privateKey, _) = keyDerivation.deriveSolanaKeypair(seed, wallet.accountIndex)
             val keypair = Keypair.fromSecretKey(privateKey)
 
-            // Convert SOL to lamports
-            val lamports = (amountSol * 1_000_000_000).toLong()
-
             // Build transaction
             val fromPubkey = PublicKey(wallet.address)
             val toPubkey = PublicKey(toAddress)
 
-            // ✅ FIX 1: Fetch recent blockhash from network FIRST
-            // You may need to add getLatestBlockhash() to your SolanaRpcClient
+            // Fetch recent blockhash
             val blockhash = rpcClient.getLatestBlockhash().getOrThrow()
 
-            // ✅ FIX 2: Correct parameter names (from, to)
             val instruction = TransferInstruction(
                 from = fromPubkey,
                 to = toPubkey,
                 lamports = lamports
             )
 
-            // ✅ FIX 3: Pass recentBlockhash to constructor
             val transaction = Transaction(
                 recentBlockhash = blockhash,
                 instructions = listOf(instruction),
                 feePayer = fromPubkey
             )
 
-            // Simulate first (Optional but recommended)
+            // Simulate first
             val serializedForSim = transaction.serialize()
             val simulation = rpcClient.simulateTransaction(serializedForSim).getOrThrow()
 
@@ -92,7 +118,6 @@ class DecagonSendTokenUseCase(
             }
 
             // Sign transaction
-            // ✅ FIX 4: sign() usually works on the instance if the constructor is correct
             transaction.sign(keypair)
 
             // Serialize
@@ -122,6 +147,9 @@ class DecagonSendTokenUseCase(
             Timber.i("Transaction sent successfully: $signature")
             Result.success(txRecord)
 
+        } catch (e: DecagonBiometricAuthenticator.BiometricAuthException) {
+            Timber.e(e, "Biometric authentication failed")
+            Result.failure(e)
         } catch (e: Exception) {
             Timber.e(e, "Send token failed")
             Result.failure(e)

@@ -1,5 +1,6 @@
 package com.decagon.ui.screen.send
 
+import android.annotation.SuppressLint
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,6 +17,7 @@ class DecagonSendViewModel(
     private val sendTokenUseCase: DecagonSendTokenUseCase
 ) : ViewModel() {
 
+    @SuppressLint("StaticFieldLeak")
     private var currentActivity: FragmentActivity? = null
 
     private val _sendState = MutableStateFlow<DecagonLoadingState<DecagonTransaction>>(
@@ -46,7 +48,7 @@ class DecagonSendViewModel(
         viewModelScope.launch {
             _sendState.value = DecagonLoadingState.Loading
 
-            val result = sendTokenUseCase(toAddress, amount)
+            val result = sendTokenUseCase(toAddress, amount, activity)
 
             _sendState.value = result.fold(
                 onSuccess = { tx ->

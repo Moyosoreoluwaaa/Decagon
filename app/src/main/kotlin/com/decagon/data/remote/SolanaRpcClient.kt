@@ -102,20 +102,42 @@ class SolanaRpcClient(
                 android.util.Base64.NO_WRAP
             )
 
-            val response = httpClient.post(rpcUrl) {
-                contentType(ContentType.Application.Json)
-                setBody(buildJsonObject {
-                    put("jsonrpc", "2.0")
-                    put("id", UUID.randomUUID().toString())
-                    put("method", "sendTransaction")
-                    put("params", buildJsonArray {
-                        add(base64Tx)
+            val requestBody = buildJsonObject {
+                put("jsonrpc", "2.0")
+                put("id", UUID.randomUUID().toString())
+                put("method", "sendTransaction")
+                put("params", buildJsonArray {
+                    add(base64Tx)
+                    // ✅ ADD THIS ENCODING CONFIG
+                    add(buildJsonObject {
+                        put("encoding", "base64")
+                        put("skipPreflight", false)
+                        put("preflightCommitment", "confirmed")
                     })
                 })
             }
 
-            val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
-            val signature = json["result"]?.jsonPrimitive?.content ?: throw IllegalStateException("No signature returned.")
+            Timber.d("Request body: $requestBody")
+
+            val response = httpClient.post(rpcUrl) {
+                contentType(ContentType.Application.Json)
+                setBody(requestBody)
+            }
+
+            val rawResponse = response.bodyAsText()
+            Timber.d("RPC Response: $rawResponse")
+
+            val json = Json.parseToJsonElement(rawResponse).jsonObject
+
+            val error = json["error"]?.jsonObject
+            if (error != null) {
+                val errorMsg = error["message"]?.jsonPrimitive?.content ?: "Unknown RPC error"
+                Timber.e("RPC Error: $errorMsg")
+                throw IllegalStateException("RPC Error: $errorMsg")
+            }
+
+            val signature = json["result"]?.jsonPrimitive?.content
+                ?: throw IllegalStateException("No signature in response")
 
             Timber.i("Transaction signature: ${signature.take(8)}...")
             Result.success(signature)
@@ -142,6 +164,10 @@ class SolanaRpcClient(
                     put("method", "simulateTransaction")
                     put("params", buildJsonArray {
                         add(base64Tx)
+                        buildJsonObject {
+                            put("encoding", "base64") // ✅ Add this
+                            put("commitment", "confirmed")
+                        }
                     })
                 })
             }

@@ -19,7 +19,8 @@ val decagonTransactionModule = module {
             walletRepository = get(),
             transactionRepository = get(),
             rpcClient = get(),
-            keyDerivation = get()
+            keyDerivation = get(),
+            biometricAuthenticator = get()
         )
     }
 

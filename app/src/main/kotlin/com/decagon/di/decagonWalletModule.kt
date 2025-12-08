@@ -26,5 +26,5 @@ val decagonWalletModule = module {
     
     // ViewModels
     viewModel { DecagonOnboardingViewModel(get(), get()) }
-    viewModel { DecagonWalletViewModel(get()) }
+    viewModel { DecagonWalletViewModel(get(), get()) }
 }

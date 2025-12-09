@@ -1,13 +1,15 @@
 package com.decagon.data.repository
 
 import androidx.fragment.app.FragmentActivity
+import com.decagon.core.chains.ChainType
 import com.decagon.core.crypto.DecagonKeyDerivation
 import com.decagon.core.crypto.DecagonMnemonic
 import com.decagon.core.crypto.DecagonSecureEnclaveManager
 import com.decagon.core.security.DecagonBiometricAuthenticator
 import com.decagon.data.local.dao.DecagonWalletDao
-import com.decagon.data.mapper.DecagonWalletMapper.toDomain
-import com.decagon.data.mapper.DecagonWalletMapper.toEntity
+import com.decagon.data.mapper.toDomain
+import com.decagon.data.mapper.toEntity
+import com.decagon.domain.model.ChainWallet
 import com.decagon.domain.model.DecagonWallet
 import com.decagon.domain.repository.DecagonWalletRepository
 import kotlinx.coroutines.Dispatchers
@@ -39,28 +41,44 @@ class DecagonWalletRepositoryImpl(
         accountIndex: Int,
         activity: FragmentActivity
     ): Result<DecagonWallet> = withContext(Dispatchers.Main) {
-        Timber.d("Creating wallet: $name")
+        Timber.d("Creating multi-chain wallet: $name")
 
         try {
             require(mnemonicHelper.validatePhrase(mnemonic)) { "Invalid mnemonic" }
 
-            // Crypto operations on Default dispatcher
             val seed = withContext(Dispatchers.Default) {
                 mnemonicHelper.deriveSeed(mnemonic)
             }
 
-            val (_, publicKey) = withContext(Dispatchers.Default) {
-                keyDerivation.deriveSolanaKeypair(seed, accountIndex)
+            // Derive all chains
+            val allKeypairs = withContext(Dispatchers.Default) {
+                keyDerivation.deriveAllChains(seed, accountIndex)
             }
 
-            val address = keyDerivation.deriveSolanaAddress(publicKey)
+            // Build ChainWallet list
+            val chainWallets = allKeypairs.map { (chainId, keypair) ->
+                val (privateKey, publicKey) = keypair
+                val address = when (chainId) {
+                    ChainType.Solana.id -> keyDerivation.deriveSolanaAddress(publicKey)
+                    ChainType.Ethereum.id -> keyDerivation.deriveEthereumAddress(publicKey)
+                    ChainType.Polygon.id -> keyDerivation.derivePolygonAddress(publicKey)
+                    else -> throw IllegalStateException("Unknown chain: $chainId")
+                }
 
+                ChainWallet(
+                    chainId = chainId,
+                    address = address,
+                    publicKey = publicKey.toHex(),
+                    balance = 0.0
+                )
+            }
+
+            val solanaChain = chainWallets.first { it.chainId == ChainType.Solana.id }
             val walletId = UUID.randomUUID().toString()
             val alias = DecagonSecureEnclaveManager.getWalletKeyAlias(walletId)
 
             Timber.i("Requesting biometric authentication...")
 
-            // Biometric auth on Main thread
             val (encryptedSeed, encryptedMnemonic) = suspendCancellableCoroutine { continuation ->
                 biometricAuthenticator.authenticateForEncryption(
                     activity = activity,
@@ -68,7 +86,6 @@ class DecagonWalletRepositoryImpl(
                     enclaveManager = enclaveManager,
                     seed = seed,
                     onSuccess = { encrypted ->
-                        // âœ… ALSO encrypt mnemonic
                         val mnemonicBytes = mnemonic.toByteArray(Charsets.UTF_8)
                         val mnemonicAlias = "${alias}_mnemonic"
 
@@ -89,38 +106,38 @@ class DecagonWalletRepositoryImpl(
             val wallet = DecagonWallet(
                 id = walletId,
                 name = name,
-                publicKey = publicKey.toHex(),
-                address = address,
+                publicKey = solanaChain.publicKey,
+                address = solanaChain.address,
                 accountIndex = accountIndex,
-                createdAt = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis(),
+                chains = chainWallets,
+                activeChainId = ChainType.Solana.id
             )
 
-            // âœ… Database operations on IO dispatcher
             withContext(Dispatchers.IO) {
                 val entity = wallet.toEntity(encryptedSeed, encryptedMnemonic)
                 walletDao.insert(entity)
-                Timber.i("Wallet created: $walletId")
+                Timber.i("Wallet created with ${chainWallets.size} chains")
             }
 
-            // âœ… Auto-activate AFTER insert completes
             val walletCount = withContext(Dispatchers.IO) {
                 walletDao.getCount().first()
             }
 
             if (walletCount == 1) {
-                Timber.i("First wallet detected, setting as active")
                 withContext(Dispatchers.IO) {
                     walletDao.setActive(walletId)
                 }
             }
 
-            Timber.i("Wallet secured: $walletId")
             Result.success(wallet)
         } catch (e: Exception) {
             Timber.e(e, "Wallet creation failed")
             Result.failure(e)
         }
     }
+
+    private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
 
     override fun getWalletById(id: String): Flow<DecagonWallet?> {
         Timber.d("Getting wallet by ID: $id")
@@ -155,6 +172,13 @@ class DecagonWalletRepositoryImpl(
         } ?: Timber.w("Attempted to delete non-existent wallet: $walletId")
     }
 
+    override suspend fun setActiveChain(walletId: String, chainId: String) {
+        withContext(Dispatchers.IO) {
+            Timber.d("Setting active chain: $walletId -> $chainId")
+            walletDao.updateActiveChain(walletId, chainId)
+        }
+    }
+
     override suspend fun decryptSeed(walletId: String): Result<ByteArray> {
         Timber.d("Attempting to decrypt seed for wallet: $walletId")
         return try {
@@ -171,6 +195,7 @@ class DecagonWalletRepositoryImpl(
             Result.failure(e)
         }
     }
+
 
     // âœ… NEW: Decrypt mnemonic
     suspend fun decryptMnemonic(walletId: String): Result<String> {
@@ -198,5 +223,5 @@ class DecagonWalletRepositoryImpl(
         }
     }
 
-    private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
+//    private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
 }

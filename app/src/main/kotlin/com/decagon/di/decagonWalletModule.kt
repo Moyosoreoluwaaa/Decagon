@@ -6,10 +6,11 @@ import com.decagon.domain.repository.DecagonSettingsRepository
 import com.decagon.domain.repository.DecagonWalletRepository
 import com.decagon.domain.usecase.DecagonCreateWalletUseCase
 import com.decagon.domain.usecase.DecagonImportWalletUseCase
+import com.decagon.ui.screen.chains.DecagonSupportedChainsViewModel
 import com.decagon.ui.screen.onboarding.DecagonOnboardingViewModel
 import com.decagon.ui.screen.settings.DecagonSettingsViewModel
 import com.decagon.ui.screen.wallet.DecagonWalletViewModel
-import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val decagonWalletModule = module {
@@ -48,6 +49,13 @@ val decagonWalletModule = module {
     viewModel {
         DecagonSettingsViewModel(
             settingsRepository = get(),
+            walletRepository = get()
+        )
+    }
+
+    // decagonWalletModule.kt - ADD:
+    viewModel {
+        DecagonSupportedChainsViewModel(
             walletRepository = get()
         )
     }

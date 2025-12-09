@@ -1,5 +1,6 @@
 package com.decagon.core.crypto
 
+import com.decagon.core.chains.ChainType
 import net.i2p.crypto.eddsa.EdDSAPrivateKey
 import net.i2p.crypto.eddsa.EdDSAPublicKey
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable
@@ -58,23 +59,23 @@ class DecagonKeyDerivation {
      * @param accountIndex Account index (default: 0)
      * @return Pair of (privateKey, publicKey) as ByteArrays
      */
-    fun deriveEthereumKeypair(seed: ByteArray, accountIndex: Int = 0): Pair<ByteArray, ByteArray> {
-        Timber.d("Deriving Ethereum keypair (stub) for account index: $accountIndex")
-        // Ethereum path: m/44'/60'/0'/0/accountIndex
-        val path = listOf(
-            44 + HARDENED_OFFSET,
-            60 + HARDENED_OFFSET,
-            0 + HARDENED_OFFSET,
-            0,
-            accountIndex
-        )
-
-        val privateKey = derivePrivateKey(seed, path)
-        // Ethereum uses secp256k1, but for 0.1 we'll stub this
-        // Full implementation in 1.5 (EVM chain support)
-        Timber.v("Ethereum keypair derivation (stub) complete.")
-        return Pair(privateKey, ByteArray(32))
-    }
+//    fun deriveEthereumKeypair(seed: ByteArray, accountIndex: Int = 0): Pair<ByteArray, ByteArray> {
+//        Timber.d("Deriving Ethereum keypair (stub) for account index: $accountIndex")
+//        // Ethereum path: m/44'/60'/0'/0/accountIndex
+//        val path = listOf(
+//            44 + HARDENED_OFFSET,
+//            60 + HARDENED_OFFSET,
+//            0 + HARDENED_OFFSET,
+//            0,
+//            accountIndex
+//        )
+//
+//        val privateKey = derivePrivateKey(seed, path)
+//        // Ethereum uses secp256k1, but for 0.1 we'll stub this
+//        // Full implementation in 1.5 (EVM chain support)
+//        Timber.v("Ethereum keypair derivation (stub) complete.")
+//        return Pair(privateKey, ByteArray(32))
+//    }
 
     /**
      * Derives Solana address (Base58 encoded public key).
@@ -159,6 +160,86 @@ class DecagonKeyDerivation {
         val privateKeyObj = EdDSAPrivateKey(keySpec)
         val publicKeyObj = EdDSAPublicKey(EdDSAPublicKeySpec(privateKeyObj.a, ed25519Curve))
         return publicKeyObj.abyte
+    }
+
+    // DecagonKeyDerivation.kt - ADD THIS METHOD:
+    /**
+     * Derives keypairs for all supported chains from single seed.
+     *
+     * @param seed BIP39 seed
+     * @param accountIndex Account index
+     * @return Map of chainId to (privateKey, publicKey)
+     */
+    fun deriveAllChains(
+        seed: ByteArray,
+        accountIndex: Int = 0
+    ): Map<String, Pair<ByteArray, ByteArray>> {
+        Timber.d("Deriving keypairs for all chains (account: $accountIndex)")
+
+        return mapOf(
+            ChainType.Solana.id to deriveSolanaKeypair(seed, accountIndex),
+            ChainType.Ethereum.id to deriveEthereumKeypair(seed, accountIndex),
+            ChainType.Polygon.id to derivePolygonKeypair(seed, accountIndex)
+        )
+    }
+
+    /**
+     * Derives Polygon keypair (same as Ethereum, different BIP44 path).
+     */
+    fun derivePolygonKeypair(seed: ByteArray, accountIndex: Int = 0): Pair<ByteArray, ByteArray> {
+        Timber.d("Deriving Polygon keypair for account index: $accountIndex")
+
+        val path = listOf(
+            44 + HARDENED_OFFSET,
+            966 + HARDENED_OFFSET, // Polygon coin type
+            accountIndex + HARDENED_OFFSET,
+            0
+        )
+
+        val privateKey = derivePrivateKey(seed, path)
+        val publicKey = derivePublicKey(privateKey)
+
+        Timber.v("Polygon keypair derivation complete.")
+        return Pair(privateKey, publicKey)
+    }
+
+    // Fix deriveEthereumKeypair to actually work:
+    fun deriveEthereumKeypair(seed: ByteArray, accountIndex: Int = 0): Pair<ByteArray, ByteArray> {
+        Timber.d("Deriving Ethereum keypair for account index: $accountIndex")
+
+        val path = listOf(
+            44 + HARDENED_OFFSET,
+            60 + HARDENED_OFFSET, // Ethereum coin type
+            accountIndex + HARDENED_OFFSET,
+            0,
+            0 // Ethereum uses address_index at end
+        )
+
+        val privateKey = derivePrivateKey(seed, path)
+        // ✅ TODO Version 0.5: Use secp256k1 for Ethereum public key
+        // For now, stub with Ed25519 (won't work on-chain but tests infrastructure)
+        val publicKey = derivePublicKey(privateKey)
+
+        Timber.v("Ethereum keypair derivation complete (Ed25519 stub).")
+        return Pair(privateKey, publicKey)
+    }
+
+    /**
+     * Derives Ethereum address from public key.
+     *
+     * ✅ TODO Version 0.5: Implement Keccak-256 hashing
+     * For now, returns placeholder.
+     */
+    fun deriveEthereumAddress(publicKey: ByteArray): String {
+        // STUB: Real implementation needs Keccak-256
+        return "0x" + publicKey.take(20).joinToString("") { "%02x".format(it) }
+    }
+
+    /**
+     * Derives Polygon address (same as Ethereum).
+     */
+    fun derivePolygonAddress(publicKey: ByteArray): String {
+        return deriveEthereumAddress(publicKey)
     }
 
     companion object {

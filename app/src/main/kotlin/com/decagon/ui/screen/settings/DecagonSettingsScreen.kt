@@ -27,6 +27,7 @@ fun DecagonSettingsScreen(
     onBackClick: () -> Unit,
     onShowRecoveryPhrase: () -> Unit,
     onShowPrivateKey: () -> Unit,
+    onNavigateToChains: () -> Unit,
     viewModel: DecagonSettingsViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
@@ -109,6 +110,13 @@ fun DecagonSettingsScreen(
                     onClick = { showEditDialog = true }
                 )
             }
+
+            SettingsItem(
+                icon = Icons.Default.AccountBalance,
+                title = "Supported Chains",
+                subtitle = "Manage blockchain networks",
+                onClick = onNavigateToChains  // WIRE THIS UP
+            )
 
             // Security Section
             SettingsSection(title = "Security") {

@@ -18,7 +18,7 @@ import com.decagon.data.local.entity.TransactionEntity
         PendingTxEntity::class,
         TransactionEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 @TypeConverters(DecagonTypeConverters::class)
@@ -40,7 +40,8 @@ abstract class DecagonDatabase : RoomDatabase() {
 
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("""
+                db.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS pending_transactions (
                         id TEXT PRIMARY KEY NOT NULL,
                         fromWalletId TEXT NOT NULL,
@@ -50,9 +51,11 @@ abstract class DecagonDatabase : RoomDatabase() {
                         createdAt INTEGER NOT NULL,
                         retryCount INTEGER NOT NULL DEFAULT 0
                     )
-                """)
+                """
+                )
 
-                db.execSQL("""
+                db.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS transactions (
                         id TEXT PRIMARY KEY NOT NULL,
                         fromAddress TEXT NOT NULL,
@@ -64,7 +67,8 @@ abstract class DecagonDatabase : RoomDatabase() {
                         timestamp INTEGER NOT NULL,
                         fee INTEGER NOT NULL
                     )
-                """)
+                """
+                )
             }
         }
 
@@ -73,9 +77,27 @@ abstract class DecagonDatabase : RoomDatabase() {
                 // âœ… Add encryptedMnemonic column
                 // NOTE: Existing wallets will have NULL mnemonic (cannot recover)
                 // New wallets created after this migration will store mnemonic
-                db.execSQL("""
+                db.execSQL(
+                    """
                     ALTER TABLE decagon_wallets 
                     ADD COLUMN encryptedMnemonic BLOB NOT NULL DEFAULT ''
+                """
+                )
+            }
+
+
+        }
+
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    ALTER TABLE decagon_wallets 
+                    ADD COLUMN chains TEXT NOT NULL DEFAULT '[]'
+                """)
+
+                db.execSQL("""
+                    ALTER TABLE decagon_wallets 
+                    ADD COLUMN activeChainId TEXT NOT NULL DEFAULT 'solana'
                 """)
             }
         }

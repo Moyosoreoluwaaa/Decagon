@@ -3,86 +3,71 @@ package com.decagon.core.util
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import com.decagon.core.chains.ChainRegistry
+import com.decagon.core.chains.ChainType
 import timber.log.Timber
 
-/**
- * Utility for opening Solana blockchain explorer links.
- */
 object DecagonExplorerUtil {
-    
-    private const val SOLSCAN_BASE = "https://solscan.io"
-    
+
     /**
-     * Opens transaction in Solscan explorer.
-     *
-     * @param context Android context
-     * @param signature Transaction signature
+     * Opens transaction in chain-specific explorer.
      */
-    fun openTransaction(context: Context, signature: String) {
+    fun openTransaction(context: Context, chainId: String, txHash: String) {
         try {
-            val url = "$SOLSCAN_BASE/tx/$signature"
-            Timber.d("Opening transaction in explorer: $url")
-            
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            context.startActivity(intent)
+            val config = ChainRegistry.getChain(chainId)
+            val url = when (ChainType.fromId(chainId)) {
+                ChainType.Solana -> "${config.explorerUrl}/tx/$txHash"
+                ChainType.Ethereum -> "${config.explorerUrl}/tx/$txHash"
+                ChainType.Polygon -> "${config.explorerUrl}/tx/$txHash"
+            }
+
+            Timber.d("Opening transaction: $url")
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         } catch (e: Exception) {
             Timber.e(e, "Failed to open transaction explorer")
         }
     }
-    
+
     /**
-     * Opens account/address in Solscan explorer.
-     *
-     * @param context Android context
-     * @param address Solana address
+     * Opens address in chain-specific explorer.
      */
-    fun openAddress(context: Context, address: String) {
+    fun openAddress(context: Context, chainId: String, address: String) {
         try {
-            val url = "$SOLSCAN_BASE/account/$address"
-            Timber.d("Opening address in explorer: $url")
-            
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            context.startActivity(intent)
+            val config = ChainRegistry.getChain(chainId)
+            val url = when (ChainType.fromId(chainId)) {
+                ChainType.Solana -> "${config.explorerUrl}/account/$address"
+                ChainType.Ethereum -> "${config.explorerUrl}/address/$address"
+                ChainType.Polygon -> "${config.explorerUrl}/address/$address"
+            }
+
+            Timber.d("Opening address: $url")
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         } catch (e: Exception) {
             Timber.e(e, "Failed to open address explorer")
         }
     }
-    
+
     /**
-     * Opens token account in Solscan explorer.
-     *
-     * @param context Android context
-     * @param tokenAddress Token mint address
+     * Gets transaction URL for sharing/copying.
      */
-    fun openToken(context: Context, tokenAddress: String) {
-        try {
-            val url = "$SOLSCAN_BASE/token/$tokenAddress"
-            Timber.d("Opening token in explorer: $url")
-            
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to open token explorer")
+    fun getTransactionUrl(chainId: String, txHash: String): String {
+        val config = ChainRegistry.getChain(chainId)
+        return when (ChainType.fromId(chainId)) {
+            ChainType.Solana -> "${config.explorerUrl}/tx/$txHash"
+            ChainType.Ethereum -> "${config.explorerUrl}/tx/$txHash"
+            ChainType.Polygon -> "${config.explorerUrl}/tx/$txHash"
         }
     }
-    
+
     /**
-     * Gets transaction explorer URL (for copying/sharing).
-     *
-     * @param signature Transaction signature
-     * @return Full URL string
+     * Gets address URL for sharing/copying.
      */
-    fun getTransactionUrl(signature: String): String {
-        return "$SOLSCAN_BASE/tx/$signature"
-    }
-    
-    /**
-     * Gets address explorer URL (for copying/sharing).
-     *
-     * @param address Solana address
-     * @return Full URL string
-     */
-    fun getAddressUrl(address: String): String {
-        return "$SOLSCAN_BASE/account/$address"
+    fun getAddressUrl(chainId: String, address: String): String {
+        val config = ChainRegistry.getChain(chainId)
+        return when (ChainType.fromId(chainId)) {
+            ChainType.Solana -> "${config.explorerUrl}/account/$address"
+            ChainType.Ethereum -> "${config.explorerUrl}/address/$address"
+            ChainType.Polygon -> "${config.explorerUrl}/address/$address"
+        }
     }
 }

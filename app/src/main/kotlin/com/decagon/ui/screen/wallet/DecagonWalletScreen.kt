@@ -1,16 +1,39 @@
 package com.decagon.ui.screen.wallet
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.decagon.core.util.DecagonLoadingState
+import com.decagon.ui.components.DecagonQuickActions
 import com.decagon.ui.components.DecagonWalletSelector
 import com.decagon.ui.screen.send.DecagonSendSheet
 import org.koin.androidx.compose.koinViewModel
@@ -22,11 +45,11 @@ fun DecagonWalletScreen(
     onCreateWallet: () -> Unit = {},
     onImportWallet: () -> Unit = {},
     onNavigateToSettings: (String) -> Unit = {},
-    onNavigateToHistory: () -> Unit = {} // ✅ NEW
+    onNavigateToHistory: () -> Unit = {},
+    onNavigateToChains: () -> Unit = {}
 ) {
     val walletState by viewModel.walletState.collectAsState()
     val allWallets by viewModel.allWallets.collectAsState()
-    var showSendSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -44,6 +67,7 @@ fun DecagonWalletScreen(
                                 onImportWallet = onImportWallet
                             )
                         }
+
                         else -> Text("Decagon Wallet")
                     }
                 },
@@ -80,6 +104,7 @@ fun DecagonWalletScreen(
                                     }
                                 }
                             }
+
                             else -> {
                                 Icon(Icons.Default.AccountCircle, "Settings")
                             }
@@ -87,49 +112,43 @@ fun DecagonWalletScreen(
                     }
                 }
             )
-        },
-        floatingActionButton = {
-            if (walletState is DecagonLoadingState.Success) {
-                FloatingActionButton(
-                    onClick = { showSendSheet = true }
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, "Send")
-                }
-            }
         }
     ) { padding ->
         when (val state = walletState) {
             is DecagonLoadingState.Loading -> {
                 LoadingView(Modifier.padding(padding))
             }
+
             is DecagonLoadingState.Success -> {
                 WalletContent(
                     wallet = state.data,
-                    modifier = Modifier.padding(padding)
+                    modifier = Modifier.padding(padding),
+                    onNavigateToChains
                 )
             }
+
             is DecagonLoadingState.Error -> {
                 ErrorView(
                     message = state.message,
                     modifier = Modifier.padding(padding)
                 )
             }
+
             is DecagonLoadingState.Idle -> {}
         }
     }
 
-    if (showSendSheet) {
-        DecagonSendSheet(
-            onDismiss = { showSendSheet = false }
-        )
-    }
 }
 
 @Composable
 private fun WalletContent(
     wallet: com.decagon.domain.model.DecagonWallet,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToChains: () -> Unit = {}
 ) {
+
+    var showSendSheet by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -170,6 +189,23 @@ private fun WalletContent(
                 )
             }
         }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        DecagonQuickActions(
+            wallet = wallet,
+            onSendClick = { showSendSheet = true },
+            onReceiveClick = { /* show receive dialog */ }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedButton(
+            onClick = onNavigateToChains,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Manage Chains")
+            Icon(Icons.Default.ChevronRight, null)
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -182,6 +218,12 @@ private fun WalletContent(
             text = "Tap history icon to view transactions",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+
+    if (showSendSheet) {
+        DecagonSendSheet(
+            onDismiss = { showSendSheet = false }
         )
     }
 }

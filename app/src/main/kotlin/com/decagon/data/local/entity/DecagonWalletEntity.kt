@@ -19,7 +19,9 @@ data class DecagonWalletEntity(
     val address: String,                 // Base58 Solana address
     val accountIndex: Int = 0,           // BIP44 account index
     val createdAt: Long,
-    val isActive: Boolean = false
+    val isActive: Boolean = false,
+    val chains: String = "[]", // JSON array
+    val activeChainId: String = "solana"
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

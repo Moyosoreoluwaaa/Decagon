@@ -80,6 +80,12 @@ interface DecagonWalletDao {
     
     @Query("UPDATE decagon_wallets SET isActive = 1 WHERE id = :walletId")
     suspend fun activateWallet(walletId: String)
+
+    /**
+     * Updates wallet's active chain.
+     */
+    @Query("UPDATE decagon_wallets SET activeChainId = :chainId WHERE id = :walletId")
+    suspend fun updateActiveChain(walletId: String, chainId: String)
     
     /**
      * Gets wallet count.

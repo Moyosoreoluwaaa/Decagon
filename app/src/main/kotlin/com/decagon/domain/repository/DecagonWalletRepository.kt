@@ -69,4 +69,6 @@ interface DecagonWalletRepository {
      * @return Decrypted seed bytes
      */
     suspend fun decryptSeed(walletId: String): Result<ByteArray>
+
+    suspend fun setActiveChain(walletId: String, chainId: String)
 }

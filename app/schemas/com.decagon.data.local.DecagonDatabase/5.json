@@ -1,0 +1,210 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 5,
+    "identityHash": "1c86d0c4834afcf2f276cfa70cc1bfe5",
+    "entities": [
+      {
+        "tableName": "decagon_wallets",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `encryptedSeed` BLOB NOT NULL, `encryptedMnemonic` BLOB NOT NULL, `publicKey` TEXT NOT NULL, `address` TEXT NOT NULL, `accountIndex` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `isActive` INTEGER NOT NULL, `chains` TEXT NOT NULL, `activeChainId` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "encryptedSeed",
+            "columnName": "encryptedSeed",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "encryptedMnemonic",
+            "columnName": "encryptedMnemonic",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "publicKey",
+            "columnName": "publicKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountIndex",
+            "columnName": "accountIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chains",
+            "columnName": "chains",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activeChainId",
+            "columnName": "activeChainId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "pending_transactions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `fromWalletId` TEXT NOT NULL, `toAddress` TEXT NOT NULL, `amount` REAL NOT NULL, `lamports` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `retryCount` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromWalletId",
+            "columnName": "fromWalletId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toAddress",
+            "columnName": "toAddress",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amount",
+            "columnName": "amount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lamports",
+            "columnName": "lamports",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryCount",
+            "columnName": "retryCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "transactions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `fromAddress` TEXT NOT NULL, `toAddress` TEXT NOT NULL, `amount` REAL NOT NULL, `lamports` INTEGER NOT NULL, `signature` TEXT, `status` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `fee` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromAddress",
+            "columnName": "fromAddress",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toAddress",
+            "columnName": "toAddress",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amount",
+            "columnName": "amount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lamports",
+            "columnName": "lamports",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "signature",
+            "columnName": "signature",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fee",
+            "columnName": "fee",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1c86d0c4834afcf2f276cfa70cc1bfe5')"
+    ]
+  }
+}

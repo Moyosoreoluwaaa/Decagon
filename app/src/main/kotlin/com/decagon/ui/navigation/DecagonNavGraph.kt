@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.decagon.ui.screen.chains.DecagonSupportedChainsScreen
 import com.decagon.ui.screen.create.DecagonCreateWalletScreen
 import com.decagon.ui.screen.history.DecagonTransactionDetailScreen
 import com.decagon.ui.screen.history.DecagonTransactionHistoryScreen
@@ -81,8 +82,16 @@ fun DecagonNavGraph(
         // Main wallet screen
         composable("wallet") {
             Timber.d("NavGraph: Showing wallet")
+
+            // 1. Retrieve the ViewModel and its state
             val walletViewModel: com.decagon.ui.screen.wallet.DecagonWalletViewModel = koinViewModel()
             val walletState by walletViewModel.walletState.collectAsState()
+
+            // 2. Determine the wallet ID from the successful state
+            val currentWalletId = when (val state = walletState) {
+                is com.decagon.core.util.DecagonLoadingState.Success -> state.data.id
+                else -> null // Or handle the case where it's still loading/error
+            }
 
             DecagonWalletScreen(
                 onCreateWallet = {
@@ -97,10 +106,18 @@ fun DecagonNavGraph(
                     Timber.i("NavGraph: Settings for $walletId")
                     navController.navigate("settings/$walletId")
                 },
-                // ✅ NEW: Navigate to transaction history
                 onNavigateToHistory = {
                     Timber.i("NavGraph: Navigate to transaction history")
                     navController.navigate("transactions")
+                },
+                // 3. Update the navigation call to use the determined walletId
+                onNavigateToChains = {
+                    if (currentWalletId != null) {
+                        navController.navigate("chains/$currentWalletId")
+                    } else {
+                        // Handle case: Attempted to navigate to chains while wallet is loading/error
+                        Timber.w("Cannot navigate to chains: currentWalletId is null.")
+                    }
                 }
             )
         }
@@ -134,12 +151,27 @@ fun DecagonNavGraph(
             )
         }
 
+        composable("chains/{walletId}") { backStackEntry ->
+            val walletId = backStackEntry.arguments?.getString("walletId")!!
+            Timber.d("NavGraph: Showing chains for $walletId")
+
+            DecagonSupportedChainsScreen(
+                walletId = walletId,
+                onBackClick = { navController.popBackStack() },
+                onChainSelected = { chainId ->
+                    Timber.i("Chain selected: $chainId")
+                    navController.popBackStack()
+                }
+            )
+        }
+
         // Settings screen
         composable("settings/{walletId}") { backStackEntry ->
             val walletId = backStackEntry.arguments?.getString("walletId")!!
             Timber.d("NavGraph: Showing settings for $walletId")
 
-            val walletViewModel: com.decagon.ui.screen.wallet.DecagonWalletViewModel = koinViewModel()
+            val walletViewModel: com.decagon.ui.screen.wallet.DecagonWalletViewModel =
+                koinViewModel()
             val walletState by walletViewModel.walletState.collectAsState()
 
             val currentWallet = when (val state = walletState) {
@@ -156,6 +188,9 @@ fun DecagonNavGraph(
                     },
                     onShowPrivateKey = {
                         navController.navigate("reveal_private_key/$walletId")
+                    },
+                    onNavigateToChains = {  // ADD THIS PARAMETER
+                        navController.navigate("chains/$walletId")
                     }
                 )
             }

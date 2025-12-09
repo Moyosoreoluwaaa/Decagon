@@ -5,6 +5,7 @@ import com.decagon.di.decagonCoreModule
 import com.decagon.di.decagonNetworkModule
 import com.decagon.di.decagonTransactionModule
 import com.decagon.di.decagonWalletModule
+import com.decagon.worker.BalanceSyncManager
 import com.decagon.worker.TransactionSyncManager
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -20,7 +21,7 @@ class DecagonApplication : Application() {
             Timber.plant(Timber.DebugTree())
         }
         Timber.d("Application started, planting Timber DebugTree in debug mode.")
-
+        BalanceSyncManager(this).schedulePeriodicSync()
         TransactionSyncManager(this).schedulePeriodic()
 
         startKoin {

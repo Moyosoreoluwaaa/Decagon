@@ -1,19 +1,25 @@
 package com.decagon.ui.screen.wallet
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,12 +37,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.ui.components.DecagonQuickActions
 import com.decagon.ui.components.DecagonWalletSelector
 import com.decagon.ui.screen.send.DecagonSendSheet
 import org.koin.androidx.compose.koinViewModel
+import java.text.NumberFormat
+import java.util.Currency
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,19 +77,16 @@ fun DecagonWalletScreen(
                                 onImportWallet = onImportWallet
                             )
                         }
-
                         else -> Text("Decagon Wallet")
                     }
                 },
                 actions = {
-                    // ✅ NEW: History button
                     if (walletState is DecagonLoadingState.Success) {
                         IconButton(onClick = onNavigateToHistory) {
                             Icon(Icons.Default.History, "Transaction History")
                         }
                     }
 
-                    // Avatar button
                     IconButton(
                         onClick = {
                             val state = walletState
@@ -104,7 +111,6 @@ fun DecagonWalletScreen(
                                     }
                                 }
                             }
-
                             else -> {
                                 Icon(Icons.Default.AccountCircle, "Settings")
                             }
@@ -118,36 +124,40 @@ fun DecagonWalletScreen(
             is DecagonLoadingState.Loading -> {
                 LoadingView(Modifier.padding(padding))
             }
-
             is DecagonLoadingState.Success -> {
                 WalletContent(
                     wallet = state.data,
+                    viewModel = viewModel,
                     modifier = Modifier.padding(padding),
-                    onNavigateToChains
+                    onNavigateToChains = onNavigateToChains
                 )
             }
-
             is DecagonLoadingState.Error -> {
                 ErrorView(
                     message = state.message,
                     modifier = Modifier.padding(padding)
                 )
             }
-
             is DecagonLoadingState.Idle -> {}
         }
     }
-
 }
 
 @Composable
 private fun WalletContent(
     wallet: com.decagon.domain.model.DecagonWallet,
+    viewModel: DecagonWalletViewModel,
     modifier: Modifier = Modifier,
     onNavigateToChains: () -> Unit = {}
 ) {
-
     var showSendSheet by remember { mutableStateOf(false) }
+    var showCurrencyMenu by remember { mutableStateOf(false) }
+
+    val selectedCurrency by viewModel.selectedCurrency.collectAsState()
+    val fiatPrice by viewModel.fiatPrice.collectAsState()
+
+    // Calculate fiat value
+    val fiatValue = wallet.balance * fiatPrice
 
     Column(
         modifier = modifier
@@ -170,25 +180,78 @@ private fun WalletContent(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = wallet.address,
+                    text = "${wallet.address.take(4)}...${wallet.address.takeLast(4)}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // SOL Balance
                 Text(
-                    text = "${wallet.balance} SOL",
-                    style = MaterialTheme.typography.displayMedium
+                    text = "%.4f SOL".format(wallet.balance),
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.Bold
                 )
 
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Fiat Value with Currency Selector
+                Box {
+                    Row(
+                        modifier = Modifier.clickable { showCurrencyMenu = true },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = formatCurrency(fiatValue, selectedCurrency),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Change currency",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    // Currency dropdown
+                    DropdownMenu(
+                        expanded = showCurrencyMenu,
+                        onDismissRequest = { showCurrencyMenu = false }
+                    ) {
+                        listOf("usd", "eur", "gbp", "ngn").forEach { currency ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = getCurrencyDisplay(currency),
+                                        fontWeight = if (currency == selectedCurrency) {
+                                            FontWeight.Bold
+                                        } else {
+                                            FontWeight.Normal
+                                        }
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.setCurrency(currency)
+                                    showCurrencyMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Price per SOL
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "~ $0.00",
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = "1 SOL = ${formatCurrency(fiatPrice, selectedCurrency)}",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         DecagonQuickActions(
@@ -210,12 +273,12 @@ private fun WalletContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Version 0.3: Transaction History",
+            text = "Version 0.3: Transaction History + Fiat Prices",
             style = MaterialTheme.typography.bodyMedium
         )
 
         Text(
-            text = "Tap history icon to view transactions",
+            text = "Tap currency to change • View history with top-right icon",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -252,5 +315,41 @@ private fun ErrorView(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.error
         )
+    }
+}
+
+// Helper functions
+private fun formatCurrency(amount: Double, currencyCode: String): String {
+    return try {
+        val format = NumberFormat.getCurrencyInstance(Locale.US).apply {
+            currency = Currency.getInstance(currencyCode.uppercase())
+            maximumFractionDigits = 2
+            minimumFractionDigits = 2
+        }
+        format.format(amount)
+    } catch (e: Exception) {
+        // Fallback for unsupported currencies
+        val symbol = getCurrencySymbol(currencyCode)
+        "$symbol%.2f".format(amount)
+    }
+}
+
+private fun getCurrencySymbol(code: String): String {
+    return when (code.lowercase()) {
+        "usd" -> "$"
+        "eur" -> "€"
+        "gbp" -> "£"
+        "ngn" -> "₦"
+        else -> code.uppercase()
+    }
+}
+
+private fun getCurrencyDisplay(code: String): String {
+    return when (code.lowercase()) {
+        "usd" -> "USD ($)"
+        "eur" -> "EUR (€)"
+        "gbp" -> "GBP (£)"
+        "ngn" -> "NGN (₦)"
+        else -> code.uppercase()
     }
 }

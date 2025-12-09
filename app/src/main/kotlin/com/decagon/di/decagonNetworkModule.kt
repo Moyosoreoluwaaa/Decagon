@@ -1,5 +1,6 @@
 package com.decagon.di
 
+import com.decagon.data.remote.CoinPriceService
 import com.decagon.data.remote.SolanaRpcClient
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -26,4 +27,6 @@ val decagonNetworkModule = module {
             rpcUrl = "https://api.devnet.solana.com"
         )
     }
+
+    single { CoinPriceService(get()) }
 }

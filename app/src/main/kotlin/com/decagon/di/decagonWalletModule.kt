@@ -43,7 +43,7 @@ val decagonWalletModule = module {
 
     // ViewModels
     viewModel { DecagonOnboardingViewModel(get(), get(), get()) }
-    viewModel { DecagonWalletViewModel(get(), get()) }
+    viewModel { DecagonWalletViewModel(get(), get(), get()) }
 
     // Settings ViewModel
     viewModel {

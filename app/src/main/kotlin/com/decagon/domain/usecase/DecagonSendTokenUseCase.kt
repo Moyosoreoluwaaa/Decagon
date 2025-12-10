@@ -10,7 +10,6 @@ import com.decagon.domain.model.TransactionStatus
 import com.decagon.domain.repository.DecagonTransactionRepository
 import com.decagon.domain.repository.DecagonWalletRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.sol4k.Keypair
@@ -28,7 +27,7 @@ class DecagonSendTokenUseCase(
     private val biometricAuthenticator: DecagonBiometricAuthenticator
 ) {
     companion object {
-        private const val DEFAULT_PRIORITY_FEE = 10_000L
+        private const val DEFAULT_PRIORITY_FEE = 50_000L
         private const val COMPUTE_UNIT_LIMIT = 200_000
     }
 
@@ -45,12 +44,10 @@ class DecagonSendTokenUseCase(
         Timber.d("Executing send token: $amountSol SOL to ${toAddress.take(4)}...")
 
         try {
-            // Validate
             require(keyDerivation.isValidSolanaAddress(toAddress)) {
                 "Invalid recipient address"
             }
 
-            // Get wallet
             val wallet = withContext(Dispatchers.IO) {
                 walletRepository.getActiveWallet().first()
                     ?: throw IllegalStateException("No active wallet")
@@ -58,13 +55,11 @@ class DecagonSendTokenUseCase(
 
             Timber.d("Using wallet: ${wallet.address.take(8)}...")
 
-            // Calculate amounts
             val lamports = (amountSol * 1_000_000_000).toLong()
             val baseFee = 5000L
             val priorityFeeLamports = priorityFeeMicroLamports / 1_000_000
             val totalFee = baseFee + priorityFeeLamports
 
-            // Check balance
             val balance = rpcClient.getBalance(wallet.address).getOrThrow()
             val requiredLamports = lamports + totalFee
             require(balance >= requiredLamports) {
@@ -75,7 +70,6 @@ class DecagonSendTokenUseCase(
 
             Timber.i("Balance check passed: $balance lamports available")
 
-            // Authenticate
             Timber.i("Requesting biometric authentication...")
             val authenticated = withContext(Dispatchers.Main) {
                 biometricAuthenticator.authenticate(
@@ -90,23 +84,19 @@ class DecagonSendTokenUseCase(
                 throw SecurityException("Authentication required")
             }
 
-            // Decrypt seed
             val seedResult = withContext(Dispatchers.IO) {
                 walletRepository.decryptSeed(wallet.id)
             }
             val seed = seedResult.getOrThrow()
 
-            // Derive keypair
             val (privateKey, _) = keyDerivation.deriveSolanaKeypair(seed, wallet.accountIndex)
             val keypair = Keypair.fromSecretKey(privateKey)
 
             Timber.d("Keypair derived")
 
-            // Get fresh blockhash
             val blockhash = rpcClient.getLatestBlockhash().getOrThrow()
             Timber.d("Got fresh blockhash: $blockhash")
 
-            // Build transaction
             val fromPubkey = PublicKey(wallet.address)
             val toPubkey = PublicKey(toAddress)
 
@@ -124,62 +114,22 @@ class DecagonSendTokenUseCase(
                 feePayer = fromPubkey
             )
 
-            // CRITICAL: Sign BEFORE serialization
             transaction.sign(keypair)
             Timber.d("Transaction signed")
 
-            // Serialize signed transaction
             val serializedTx = transaction.serialize()
             Timber.d("Transaction serialized: ${serializedTx.size} bytes")
 
-            // Simulate
             val simulation = rpcClient.simulateTransaction(serializedTx).getOrThrow()
             if (!simulation.willSucceed) {
                 throw IllegalStateException("Simulation failed: ${simulation.errorMessage}")
             }
             Timber.i("Simulation passed")
 
-            // Send (ONLY ONCE)
             Timber.i("Sending transaction to network...")
             val signature = rpcClient.sendTransaction(serializedTx).getOrThrow()
             Timber.i("✅ Transaction sent! Signature: $signature")
 
-            // Wait for confirmation
-            Timber.d("Waiting for confirmation...")
-            var confirmed = false
-            var attempts = 0
-
-            while (!confirmed && attempts < 30) {
-                delay(1000)
-
-                try {
-                    val statusResult = rpcClient.getTransactionStatus(signature)
-                    if (statusResult.isSuccess) {
-                        when (val status = statusResult.getOrNull()) {
-                            "processed", "confirmed", "finalized" -> {
-                                confirmed = true
-                                Timber.i("✅ Confirmed: $status")
-                            }
-                            "failed" -> {
-                                throw IllegalStateException("Transaction failed on-chain")
-                            }
-                            else -> {
-                                Timber.d("Pending... (${attempts + 1}/30)")
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Timber.w(e, "Error checking status")
-                }
-
-                attempts++
-            }
-
-            if (!confirmed) {
-                Timber.w("Not confirmed after 30s, but signature is valid")
-            }
-
-            // Save to database
             val txId = UUID.randomUUID().toString()
             val txRecord = DecagonTransaction(
                 id = txId,
@@ -188,7 +138,7 @@ class DecagonSendTokenUseCase(
                 amount = amountSol,
                 lamports = lamports,
                 signature = signature,
-                status = if (confirmed) TransactionStatus.CONFIRMED else TransactionStatus.PENDING,
+                status = TransactionStatus.PENDING,
                 timestamp = System.currentTimeMillis(),
                 fee = baseFee,
                 priorityFee = priorityFeeMicroLamports
@@ -198,7 +148,12 @@ class DecagonSendTokenUseCase(
                 transactionRepository.insertTransaction(txRecord)
             }
 
-            Timber.i("✅ Saved to database: $txId")
+            Timber.i("✅ Transaction saved:")
+            Timber.i("   ID: $txId")
+            Timber.i("   Signature: $signature")
+            Timber.i("   Status: ${txRecord.status}")
+            Timber.i("   From: ${txRecord.from.take(8)}...")
+            Timber.i("   To: ${txRecord.to.take(8)}...")
             Result.success(txRecord)
 
         } catch (e: DecagonBiometricAuthenticator.BiometricAuthException) {

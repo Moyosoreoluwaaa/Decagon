@@ -27,73 +27,60 @@ class TransactionStatusWorker(
     private val rpcClient: SolanaRpcClient by inject()
 
     override suspend fun doWork(): Result {
-        Timber.d("TransactionStatusWorker started")
-
         return try {
-            // Get active wallet
             val wallet = walletRepository.getActiveWallet().first()
-                ?: return Result.success().also {
-                    Timber.d("No active wallet, skipping sync")
-                }
+                ?: return Result.success()
 
-            // Get transaction history
-            val transactions = transactionRepository
-                .getTransactionHistory(wallet.address)
+            // ✅ FIX: Query ONLY pending transactions
+            val pendingTxs = transactionRepository
+                .getPendingTransactionsByAddress(wallet.address)  // NEW method
                 .first()
 
-            // Filter pending transactions
-            val pendingTxs = transactions.filter { it.status == TransactionStatus.PENDING }
-            
-            Timber.i("Syncing status for ${pendingTxs.size} pending transactions")
+            Timber.i("Syncing ${pendingTxs.size} pending transactions")
 
-            // Check status for each pending transaction
-            var updatedCount = 0
             pendingTxs.forEach { tx ->
                 tx.signature?.let { signature ->
                     try {
-                        // Query transaction status from blockchain
                         val statusResult = rpcClient.getTransactionStatus(signature)
-                        
-                        statusResult.onSuccess { status ->
-                            if (status != "pending") {
-                                // Update in database
-                                val newStatus = when (status) {
-                                    "confirmed", "finalized" -> "CONFIRMED"
-                                    "failed" -> "FAILED"
-                                    else -> "PENDING"
-                                }
-                                
-                                transactionRepository.updateTransactionStatus(
-                                    txId = tx.id,
-                                    signature = signature,
-                                    status = newStatus
-                                )
-                                
-                                Timber.i("Updated tx ${tx.id} to $newStatus")
-                                updatedCount++
+
+                        statusResult.onSuccess { rpcStatus ->
+                            // ✅ FIX: More robust status mapping
+                            val newStatus = when (rpcStatus.lowercase()) {
+                                "confirmed", "finalized" -> "CONFIRMED"
+                                "failed", "error" -> "FAILED"
+                                else -> return@onSuccess  // Skip if still pending
                             }
+
+                            transactionRepository.updateTransactionStatus(
+                                txId = tx.id,
+                                signature = signature,
+                                status = newStatus
+                            )
+
+                            Timber.i("✅ Updated ${tx.id}: $rpcStatus → $newStatus")
                         }
+
+                        statusResult.onFailure { error ->
+                            Timber.w(error, "⚠️ Failed to check ${tx.id}: ${error.message}")
+                        }
+
                     } catch (e: Exception) {
-                        Timber.w(e, "Failed to check status for tx: ${tx.id}")
-                        // Continue with other transactions
+                        Timber.e(e, "❌ Error checking ${tx.id}")
                     }
-                }
+                } ?: Timber.w("⚠️ Transaction ${tx.id} has no signature")
             }
 
-            Timber.i("TransactionStatusWorker completed: $updatedCount/$${pendingTxs.size} updated")
+            Timber.d("📊 Debug Info:")
+            Timber.d("   Wallet: ${wallet.address.take(8)}...")
+            Timber.d("   Total pending: ${pendingTxs.size}")
+            pendingTxs.forEach { tx ->
+                Timber.d("   - ${tx.id}: sig=${tx.signature?.take(8)} status=${tx.status}")
+            }
+
             Result.success()
-
         } catch (e: Exception) {
-            Timber.e(e, "TransactionStatusWorker failed")
-            
-            // Retry if attempt count < 3
-            if (runAttemptCount < 3) {
-                Timber.d("Retrying... (attempt ${runAttemptCount + 1})")
-                Result.retry()
-            } else {
-                Timber.e("Max retries reached, giving up")
-                Result.failure()
-            }
+            Timber.e(e, "Worker failed")
+            if (runAttemptCount < 3) Result.retry() else Result.failure()
         }
     }
 }

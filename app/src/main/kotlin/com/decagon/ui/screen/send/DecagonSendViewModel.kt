@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.domain.model.DecagonTransaction
 import com.decagon.domain.usecase.DecagonSendTokenUseCase
+import com.decagon.worker.TransactionSyncManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -53,6 +54,26 @@ class DecagonSendViewModel(
             _sendState.value = result.fold(
                 onSuccess = { tx ->
                     Timber.i("Send successful: ${tx.signature}")
+                    DecagonLoadingState.Success(tx)
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Send failed")
+                    DecagonLoadingState.Error(error, error.message ?: "Send failed")
+                }
+            )
+        }
+
+        viewModelScope.launch {
+            _sendState.value = DecagonLoadingState.Loading
+            val result = sendTokenUseCase(toAddress, amount, activity)
+
+            _sendState.value = result.fold(
+                onSuccess = { tx ->
+                    Timber.i("Send successful: ${tx.signature}")
+
+                    // ✅ Trigger immediate sync
+                    TransactionSyncManager(activity.applicationContext).syncNow()
+
                     DecagonLoadingState.Success(tx)
                 },
                 onFailure = { error ->

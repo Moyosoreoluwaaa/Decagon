@@ -90,6 +90,12 @@ class DecagonTransactionRepositoryImpl(
         }
     }
 
+    override fun getPendingTransactionsByAddress(address: String): Flow<List<DecagonTransaction>> {
+        return transactionDao.getPendingByAddress(address).map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
     // ✅ Extension: Entity to Domain
     private fun TransactionEntity.toDomain() = DecagonTransaction(
         id = id,

@@ -22,4 +22,13 @@ interface TransactionDao {
     // ✅ NEW: Get single transaction by ID
     @Query("SELECT * FROM transactions WHERE id = :txId")
     fun getById(txId: String): Flow<TransactionEntity?>
+
+    // TransactionDao.kt
+    @Query("""
+    SELECT * FROM transactions 
+    WHERE (fromAddress = :address OR toAddress = :address)
+    AND status = 'PENDING'
+    ORDER BY timestamp DESC
+""")
+    fun getPendingByAddress(address: String): Flow<List<TransactionEntity>>
 }

@@ -1,8 +1,8 @@
 package com.decagon.data.remote
 
 import com.decagon.domain.model.TransactionDetails
-import com.decagon.util.buildJsonRpcRequest
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -17,6 +17,7 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -25,7 +26,6 @@ import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 import timber.log.Timber
 import java.util.UUID
-
 
 class SolanaRpcClient(
     private val httpClient: HttpClient,
@@ -63,10 +63,6 @@ class SolanaRpcClient(
         }
     }
 
-    /**
-     * Fetches the latest valid blockhash from the network.
-     * This is required for transaction construction.
-     */
     suspend fun getLatestBlockhash(): Result<String> {
         Timber.d("Fetching latest blockhash")
         return try {
@@ -80,8 +76,6 @@ class SolanaRpcClient(
             }
 
             val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
-
-            // Navigate the JSON path: result.value.blockhash
             val blockhash = json["result"]
                 ?.jsonObject
                 ?.get("value")
@@ -117,11 +111,11 @@ class SolanaRpcClient(
                 put("method", "sendTransaction")
                 put("params", buildJsonArray {
                     add(base64Tx)
-                    // ✅ ADD THIS ENCODING CONFIG
                     add(buildJsonObject {
                         put("encoding", "base64")
                         put("skipPreflight", false)
                         put("preflightCommitment", "confirmed")
+                        put("maxRetries", 5)
                     })
                 })
             }
@@ -131,6 +125,9 @@ class SolanaRpcClient(
             val response = httpClient.post(rpcUrl) {
                 contentType(ContentType.Application.Json)
                 setBody(requestBody)
+                timeout {
+                    requestTimeoutMillis = 60_000
+                }
             }
 
             val rawResponse = response.bodyAsText()
@@ -140,15 +137,20 @@ class SolanaRpcClient(
 
             val error = json["error"]?.jsonObject
             if (error != null) {
+                val errorCode = error["code"]?.jsonPrimitive?.int
                 val errorMsg = error["message"]?.jsonPrimitive?.content ?: "Unknown RPC error"
-                Timber.e("RPC Error: $errorMsg")
-                throw IllegalStateException("RPC Error: $errorMsg")
+                val errorData = error["data"]?.toString()
+
+                Timber.e("RPC Error [$errorCode]: $errorMsg | Data: $errorData")
+                return Result.failure(IllegalStateException("RPC Error [$errorCode]: $errorMsg"))
             }
 
             val signature = json["result"]?.jsonPrimitive?.content
                 ?: throw IllegalStateException("No signature in response")
 
             Timber.i("Transaction signature: ${signature.take(8)}...")
+            Timber.i("Transaction submitted successfully")
+
             Result.success(signature)
 
         } catch (e: Exception) {
@@ -174,7 +176,7 @@ class SolanaRpcClient(
                     put("params", buildJsonArray {
                         add(base64Tx)
                         buildJsonObject {
-                            put("encoding", "base64") // ✅ Add this
+                            put("encoding", "base64")
                             put("commitment", "confirmed")
                         }
                     })
@@ -182,24 +184,11 @@ class SolanaRpcClient(
             }
 
             val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
-//            val result = json["result"]?.jsonObject?.get("value")?.jsonObject
-//            val error = result?.get("err")
-
-//            val simulationResult = SimulationResult(
-//                willSucceed = error == null || error is JsonNull,
-//                errorMessage = error?.toString()
-//            )
-//
-//            Timber.i("Simulation result: ${if (simulationResult.willSucceed) "SUCCESS" else "FAIL"}")
-//            Result.success(simulationResult)
-
             val result = json["result"]?.jsonObject
             val value = result?.get("value")?.jsonObject
 
             val err = value?.get("err")
             val willSucceed = err == null || err is JsonNull
-
-            // ✅ Extract fee from simulation
             val fee = value?.get("unitsConsumed")?.jsonPrimitive?.longOrNull
 
             return Result.success(
@@ -215,29 +204,22 @@ class SolanaRpcClient(
         }
     }
 
-    /**
-     * Gets transaction status from blockchain.
-     * This checks if the transaction has been processed/confirmed.
-     *
-     * @param signature Transaction signature
-     * @return Status: "pending", "processed", "confirmed", "finalized", or "failed"
-     */
     suspend fun getTransactionStatus(signature: String): Result<String> {
         return withContext(Dispatchers.IO) {
             try {
-                val request = buildJsonRpcRequest(
-                    method = "getSignatureStatuses",
-                    params = listOf(
-                        listOf(signature),
-                        buildJsonObject {
-                            put("searchTransactionHistory", true)
-                        }
-                    )
-                )
-
                 val response = httpClient.post(rpcUrl) {
                     contentType(ContentType.Application.Json)
-                    setBody(request)
+                    setBody(buildJsonObject {
+                        put("jsonrpc", "2.0")
+                        put("id", UUID.randomUUID().toString())
+                        put("method", "getSignatureStatuses")
+                        put("params", buildJsonArray {
+                            add(buildJsonArray { add(signature) })
+                            add(buildJsonObject {
+                                put("searchTransactionHistory", true)
+                            })
+                        })
+                    })
                 }
 
                 if (!response.status.isSuccess()) {
@@ -249,14 +231,12 @@ class SolanaRpcClient(
                 val body = response.bodyAsText()
                 val json = Json.parseToJsonElement(body).jsonObject
 
-                // Check for RPC error
                 json["error"]?.let { error ->
                     val errorMsg = error.jsonObject["message"]?.jsonPrimitive?.content
                         ?: "Unknown RPC error"
                     return@withContext Result.failure(IOException(errorMsg))
                 }
 
-                // Parse result
                 val result = json["result"]?.jsonObject
                     ?: return@withContext Result.failure(
                         IOException("Missing result in response")
@@ -267,22 +247,18 @@ class SolanaRpcClient(
                         IOException("Missing value array")
                     )
 
-                // Get first status (we only queried one signature)
                 val statusObj = statusArray.firstOrNull()?.jsonObject
 
                 if (statusObj == null) {
-                    // Transaction not found yet (still pending)
                     return@withContext Result.success("pending")
                 }
 
-                // Check if transaction failed
                 val err = statusObj["err"]
                 if (err != null && err !is JsonNull) {
                     Timber.w("Transaction failed with error: $err")
                     return@withContext Result.success("failed")
                 }
 
-                // Get confirmation status
                 val confirmationStatus = statusObj["confirmationStatus"]
                     ?.jsonPrimitive?.content ?: "pending"
 
@@ -296,30 +272,23 @@ class SolanaRpcClient(
         }
     }
 
-    /**
-     * Gets transaction details from blockchain.
-     * Use this to verify a transaction exists and get full details.
-     *
-     * @param signature Transaction signature
-     * @return Transaction details or null if not found
-     */
     suspend fun getTransaction(signature: String): Result<TransactionDetails?> {
         return withContext(Dispatchers.IO) {
             try {
-                val request = buildJsonRpcRequest(
-                    method = "getTransaction",
-                    params = listOf(
-                        signature,
-                        buildJsonObject {
-                            put("encoding", "json")
-                            put("maxSupportedTransactionVersion", 0)
-                        }
-                    )
-                )
-
                 val response = httpClient.post(rpcUrl) {
                     contentType(ContentType.Application.Json)
-                    setBody(request)
+                    setBody(buildJsonObject {
+                        put("jsonrpc", "2.0")
+                        put("id", UUID.randomUUID().toString())
+                        put("method", "getTransaction")
+                        put("params", buildJsonArray {
+                            add(signature)
+                            add(buildJsonObject {
+                                put("encoding", "json")
+                                put("maxSupportedTransactionVersion", 0)
+                            })
+                        })
+                    })
                 }
 
                 if (!response.status.isSuccess()) {
@@ -331,30 +300,21 @@ class SolanaRpcClient(
                 val body = response.bodyAsText()
                 val json = Json.parseToJsonElement(body).jsonObject
 
-                // Check for RPC error
                 json["error"]?.let { error ->
                     val errorMsg = error.jsonObject["message"]?.jsonPrimitive?.content
                         ?: "Unknown RPC error"
                     return@withContext Result.failure(IOException(errorMsg))
                 }
 
-                // Parse result
                 val result = json["result"]
 
                 if (result is JsonNull || result == null) {
-                    // Transaction not found
                     return@withContext Result.success(null)
                 }
 
                 val resultObj = result.jsonObject
-
-                // Extract slot (block number)
                 val slot = resultObj["slot"]?.jsonPrimitive?.long ?: 0L
-
-                // Extract block time (Unix timestamp)
                 val blockTime = resultObj["blockTime"]?.jsonPrimitive?.long ?: 0L
-
-                // Extract meta (includes fee and status)
                 val meta = resultObj["meta"]?.jsonObject
                 val fee = meta?.get("fee")?.jsonPrimitive?.long ?: 0L
                 val err = meta?.get("err")
@@ -384,27 +344,32 @@ class SolanaRpcClient(
     ): Result<List<String>> {
         return withContext(Dispatchers.IO) {
             try {
-                val request = buildJsonRpcRequest(
-                    method = "getSignaturesForAddress",
-                    params = listOf(
-                        address,
-                        buildJsonObject {
-                            put("limit", limit)
-                        }
-                    )
-                )
-
+                // ✅ FIX: Use consistent request format
                 val response = httpClient.post(rpcUrl) {
                     contentType(ContentType.Application.Json)
-                    setBody(request)
+                    setBody(buildJsonObject {
+                        put("jsonrpc", "2.0")
+                        put("id", UUID.randomUUID().toString())
+                        put("method", "getSignaturesForAddress")
+                        put("params", buildJsonArray {
+                            add(address)
+                            add(buildJsonObject {
+                                put("limit", limit)
+                            })
+                        })
+                    })
                 }
 
                 val body = response.bodyAsText()
+                Timber.d("getSignaturesForAddress response: $body")
+
                 val json = Json.parseToJsonElement(body).jsonObject
 
+                // ✅ Check for RPC errors
                 json["error"]?.let { error ->
                     val errorMsg = error.jsonObject["message"]?.jsonPrimitive?.content
                         ?: "Unknown RPC error"
+                    Timber.e("RPC Error: $errorMsg")
                     return@withContext Result.failure(IOException(errorMsg))
                 }
 
@@ -415,22 +380,16 @@ class SolanaRpcClient(
                     elem.jsonObject["signature"]?.jsonPrimitive?.content
                 }
 
+                Timber.i("Fetched ${signatures.size} signatures")
                 Result.success(signatures)
+
             } catch (e: Exception) {
+                Timber.e(e, "Failed to get signatures")
                 Result.failure(e)
             }
         }
     }
 
-    /**
-     * Confirms a transaction by polling its status.
-     * Waits until the transaction reaches the desired commitment level.
-     *
-     * @param signature Transaction signature
-     * @param commitment Desired commitment: "processed", "confirmed", "finalized"
-     * @param timeoutSeconds Maximum time to wait (default: 30 seconds)
-     * @return true if confirmed, false if timeout
-     */
     suspend fun confirmTransaction(
         signature: String,
         commitment: String = "confirmed",
@@ -456,12 +415,15 @@ class SolanaRpcClient(
                         status == "failed" -> {
                             return@withContext Result.success(false)
                         }
+
                         status == "finalized" -> {
                             return@withContext Result.success(true)
                         }
+
                         status == "confirmed" && commitment != "finalized" -> {
                             return@withContext Result.success(true)
                         }
+
                         status == "processed" && commitment == "processed" -> {
                             return@withContext Result.success(true)
                         }
@@ -470,7 +432,6 @@ class SolanaRpcClient(
                     kotlinx.coroutines.delay(1000)
                 }
 
-                // Timeout
                 Timber.w("Transaction confirmation timeout after $timeoutSeconds seconds")
                 Result.success(false)
 
@@ -480,13 +441,10 @@ class SolanaRpcClient(
             }
         }
     }
-
 }
-
-
 
 data class SimulationResult(
     val willSucceed: Boolean,
     val errorMessage: String? = null,
-    val fee: Long? = null // ✅ NEW: Actual fee from simulation
+    val fee: Long? = null
 )

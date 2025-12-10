@@ -16,4 +16,7 @@ interface DecagonTransactionRepository {
 
     // ✅ NEW: Get recent transactions (limit 50)
     fun getRecentTransactions(): Flow<List<DecagonTransaction>>
+
+    fun getPendingTransactionsByAddress(address: String): Flow<List<DecagonTransaction>>
+
 }

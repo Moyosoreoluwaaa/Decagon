@@ -18,7 +18,7 @@ import com.decagon.data.local.entity.TransactionEntity
         PendingTxEntity::class,
         TransactionEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 @TypeConverters(DecagonTypeConverters::class)
@@ -90,15 +90,25 @@ abstract class DecagonDatabase : RoomDatabase() {
 
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("""
+                db.execSQL(
+                    """
                     ALTER TABLE decagon_wallets 
                     ADD COLUMN chains TEXT NOT NULL DEFAULT '[]'
-                """)
+                """
+                )
 
-                db.execSQL("""
+                db.execSQL(
+                    """
                     ALTER TABLE decagon_wallets 
                     ADD COLUMN activeChainId TEXT NOT NULL DEFAULT 'solana'
-                """)
+                """
+                )
+            }
+        }
+
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE transactions ADD COLUMN priorityFee INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

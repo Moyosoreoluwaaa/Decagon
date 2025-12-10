@@ -3,17 +3,21 @@ package com.decagon.ui.screen.send
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.decagon.core.util.DecagonLoadingState
+import com.decagon.domain.model.DecagonTransaction
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 
@@ -170,7 +174,7 @@ private fun LoadingView() {
 
 @Composable
 private fun SuccessView(
-    transaction: com.decagon.domain.model.DecagonTransaction,
+    transaction: DecagonTransaction,
     onDone: () -> Unit
 ) {
     Column(
@@ -259,5 +263,36 @@ private fun DetailRow(label: String, value: String) {
             text = value,
             style = MaterialTheme.typography.bodyMedium
         )
+    }
+}
+
+@Composable
+private fun SuccessContent(transaction: DecagonTransaction) {
+    Card {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(Icons.Default.CheckCircle, null, tint = Color.Green)
+
+            Text("Transaction Sent!", style = MaterialTheme.typography.titleLarge)
+
+            Spacer(Modifier.height(16.dp))
+
+            DetailRow("Amount", "${transaction.amount} SOL")
+            DetailRow("Base Fee", "${transaction.fee / 1_000_000_000.0} SOL")
+
+            if (transaction.priorityFee > 0) {
+                DetailRow("Priority Fee", "${transaction.priorityFee / 1_000_000_000.0} SOL")
+            }
+
+            DetailRow("Total", "${transaction.amount + transaction.totalFeeSol} SOL")
+
+            Text(
+                text = "Signature: ${transaction.truncatedSignature}",
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace
+            )
+        }
     }
 }

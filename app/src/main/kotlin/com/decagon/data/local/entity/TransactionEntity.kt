@@ -14,5 +14,6 @@ data class TransactionEntity(
     val signature: String?,
     val status: String, // PENDING/CONFIRMED/FAILED
     val timestamp: Long,
-    val fee: Long
+    val fee: Long,
+    val priorityFee: Long = 0 // ✅ NEW: Add to DB schema
 )

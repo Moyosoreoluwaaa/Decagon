@@ -171,6 +171,10 @@ fun DecagonSettingsScreen(
                     onClick = onShowPrivateKey,
                     destructive = false
                 )
+
+                Button(onClick = { viewModel.fixStuckTransactions(wallet.address) }) {
+                    Text("Fix Stuck Transactions")
+                }
             }
 
             // Danger Zone

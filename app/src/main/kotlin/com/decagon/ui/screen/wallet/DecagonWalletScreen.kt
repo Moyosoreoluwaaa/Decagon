@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -317,6 +316,19 @@ private fun WalletContent(
         )
 
         Spacer(modifier = Modifier.height(16.dp))
+
+//        // In your debug settings or wallet screen
+//        Button(onClick = {
+//            viewModelScope.launch {
+//                val diagnostic = TransactionDiagnostic(
+//                    transactionRepository,
+//                    rpcClient
+//                )
+//                diagnostic.diagnoseAndFixPending(wallet.address)
+//            }
+//        }) {
+//            Text("Fix Stuck Transactions")
+//        }
     }
 
     if (showSendSheet) {

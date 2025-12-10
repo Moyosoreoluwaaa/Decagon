@@ -49,7 +49,9 @@ val decagonWalletModule = module {
     viewModel {
         DecagonSettingsViewModel(
             settingsRepository = get(),
-            walletRepository = get()
+            walletRepository = get(),
+            transactionRepository = get(), // ✅ Add
+            rpcClient = get() // ✅ Add
         )
     }
 

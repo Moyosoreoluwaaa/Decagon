@@ -5,8 +5,11 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.decagon.core.util.DecagonLoadingState
+import com.decagon.data.remote.SolanaRpcClient
 import com.decagon.domain.repository.DecagonSettingsRepository
+import com.decagon.domain.repository.DecagonTransactionRepository
 import com.decagon.domain.repository.DecagonWalletRepository
+import com.decagon.util.TransactionDiagnostic
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +18,9 @@ import timber.log.Timber
 
 class DecagonSettingsViewModel(
     private val settingsRepository: DecagonSettingsRepository,
-    private val walletRepository: DecagonWalletRepository
+    private val walletRepository: DecagonWalletRepository,
+    private val transactionRepository: DecagonTransactionRepository, // ✅ Inject
+    private val rpcClient: SolanaRpcClient // ✅ Inject
 ) : ViewModel() {
 
     @SuppressLint("StaticFieldLeak")
@@ -152,5 +157,13 @@ class DecagonSettingsViewModel(
 
     fun resetEditNameState() {
         _editNameState.value = DecagonLoadingState.Idle
+    }
+
+    fun fixStuckTransactions(walletAddress: String) {
+        viewModelScope.launch {
+            val diagnostic = TransactionDiagnostic(transactionRepository, rpcClient)
+            val fixed = diagnostic.diagnoseAndFixPending(walletAddress)
+            Timber.i("Fixed $fixed stuck transactions")
+        }
     }
 }

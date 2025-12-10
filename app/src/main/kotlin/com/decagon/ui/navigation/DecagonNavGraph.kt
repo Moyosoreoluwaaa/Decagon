@@ -109,15 +109,6 @@ fun DecagonNavGraph(
                 onNavigateToHistory = {
                     Timber.i("NavGraph: Navigate to transaction history")
                     navController.navigate("transactions")
-                },
-                // 3. Update the navigation call to use the determined walletId
-                onNavigateToChains = {
-                    if (currentWalletId != null) {
-                        navController.navigate("chains/$currentWalletId")
-                    } else {
-                        // Handle case: Attempted to navigate to chains while wallet is loading/error
-                        Timber.w("Cannot navigate to chains: currentWalletId is null.")
-                    }
                 }
             )
         }

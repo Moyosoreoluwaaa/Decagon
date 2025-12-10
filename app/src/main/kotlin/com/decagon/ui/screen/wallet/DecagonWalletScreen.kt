@@ -1,6 +1,7 @@
 package com.decagon.ui.screen.wallet
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,7 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,12 +25,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,12 +39,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.decagon.core.util.DecagonLoadingState
+import com.decagon.ui.components.CopyableAddress
 import com.decagon.ui.components.DecagonQuickActions
 import com.decagon.ui.components.DecagonWalletSelector
 import com.decagon.ui.screen.send.DecagonSendSheet
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import java.text.NumberFormat
 import java.util.Currency
@@ -56,7 +62,6 @@ fun DecagonWalletScreen(
     onImportWallet: () -> Unit = {},
     onNavigateToSettings: (String) -> Unit = {},
     onNavigateToHistory: () -> Unit = {},
-    onNavigateToChains: () -> Unit = {}
 ) {
     val walletState by viewModel.walletState.collectAsState()
     val allWallets by viewModel.allWallets.collectAsState()
@@ -129,7 +134,6 @@ fun DecagonWalletScreen(
                     wallet = state.data,
                     viewModel = viewModel,
                     modifier = Modifier.padding(padding),
-                    onNavigateToChains = onNavigateToChains
                 )
             }
             is DecagonLoadingState.Error -> {
@@ -148,13 +152,23 @@ private fun WalletContent(
     wallet: com.decagon.domain.model.DecagonWallet,
     viewModel: DecagonWalletViewModel,
     modifier: Modifier = Modifier,
-    onNavigateToChains: () -> Unit = {}
 ) {
     var showSendSheet by remember { mutableStateOf(false) }
     var showCurrencyMenu by remember { mutableStateOf(false) }
+    var showCopiedSnackbar by remember { mutableStateOf(false) }
 
     val selectedCurrency by viewModel.selectedCurrency.collectAsState()
     val fiatPrice by viewModel.fiatPrice.collectAsState()
+
+    val clipboardManager = LocalClipboardManager.current
+
+    // Dismiss snackbar after 2s
+    LaunchedEffect(showCopiedSnackbar) {
+        if (showCopiedSnackbar) {
+            delay(2000)
+            showCopiedSnackbar = false
+        }
+    }
 
     // Calculate fiat value
     val fiatValue = wallet.balance * fiatPrice
@@ -165,7 +179,7 @@ private fun WalletContent(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Card(
+        OutlinedCard(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -179,17 +193,59 @@ private fun WalletContent(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = "${wallet.address.take(4)}...${wallet.address.takeLast(4)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    CopyableAddress(
+                        address = wallet.address,
+                        truncated = true,
+                        onCopied = { showCopiedSnackbar = true }
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    IconButton(
+                        onClick = {
+
+                            clipboardManager.setText(AnnotatedString(wallet.address))
+                            showCopiedSnackbar = true
+                        },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Copy address",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Chain indicator
+                val activeChain = wallet.activeChain
+                if (activeChain != null) {
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Text(
+                            text = activeChain.chainType.name,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 // SOL Balance
                 Text(
-                    text = "%.4f SOL".format(wallet.balance),
+                    text = "%.4f ${wallet.activeChain?.chainType?.name ?: "SOL"}".format(wallet.balance),
                     style = MaterialTheme.typography.displayMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -261,33 +317,21 @@ private fun WalletContent(
         )
 
         Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedButton(
-            onClick = onNavigateToChains,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Manage Chains")
-            Icon(Icons.Default.ChevronRight, null)
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "Version 0.3: Transaction History + Fiat Prices",
-            style = MaterialTheme.typography.bodyMedium
-        )
-
-        Text(
-            text = "Tap currency to change • View history with top-right icon",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 
     if (showSendSheet) {
         DecagonSendSheet(
             onDismiss = { showSendSheet = false }
         )
+    }
+
+    // Snackbar for copy confirmation
+    if (showCopiedSnackbar) {
+        androidx.compose.material3.Snackbar(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text("Address copied to clipboard")
+        }
     }
 }
 

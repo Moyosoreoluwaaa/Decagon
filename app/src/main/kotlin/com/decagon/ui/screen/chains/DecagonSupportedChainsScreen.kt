@@ -7,13 +7,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -22,6 +25,7 @@ import com.decagon.core.util.DecagonExplorerUtil
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.domain.model.ChainWallet
 import com.decagon.domain.model.DecagonWallet
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 
@@ -127,73 +131,113 @@ private fun ChainItem(
 ) {
     val config = ChainRegistry.getChain(chainWallet.chainId)
     val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+    var showCopiedSnackbar by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-    ) {
-        Row(
+    LaunchedEffect(showCopiedSnackbar) {
+        if (showCopiedSnackbar) {
+            delay(2000)
+            showCopiedSnackbar = false
+        }
+    }
+
+    Box {
+        Card(
             modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Use Coil for loading remote icon
-                AsyncImage(
-                    model = config.iconUrl,
-                    contentDescription = "${config.nativeCurrency} icon",
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape),
-                    placeholder = painterResource(android.R.drawable.ic_menu_compass),
-                    error = painterResource(android.R.drawable.ic_menu_compass)
-                )
-
-                Column {
-                    Text(
-                        text = chainWallet.chainType.name,
-                        style = MaterialTheme.typography.titleMedium
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Use Coil for loading remote icon
+                    AsyncImage(
+                        model = config.iconUrl,
+                        contentDescription = "${config.nativeCurrency} icon",
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape),
+                        placeholder = painterResource(android.R.drawable.ic_menu_compass),
+                        error = painterResource(android.R.drawable.ic_menu_compass)
                     )
-                    Text(
-                        text = chainWallet.address.take(8) + "...",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
-                        modifier = Modifier.clickable {
-                            DecagonExplorerUtil.openAddress(
-                                context,
-                                chainWallet.chainId,
-                                chainWallet.address
-                            )
-                        },
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
 
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "${chainWallet.balance} ${config.symbol}",
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                if (isActive) {
-                    Surface(
-                        shape = MaterialTheme.shapes.extraSmall,
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    ) {
+                    Column {
                         Text(
-                            "Active",
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            text = chainWallet.chainType.name,
+                            style = MaterialTheme.typography.titleMedium
                         )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = chainWallet.address.take(8) + "...",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                                modifier = Modifier.clickable {
+                                    DecagonExplorerUtil.openAddress(
+                                        context,
+                                        chainWallet.chainId,
+                                        chainWallet.address
+                                    )
+                                },
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            IconButton(
+                                onClick = {
+                                    clipboardManager.setText(AnnotatedString(chainWallet.address))
+                                    showCopiedSnackbar = true
+                                },
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = "Copy address",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
                     }
                 }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "${chainWallet.balance} ${config.symbol}",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    if (isActive) {
+                        Surface(
+                            shape = MaterialTheme.shapes.extraSmall,
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Text(
+                                "Active",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (showCopiedSnackbar) {
+            Snackbar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
+            ) {
+                Text("Address copied to clipboard")
             }
         }
     }

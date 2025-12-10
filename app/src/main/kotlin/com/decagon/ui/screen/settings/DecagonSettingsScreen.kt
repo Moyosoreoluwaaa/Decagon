@@ -1,6 +1,7 @@
 package com.decagon.ui.screen.settings
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -17,6 +18,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.decagon.domain.model.DecagonWallet
+import com.decagon.ui.components.CopyableAddress
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 
@@ -44,6 +47,14 @@ fun DecagonSettingsScreen(
 
     var showRemoveDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
+    var showCopiedSnackbar by remember { mutableStateOf(false) }
+
+    LaunchedEffect(showCopiedSnackbar) {
+        if (showCopiedSnackbar) {
+            delay(2000)
+            showCopiedSnackbar = false
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -55,6 +66,13 @@ fun DecagonSettingsScreen(
                     }
                 }
             )
+        },
+        snackbarHost = {
+            if (showCopiedSnackbar) {
+                Snackbar(modifier = Modifier.padding(16.dp)) {
+                    Text("Address copied to clipboard")
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -64,7 +82,7 @@ fun DecagonSettingsScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             // Account Info Card
-            Card(
+            OutlinedCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -73,32 +91,50 @@ fun DecagonSettingsScreen(
                     modifier = Modifier.padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Surface(
-                        modifier = Modifier.size(80.dp),
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = MaterialTheme.colorScheme.primaryContainer
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = wallet.name.take(2).uppercase(),
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                        Surface(
+                            modifier = Modifier.size(60.dp),
+                            shape = MaterialTheme.shapes.extraLarge,
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = wallet.name.take(2).uppercase(),
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                         }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = wallet.name,
+                            style = MaterialTheme.typography.titleLarge
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
 
-                    Text(
-                        text = wallet.name,
-                        style = MaterialTheme.typography.titleLarge
-                    )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    Text(
-                        text = wallet.truncatedAddress,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        CopyableAddress(
+                            address = wallet.address,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            truncated = true,
+                            onCopied = { showCopiedSnackbar = true }
+                        )
+                    }
                 }
             }
 
@@ -109,14 +145,14 @@ fun DecagonSettingsScreen(
                     title = "Edit Account Name",
                     onClick = { showEditDialog = true }
                 )
-            }
 
-            SettingsItem(
-                icon = Icons.Default.AccountBalance,
-                title = "Supported Chains",
-                subtitle = "Manage blockchain networks",
-                onClick = onNavigateToChains  // WIRE THIS UP
-            )
+                SettingsItem(
+                    icon = Icons.Default.AccountBalance,
+                    title = "Supported Chains",
+                    subtitle = "Manage blockchain networks",
+                    onClick = onNavigateToChains
+                )
+            }
 
             // Security Section
             SettingsSection(title = "Security") {
@@ -127,8 +163,6 @@ fun DecagonSettingsScreen(
                     onClick = onShowRecoveryPhrase,
                     destructive = false
                 )
-
-                Divider(modifier = Modifier.padding(horizontal = 16.dp))
 
                 SettingsItem(
                     icon = Icons.Default.Key,

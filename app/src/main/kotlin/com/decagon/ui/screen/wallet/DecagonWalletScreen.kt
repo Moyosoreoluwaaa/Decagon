@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.ui.components.CopyableAddress
 import com.decagon.ui.components.DecagonQuickActions
+import com.decagon.ui.components.DecagonReceiveSheet
 import com.decagon.ui.components.DecagonWalletSelector
 import com.decagon.ui.screen.send.DecagonSendSheet
 import kotlinx.coroutines.delay
@@ -155,6 +156,7 @@ private fun WalletContent(
     var showSendSheet by remember { mutableStateOf(false) }
     var showCurrencyMenu by remember { mutableStateOf(false) }
     var showCopiedSnackbar by remember { mutableStateOf(false) }
+    var showReceiveSheet by remember { mutableStateOf(false) }
 
     val selectedCurrency by viewModel.selectedCurrency.collectAsState()
     val fiatPrice by viewModel.fiatPrice.collectAsState()
@@ -312,23 +314,11 @@ private fun WalletContent(
         DecagonQuickActions(
             wallet = wallet,
             onSendClick = { showSendSheet = true },
-            onReceiveClick = { /* show receive dialog */ }
+            onReceiveClick = { showReceiveSheet = true } // ✅ ENABLE
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-//        // In your debug settings or wallet screen
-//        Button(onClick = {
-//            viewModelScope.launch {
-//                val diagnostic = TransactionDiagnostic(
-//                    transactionRepository,
-//                    rpcClient
-//                )
-//                diagnostic.diagnoseAndFixPending(wallet.address)
-//            }
-//        }) {
-//            Text("Fix Stuck Transactions")
-//        }
     }
 
     if (showSendSheet) {
@@ -344,6 +334,13 @@ private fun WalletContent(
         ) {
             Text("Address copied to clipboard")
         }
+    }
+
+    if (showReceiveSheet) {
+        DecagonReceiveSheet(
+            wallet = wallet,
+            onDismiss = { showReceiveSheet = false }
+        )
     }
 }
 

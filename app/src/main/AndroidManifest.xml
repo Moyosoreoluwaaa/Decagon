@@ -10,6 +10,11 @@
 <!--    <uses-permission android:name="android.permission.CAMERA" />-->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- In AndroidManifest.xml, already present: -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
     <application
         android:name=".DecagonApplication"
         android:allowBackup="true"

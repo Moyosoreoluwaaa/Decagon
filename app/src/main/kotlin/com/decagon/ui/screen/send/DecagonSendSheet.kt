@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.domain.model.DecagonTransaction
+import com.decagon.ui.components.DecagonQrScanner // Assuming this is correct
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 
@@ -39,8 +41,8 @@ fun DecagonSendSheet(
     }
 
     val sendState by viewModel.sendState.collectAsState()
-    var toAddress by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
+    var toAddress by rememberSaveable { mutableStateOf("") } // Use rememberSaveable for the primary state
+    var amount by rememberSaveable { mutableStateOf("") } // Use rememberSaveable for the primary state
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -78,12 +80,10 @@ fun DecagonSendSheet(
                         onAmountChange = { amount = it },
                         onSend = {
                             Timber.d("Send button clicked")
+                            // This ensures the action is run on the main thread for Android API interactions
                             activity?.window?.decorView?.post {
                                 viewModel.sendToken(toAddress, amount.toDoubleOrNull() ?: 0.0)
                             }
-                        },
-                        onScanQr = {
-                            Timber.d("QR scan requested (not implemented yet)")
                         }
                     )
                 }
@@ -117,17 +117,21 @@ private fun SendForm(
     amount: String,
     onAmountChange: (String) -> Unit,
     onSend: () -> Unit,
-    onScanQr: () -> Unit
 ) {
+    // ❌ Removed the unused local state: var recipientAddress by rememberSaveable { mutableStateOf("") }
+    // ❌ Removed the unused lambda: onScanQr: () -> Unit
+
     OutlinedTextField(
         value = toAddress,
         onValueChange = onToAddressChange,
         label = { Text("Recipient Address") },
         placeholder = { Text("Solana address") },
+        // ✅ CORRECTED: Use DecagonQrScanner directly as the trailing icon, and
+        // bind its result directly to the parent state update function (onToAddressChange).
         trailingIcon = {
-            IconButton(onClick = onScanQr) {
-                Icon(Icons.Default.QrCodeScanner, "Scan QR")
-            }
+            DecagonQrScanner(
+                onAddressScanned = onToAddressChange // 👈 This is the key fix!
+            )
         },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true

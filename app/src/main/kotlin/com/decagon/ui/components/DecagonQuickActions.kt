@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.CallReceived
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
@@ -28,6 +29,7 @@ fun DecagonQuickActions(
     wallet: DecagonWallet,
     onSendClick: () -> Unit,
     onReceiveClick: () -> Unit,
+    onBuyClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -47,9 +49,14 @@ fun DecagonQuickActions(
             onClick = onReceiveClick,
             modifier = Modifier.weight(1f)
         )
-        
-        // Later versions:
-        // QuickActionButton(icon = Icons.Default.SwapHoriz, label = "Swap", ...)
+
+        // ✅ NEW: Buy/Add Funds Button
+        QuickActionButton(
+            icon = Icons.Default.AccountBalanceWallet,
+            label = "Buy",
+            onClick = onBuyClick,
+            modifier = Modifier.weight(1f)
+        )
         // QuickActionButton(icon = Icons.Default.ShoppingCart, label = "Buy", ...)
     }
 }

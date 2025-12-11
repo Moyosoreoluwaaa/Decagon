@@ -62,6 +62,7 @@ fun DecagonWalletScreen(
     onImportWallet: () -> Unit = {},
     onNavigateToSettings: (String) -> Unit = {},
     onNavigateToHistory: () -> Unit = {},
+    onNavigateToBuy: () -> Unit  = {}
 ) {
     val walletState by viewModel.walletState.collectAsState()
     val allWallets by viewModel.allWallets.collectAsState()
@@ -134,6 +135,7 @@ fun DecagonWalletScreen(
                     wallet = state.data,
                     viewModel = viewModel,
                     modifier = Modifier.padding(padding),
+                    onNavigateToBuy = onNavigateToBuy
                 )
             }
             is DecagonLoadingState.Error -> {
@@ -152,6 +154,7 @@ private fun WalletContent(
     wallet: com.decagon.domain.model.DecagonWallet,
     viewModel: DecagonWalletViewModel,
     modifier: Modifier = Modifier,
+    onNavigateToBuy: () -> Unit  = {}
 ) {
     var showSendSheet by remember { mutableStateOf(false) }
     var showCurrencyMenu by remember { mutableStateOf(false) }
@@ -314,7 +317,8 @@ private fun WalletContent(
         DecagonQuickActions(
             wallet = wallet,
             onSendClick = { showSendSheet = true },
-            onReceiveClick = { showReceiveSheet = true } // ✅ ENABLE
+            onReceiveClick = { showReceiveSheet = true }, // ✅ ENABLE
+            onBuyClick = onNavigateToBuy
         )
 
         Spacer(modifier = Modifier.height(16.dp))

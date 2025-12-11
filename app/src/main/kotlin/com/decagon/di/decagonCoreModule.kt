@@ -32,14 +32,16 @@ val decagonCoreModule = module {
                 DecagonDatabase.MIGRATION_2_3,
                 DecagonDatabase.MIGRATION_3_4,
                 DecagonDatabase.MIGRATION_4_5,
-                DecagonDatabase.MIGRATION_5_6 // Add new migration
+                DecagonDatabase.MIGRATION_5_6,
+                DecagonDatabase.MIGRATION_6_7 // ✅ ADD NEW MIGRATION
             )
             .build()
     }
 
     single { get<DecagonDatabase>().walletDao() }
-    single { get<DecagonDatabase>().pendingTxDao() } // Add
-    single { get<DecagonDatabase>().transactionDao() } // Add
+    single { get<DecagonDatabase>().pendingTxDao() }
+    single { get<DecagonDatabase>().transactionDao() }
+    single { get<DecagonDatabase>().onRampDao() } // ✅ ADD
 
     single<DecagonOnboardingStateRepository> {
         DecagonOnboardingStateRepositoryImpl(get())

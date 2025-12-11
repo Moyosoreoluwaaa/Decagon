@@ -12,6 +12,7 @@ import com.decagon.ui.screen.history.DecagonTransactionDetailScreen
 import com.decagon.ui.screen.history.DecagonTransactionHistoryScreen
 import com.decagon.ui.screen.imports.DecagonImportWalletScreen
 import com.decagon.ui.screen.imports.DecagonWalletChoiceScreen
+import com.decagon.ui.screen.onramp.DecagonOnRampScreen
 import com.decagon.ui.screen.settings.DecagonRevealPrivateKeyScreen
 import com.decagon.ui.screen.settings.DecagonRevealRecoveryScreen
 import com.decagon.ui.screen.settings.DecagonSettingsScreen
@@ -79,19 +80,11 @@ fun DecagonNavGraph(
             )
         }
 
-        // Main wallet screen
         composable("wallet") {
             Timber.d("NavGraph: Showing wallet")
 
-            // 1. Retrieve the ViewModel and its state
             val walletViewModel: com.decagon.ui.screen.wallet.DecagonWalletViewModel = koinViewModel()
             val walletState by walletViewModel.walletState.collectAsState()
-
-            // 2. Determine the wallet ID from the successful state
-            val currentWalletId = when (val state = walletState) {
-                is com.decagon.core.util.DecagonLoadingState.Success -> state.data.id
-                else -> null // Or handle the case where it's still loading/error
-            }
 
             DecagonWalletScreen(
                 onCreateWallet = {
@@ -109,9 +102,44 @@ fun DecagonNavGraph(
                 onNavigateToHistory = {
                     Timber.i("NavGraph: Navigate to transaction history")
                     navController.navigate("transactions")
+                },
+                onNavigateToBuy = { // ✅ NEW PARAMETER
+                    Timber.i("NavGraph: Navigate to on-ramp")
+                    navController.navigate("onramp")
                 }
             )
         }
+
+        // ✅ NEW: On-Ramp Screen
+        composable("onramp") {
+            Timber.d("NavGraph: Showing on-ramp screen")
+
+            val walletViewModel: com.decagon.ui.screen.wallet.DecagonWalletViewModel = koinViewModel()
+            val walletState by walletViewModel.walletState.collectAsState()
+
+            when (val state = walletState) {
+                is com.decagon.core.util.DecagonLoadingState.Success -> {
+                    DecagonOnRampScreen(
+                        wallet = state.data,
+                        onBackClick = {
+                            Timber.i("NavGraph: Back from on-ramp")
+                            navController.popBackStack()
+                        },
+                        onTransactionComplete = { txId ->
+                            Timber.i("NavGraph: On-ramp complete, showing wallet")
+                            navController.navigate("wallet") {
+                                popUpTo("wallet") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+                else -> {
+                    // Loading or error - show nothing or redirect
+                    Timber.w("NavGraph: Wallet not loaded for on-ramp")
+                }
+            }
+        }
+
 
         // ✅ NEW: Transaction history screen
         composable("transactions") {

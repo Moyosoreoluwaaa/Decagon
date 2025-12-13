@@ -88,6 +88,7 @@ dependencies {
     implementation(libs.koin.compose)
 
     // Networking, Data Scraping, Downloads
+    implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.okhttp) // Use OkHttp for the engine

@@ -9,6 +9,7 @@ import androidx.work.WorkManager
 import com.decagon.di.decagonCoreModule
 import com.decagon.di.decagonNetworkModule
 import com.decagon.di.decagonOnRampModule
+import com.decagon.di.decagonSwapModule
 import com.decagon.di.decagonTransactionModule
 import com.decagon.di.decagonWalletModule
 import com.decagon.worker.BalanceSyncManager
@@ -59,7 +60,8 @@ class DecagonApplication : Application() {
                 decagonNetworkModule,      // ADD
                 decagonWalletModule,
                 decagonTransactionModule,   // ADD
-                decagonOnRampModule // ✅ ADD NEW MODULE
+                decagonOnRampModule, // ✅ ADD NEW MODULE
+                decagonSwapModule // ← Add this
             )
         }
         Timber.d("Koin initialized with all modules including on-ramp")

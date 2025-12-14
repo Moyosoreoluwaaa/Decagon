@@ -1,8 +1,11 @@
 package com.decagon.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -16,6 +19,8 @@ import com.decagon.ui.screen.onramp.DecagonOnRampScreen
 import com.decagon.ui.screen.settings.DecagonRevealPrivateKeyScreen
 import com.decagon.ui.screen.settings.DecagonRevealRecoveryScreen
 import com.decagon.ui.screen.settings.DecagonSettingsScreen
+import com.decagon.ui.screen.swap.SwapScreen
+import com.decagon.ui.screen.swap.SwapViewModel
 import com.decagon.ui.screen.wallet.DecagonWalletScreen
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
@@ -106,6 +111,10 @@ fun DecagonNavGraph(
                 onNavigateToBuy = { // ✅ NEW PARAMETER
                     Timber.i("NavGraph: Navigate to on-ramp")
                     navController.navigate("onramp")
+                },
+                onNavigateToSwap = {
+                    Timber.i("NavGraph: Navigate to swap")
+                    navController.navigate("swap")
                 }
             )
         }
@@ -140,6 +149,21 @@ fun DecagonNavGraph(
             }
         }
 
+        composable("swap") {
+            val swapViewModel: SwapViewModel = koinViewModel()
+            val context = LocalContext.current
+
+            LaunchedEffect(Unit) {
+                (context as? FragmentActivity)?.let {
+                    swapViewModel.setActivity(it)
+                }
+            }
+
+            SwapScreen(
+                onNavigateBack = { navController.popBackStack() },
+                viewModel = swapViewModel
+            )
+        }
 
         // ✅ NEW: Transaction history screen
         composable("transactions") {

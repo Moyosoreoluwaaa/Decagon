@@ -8,10 +8,14 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.decagon.data.local.dao.DecagonWalletDao
 import com.decagon.data.local.dao.OnRampDao
 import com.decagon.data.local.dao.PendingTxDao
+import com.decagon.data.local.dao.SwapHistoryDao
+import com.decagon.data.local.dao.TokenCacheDao
 import com.decagon.data.local.dao.TransactionDao
 import com.decagon.data.local.entity.DecagonWalletEntity
 import com.decagon.data.local.entity.OnRampTransactionEntity
 import com.decagon.data.local.entity.PendingTxEntity
+import com.decagon.data.local.entity.SwapHistoryEntity
+import com.decagon.data.local.entity.TokenCacheEntity
 import com.decagon.data.local.entity.TransactionEntity
 
 @Database(
@@ -19,9 +23,11 @@ import com.decagon.data.local.entity.TransactionEntity
         DecagonWalletEntity::class,
         PendingTxEntity::class,
         TransactionEntity::class,
-        OnRampTransactionEntity::class // ✅ ADD
+        OnRampTransactionEntity::class,
+        SwapHistoryEntity::class,      // ✅ NEW
+        TokenCacheEntity::class         // ✅ NEW
     ],
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 @TypeConverters(DecagonTypeConverters::class)
@@ -31,6 +37,8 @@ abstract class DecagonDatabase : RoomDatabase() {
     abstract fun pendingTxDao(): PendingTxDao
     abstract fun transactionDao(): TransactionDao
     abstract fun onRampDao(): OnRampDao
+    abstract fun swapHistoryDao(): SwapHistoryDao      // ✅ NEW
+    abstract fun tokenCacheDao(): TokenCacheDao        // ✅ NEW
 
     companion object {
         const val DATABASE_NAME = "decagon_database"
@@ -138,6 +146,64 @@ abstract class DecagonDatabase : RoomDatabase() {
                         errorMessage TEXT
                     )
                 """
+                )
+            }
+        }
+
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create swap_history table
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS swap_history (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        walletId TEXT NOT NULL,
+                        inputMint TEXT NOT NULL,
+                        outputMint TEXT NOT NULL,
+                        inputAmount REAL NOT NULL,
+                        outputAmount REAL NOT NULL,
+                        inputSymbol TEXT NOT NULL,
+                        outputSymbol TEXT NOT NULL,
+                        signature TEXT,
+                        status TEXT NOT NULL,
+                        slippageBps INTEGER NOT NULL,
+                        priceImpactPct REAL NOT NULL,
+                        feeBps INTEGER NOT NULL,
+                        priorityFee INTEGER NOT NULL,
+                        timestamp INTEGER NOT NULL,
+                        errorMessage TEXT
+                    )
+                    """
+                )
+
+                // Create token_cache table
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS token_cache (
+                        address TEXT PRIMARY KEY NOT NULL,
+                        name TEXT NOT NULL,
+                        symbol TEXT NOT NULL,
+                        decimals INTEGER NOT NULL,
+                        logoURI TEXT,
+                        tags TEXT NOT NULL,
+                        dailyVolume REAL,
+                        hasFreezableAuthority INTEGER NOT NULL,
+                        hasMintableAuthority INTEGER NOT NULL,
+                        coingeckoId TEXT,
+                        cachedAt INTEGER NOT NULL
+                    )
+                    """
+                )
+
+                // Create indices for performance
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_swap_history_walletId ON swap_history(walletId)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_swap_history_timestamp ON swap_history(timestamp DESC)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_token_cache_symbol ON token_cache(symbol)"
                 )
             }
         }

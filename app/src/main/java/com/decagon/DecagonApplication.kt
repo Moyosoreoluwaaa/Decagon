@@ -60,8 +60,8 @@ class DecagonApplication : Application() {
                 decagonNetworkModule,      // ADD
                 decagonWalletModule,
                 decagonTransactionModule,   // ADD
-                decagonOnRampModule, // ✅ ADD NEW MODULE
-                decagonSwapModule // ← Add this
+                decagonOnRampModule,
+                decagonSwapModule// ✅ ADD NEW MODULE
             )
         }
         Timber.d("Koin initialized with all modules including on-ramp")

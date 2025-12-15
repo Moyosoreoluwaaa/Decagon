@@ -1,42 +1,62 @@
 package com.decagon.di
 
-import com.decagon.data.remote.DecagonJupiterSwapService
-import com.decagon.data.repository.DecagonSwapRepositoryImpl
-import com.decagon.domain.repository.DecagonSwapRepository
+import com.decagon.data.remote.JupiterUltraApiService
+import com.decagon.data.repository.SwapRepositoryImpl
+import com.decagon.domain.repository.SwapRepository
+import com.decagon.domain.usecase.*
+import com.decagon.ui.screen.swap.SwapViewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val decagonSwapModule = module {
-    
-    /**
-     * Jupiter Swap Service (Singleton)
-     * 
-     * HTTP client for Jupiter Aggregator API.
-     * Handles quote fetching and transaction building.
-     */
+
+    // API Service
     single {
-        DecagonJupiterSwapService(
-            httpClient = get(), // From decagonNetworkModule
-            baseUrl = if (com.decagon.BuildConfig.DEBUG) {
-                // Devnet URL for development (quotes work, but no real liquidity)
-                "https://quote-api.jup.ag/v6"
-            } else {
-                // Mainnet URL for production
-                "https://quote-api.jup.ag/v6"
-            }
+        JupiterUltraApiService(
+            httpClient = get(),
+            baseUrl = "https://lite-api.jup.ag", // TODO: Migrate to api.jup.ag after Dec 31, 2025
+            apiKey = "73ca3287-e794-4b2b-8f1d-02bc8bf60e8f"
         )
     }
-    
-    /**
-     * Swap Repository (Singleton)
-     * 
-     * Coordinates between Jupiter API and local database.
-     * Implements offline-first pattern with caching.
-     */
-    single<DecagonSwapRepository> {
-        DecagonSwapRepositoryImpl(
-            jupiterService = get(),
+
+    // Repository
+    single<SwapRepository> {
+        SwapRepositoryImpl(
+            apiService = get(),
             swapHistoryDao = get(),
-            cachedTokenDao = get()
+            tokenCacheDao = get()
+        )
+    }
+
+    // Use Cases
+    factory { GetSwapQuoteUseCase(get()) }
+
+    // Execute Swap - now with RpcClientFactory
+    factory {
+        ExecuteSwapUseCase(
+            swapRepository = get(),
+            walletRepository = get(),
+            keyDerivation = get(),
+            biometricAuthenticator = get(),
+            rpcFactory = get()  // ← CHANGED: Factory instead of client
+        )
+    }
+
+    factory { SearchTokensUseCase(get()) }
+    factory { GetTokenBalancesUseCase(get()) }
+    factory { ValidateTokenSecurityUseCase(get()) }
+    factory { GetSwapHistoryUseCase(get()) }
+
+    // ViewModel
+    viewModel {
+        SwapViewModel(
+            getSwapQuoteUseCase = get(),
+            executeSwapUseCase = get(),
+            searchTokensUseCase = get(),
+            getTokenBalancesUseCase = get(),
+            validateSecurityUseCase = get(),
+            getSwapHistoryUseCase = get(),
+            walletRepository = get()
         )
     }
 }

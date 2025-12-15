@@ -3,8 +3,8 @@ package com.decagon.domain.usecase
 import androidx.fragment.app.FragmentActivity
 import com.decagon.core.crypto.ComputeBudgetProgram
 import com.decagon.core.crypto.DecagonKeyDerivation
+import com.decagon.core.network.RpcClientFactory
 import com.decagon.core.security.DecagonBiometricAuthenticator
-import com.decagon.data.remote.SolanaRpcClient
 import com.decagon.domain.model.DecagonTransaction
 import com.decagon.domain.model.TransactionStatus
 import com.decagon.domain.repository.DecagonTransactionRepository
@@ -22,7 +22,7 @@ import java.util.UUID
 class DecagonSendTokenUseCase(
     private val walletRepository: DecagonWalletRepository,
     private val transactionRepository: DecagonTransactionRepository,
-    private val rpcClient: SolanaRpcClient,
+    private val rpcFactory: RpcClientFactory,  // ← CHANGED: Factory instead of client
     private val keyDerivation: DecagonKeyDerivation,
     private val biometricAuthenticator: DecagonBiometricAuthenticator
 ) {
@@ -32,7 +32,7 @@ class DecagonSendTokenUseCase(
     }
 
     init {
-        Timber.d("DecagonSendTokenUseCase initialized")
+        Timber.d("DecagonSendTokenUseCase initialized with RpcClientFactory")
     }
 
     suspend operator fun invoke(
@@ -44,10 +44,12 @@ class DecagonSendTokenUseCase(
         Timber.d("Executing send token: $amountSol SOL to ${toAddress.take(4)}...")
 
         try {
+            // Validate recipient address
             require(keyDerivation.isValidSolanaAddress(toAddress)) {
                 "Invalid recipient address"
             }
 
+            // Get active wallet
             val wallet = withContext(Dispatchers.IO) {
                 walletRepository.getActiveWallet().first()
                     ?: throw IllegalStateException("No active wallet")
@@ -55,11 +57,23 @@ class DecagonSendTokenUseCase(
 
             Timber.d("Using wallet: ${wallet.address.take(8)}...")
 
+            // Get active chain
+            val activeChain = wallet.activeChain
+                ?: throw IllegalStateException("No active chain selected")
+
+            Timber.d("Active chain: ${activeChain.chainId} (${activeChain.chainType.name})")
+
+            // ✅ CREATE NETWORK-AWARE RPC CLIENT
+            val rpcClient = rpcFactory.createSolanaClient(activeChain.chainId)
+            Timber.d("RPC client created for chain: ${activeChain.chainId}")
+
+            // Calculate amounts
             val lamports = (amountSol * 1_000_000_000).toLong()
             val baseFee = 5000L
             val priorityFeeLamports = priorityFeeMicroLamports / 1_000_000
             val totalFee = baseFee + priorityFeeLamports
 
+            // Check balance using network-aware client
             val balance = rpcClient.getBalance(wallet.address).getOrThrow()
             val requiredLamports = lamports + totalFee
             require(balance >= requiredLamports) {
@@ -70,6 +84,7 @@ class DecagonSendTokenUseCase(
 
             Timber.i("Balance check passed: $balance lamports available")
 
+            // Biometric authentication
             Timber.i("Requesting biometric authentication...")
             val authenticated = withContext(Dispatchers.Main) {
                 biometricAuthenticator.authenticate(
@@ -84,6 +99,7 @@ class DecagonSendTokenUseCase(
                 throw SecurityException("Authentication required")
             }
 
+            // Decrypt seed and derive keypair
             val seedResult = withContext(Dispatchers.IO) {
                 walletRepository.decryptSeed(wallet.id)
             }
@@ -94,12 +110,14 @@ class DecagonSendTokenUseCase(
 
             Timber.d("Keypair derived")
 
+            // Get fresh blockhash from network-aware client
             val blockhash = rpcClient.getLatestBlockhash().getOrThrow()
             Timber.d("Got fresh blockhash: $blockhash")
 
             val fromPubkey = PublicKey(wallet.address)
             val toPubkey = PublicKey(toAddress)
 
+            // Build transaction
             val transaction = Transaction(
                 recentBlockhash = blockhash,
                 instructions = listOf(
@@ -120,16 +138,19 @@ class DecagonSendTokenUseCase(
             val serializedTx = transaction.serialize()
             Timber.d("Transaction serialized: ${serializedTx.size} bytes")
 
+            // Simulate transaction on correct network
             val simulation = rpcClient.simulateTransaction(serializedTx).getOrThrow()
             if (!simulation.willSucceed) {
                 throw IllegalStateException("Simulation failed: ${simulation.errorMessage}")
             }
             Timber.i("Simulation passed")
 
+            // Send transaction to correct network
             Timber.i("Sending transaction to network...")
             val signature = rpcClient.sendTransaction(serializedTx).getOrThrow()
             Timber.i("✅ Transaction sent! Signature: $signature")
 
+            // Create transaction record
             val txId = UUID.randomUUID().toString()
             val txRecord = DecagonTransaction(
                 id = txId,
@@ -154,6 +175,8 @@ class DecagonSendTokenUseCase(
             Timber.i("   Status: ${txRecord.status}")
             Timber.i("   From: ${txRecord.from.take(8)}...")
             Timber.i("   To: ${txRecord.to.take(8)}...")
+            Timber.i("   Network: ${activeChain.chainId}")
+
             Result.success(txRecord)
 
         } catch (e: DecagonBiometricAuthenticator.BiometricAuthException) {

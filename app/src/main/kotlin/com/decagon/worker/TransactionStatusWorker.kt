@@ -3,7 +3,7 @@ package com.decagon.worker
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.decagon.data.remote.SolanaRpcClient
+import com.decagon.core.network.RpcClientFactory
 import com.decagon.domain.model.TransactionStatus
 import com.decagon.domain.repository.DecagonTransactionRepository
 import com.decagon.domain.repository.DecagonWalletRepository
@@ -14,8 +14,7 @@ import timber.log.Timber
 
 /**
  * Background worker to sync transaction status from Solana blockchain.
- * 
- * Checks PENDING transactions and updates their status.
+ * Now network-aware: queries correct network for each transaction.
  */
 class TransactionStatusWorker(
     appContext: Context,
@@ -24,19 +23,36 @@ class TransactionStatusWorker(
 
     private val transactionRepository: DecagonTransactionRepository by inject()
     private val walletRepository: DecagonWalletRepository by inject()
-    private val rpcClient: SolanaRpcClient by inject()
+    private val rpcFactory: RpcClientFactory by inject()  // ← CHANGED: Factory instead of client
+
+    init {
+        Timber.d("TransactionStatusWorker initialized with RpcClientFactory")
+    }
 
     override suspend fun doWork(): Result {
         return try {
-            val wallet = walletRepository.getActiveWallet().first()
-                ?: return Result.success()
+            val wallet = walletRepository.getActiveWallet().first() ?: run {
+                Timber.d("No active wallet, skipping status sync")
+                return Result.success()
+            }
 
-            // ✅ FIX: Query ONLY pending transactions
+            val activeChain = wallet.activeChain ?: run {
+                Timber.w("No active chain selected")
+                return Result.success()
+            }
+
+            Timber.d("Syncing transaction status for chain: ${activeChain.chainId}")
+
+            // ✅ CREATE NETWORK-AWARE RPC CLIENT
+            val rpcClient = rpcFactory.createSolanaClient(activeChain.chainId)
+            Timber.d("RPC client created for status sync: ${activeChain.chainId}")
+
+            // Get ONLY pending transactions
             val pendingTxs = transactionRepository
-                .getPendingTransactionsByAddress(wallet.address)  // NEW method
+                .getPendingTransactionsByAddress(wallet.address)
                 .first()
 
-            Timber.i("Syncing ${pendingTxs.size} pending transactions")
+            Timber.i("Syncing ${pendingTxs.size} pending transactions on ${activeChain.chainId}")
 
             pendingTxs.forEach { tx ->
                 tx.signature?.let { signature ->
@@ -44,7 +60,7 @@ class TransactionStatusWorker(
                         val statusResult = rpcClient.getTransactionStatus(signature)
 
                         statusResult.onSuccess { rpcStatus ->
-                            // ✅ FIX: More robust status mapping
+                            // Map RPC status to our enum
                             val newStatus = when (rpcStatus.lowercase()) {
                                 "confirmed", "finalized" -> "CONFIRMED"
                                 "failed", "error" -> "FAILED"
@@ -70,12 +86,10 @@ class TransactionStatusWorker(
                 } ?: Timber.w("⚠️ Transaction ${tx.id} has no signature")
             }
 
-            Timber.d("📊 Debug Info:")
+            Timber.d("📊 Status sync complete:")
+            Timber.d("   Network: ${activeChain.chainId}")
             Timber.d("   Wallet: ${wallet.address.take(8)}...")
-            Timber.d("   Total pending: ${pendingTxs.size}")
-            pendingTxs.forEach { tx ->
-                Timber.d("   - ${tx.id}: sig=${tx.signature?.take(8)} status=${tx.status}")
-            }
+            Timber.d("   Pending checked: ${pendingTxs.size}")
 
             Result.success()
         } catch (e: Exception) {

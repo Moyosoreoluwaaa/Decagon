@@ -13,14 +13,6 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-/**
- * Decagon Core Module - Updated for Swap Feature
- *
- * CHANGES:
- * - Added MIGRATION_7_8 to Room builder
- * - Registered swapHistoryDao()
- * - Registered cachedTokenDao()
- */
 val decagonCoreModule = module {
 
     // Dispatchers
@@ -28,7 +20,7 @@ val decagonCoreModule = module {
     single(named("Main")) { Dispatchers.Main }
     single(named("Default")) { Dispatchers.Default }
 
-    // Database with NEW migration
+    // Database
     single {
         Room.databaseBuilder(
             androidContext(),
@@ -42,22 +34,18 @@ val decagonCoreModule = module {
                 DecagonDatabase.MIGRATION_4_5,
                 DecagonDatabase.MIGRATION_5_6,
                 DecagonDatabase.MIGRATION_6_7,
-                DecagonDatabase.MIGRATION_7_8  // ← NEW: Swap tables migration
+                DecagonDatabase.MIGRATION_7_8// ✅ ADD NEW MIGRATION
             )
             .build()
     }
 
-    // Existing DAOs
     single { get<DecagonDatabase>().walletDao() }
     single { get<DecagonDatabase>().pendingTxDao() }
     single { get<DecagonDatabase>().transactionDao() }
-    single { get<DecagonDatabase>().onRampDao() }
-
-    // NEW: Swap feature DAOs
+    single { get<DecagonDatabase>().onRampDao() } // ✅ ADD
     single { get<DecagonDatabase>().swapHistoryDao() }
-    single { get<DecagonDatabase>().cachedTokenDao() }
+    single { get<DecagonDatabase>().tokenCacheDao() }
 
-    // Onboarding state repository
     single<DecagonOnboardingStateRepository> {
         DecagonOnboardingStateRepositoryImpl(get())
     }

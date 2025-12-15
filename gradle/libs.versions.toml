@@ -216,7 +216,7 @@ coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref 
 coil-network-ktor = { group = "io.coil-kt.coil3", name = "coil-network-ktor", version.ref = "coil" }
 
 # Multiplatform Settings (KMP SharedPreferences/UserDefaults wrapper)
-multiplatform-settings = { group = "com.russhwolf", name = "multiplatform-settings", version.ref = "settings" }
+#multiplatform-settings = { group = "com.russhwolf", name = "multiplatform-settings", version.ref = "settings" }
 multiplatform-settings-no-arg = { group = "com.russhwolf", name = "multiplatform-settings-no-arg", version.ref = "settings" }
 multiplatform-settings-coroutines = { group = "com.russhwolf", name = "multiplatform-settings-coroutines", version.ref = "settings" }
 

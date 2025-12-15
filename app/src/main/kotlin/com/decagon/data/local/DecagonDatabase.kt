@@ -8,14 +8,14 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.decagon.data.local.dao.DecagonWalletDao
 import com.decagon.data.local.dao.OnRampDao
 import com.decagon.data.local.dao.PendingTxDao
+import com.decagon.data.local.dao.SwapHistoryDao
+import com.decagon.data.local.dao.TokenCacheDao
 import com.decagon.data.local.dao.TransactionDao
-import com.decagon.data.local.entity.DecagonCachedTokenDao
-import com.decagon.data.local.entity.DecagonCachedTokenEntity
-import com.decagon.data.local.entity.DecagonSwapHistoryDao
-import com.decagon.data.local.entity.DecagonSwapHistoryEntity
 import com.decagon.data.local.entity.DecagonWalletEntity
 import com.decagon.data.local.entity.OnRampTransactionEntity
 import com.decagon.data.local.entity.PendingTxEntity
+import com.decagon.data.local.entity.SwapHistoryEntity
+import com.decagon.data.local.entity.TokenCacheEntity
 import com.decagon.data.local.entity.TransactionEntity
 
 @Database(
@@ -23,9 +23,9 @@ import com.decagon.data.local.entity.TransactionEntity
         DecagonWalletEntity::class,
         PendingTxEntity::class,
         TransactionEntity::class,
-        OnRampTransactionEntity::class, // ✅ ADD
-        DecagonSwapHistoryEntity::class,  // ← NEW
-        DecagonCachedTokenEntity::class   // ← NEW
+        OnRampTransactionEntity::class,
+        SwapHistoryEntity::class,      // ✅ NEW
+        TokenCacheEntity::class         // ✅ NEW
     ],
     version = 8,
     exportSchema = true
@@ -37,10 +37,8 @@ abstract class DecagonDatabase : RoomDatabase() {
     abstract fun pendingTxDao(): PendingTxDao
     abstract fun transactionDao(): TransactionDao
     abstract fun onRampDao(): OnRampDao
-    // NEW: Swap feature DAOs
-    abstract fun swapHistoryDao(): DecagonSwapHistoryDao
-    abstract fun cachedTokenDao(): DecagonCachedTokenDao
-
+    abstract fun swapHistoryDao(): SwapHistoryDao      // ✅ NEW
+    abstract fun tokenCacheDao(): TokenCacheDao        // ✅ NEW
 
     companion object {
         const val DATABASE_NAME = "decagon_database"
@@ -151,23 +149,15 @@ abstract class DecagonDatabase : RoomDatabase() {
                 )
             }
         }
-        /**
-         * Migration 7 → 8: Add swap feature tables
-         *
-         * Changes:
-         * - Creates decagon_swap_history table
-         * - Creates decagon_cached_tokens table
-         * - Adds indices for performance
-         */
-        val MIGRATION_7_8 = object : Migration(7, 8) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                timber.log.Timber.i("Running migration 7 → 8: Adding swap feature tables")
 
-                // Create swap history table
-                database.execSQL("""
-                    CREATE TABLE IF NOT EXISTS decagon_swap_history (
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create swap_history table
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS swap_history (
                         id TEXT PRIMARY KEY NOT NULL,
-                        walletAddress TEXT NOT NULL,
+                        walletId TEXT NOT NULL,
                         inputMint TEXT NOT NULL,
                         outputMint TEXT NOT NULL,
                         inputAmount REAL NOT NULL,
@@ -176,50 +166,45 @@ abstract class DecagonDatabase : RoomDatabase() {
                         outputSymbol TEXT NOT NULL,
                         signature TEXT,
                         status TEXT NOT NULL,
+                        slippageBps INTEGER NOT NULL,
+                        priceImpactPct REAL NOT NULL,
+                        feeBps INTEGER NOT NULL,
+                        priorityFee INTEGER NOT NULL,
                         timestamp INTEGER NOT NULL,
-                        priceImpact REAL NOT NULL,
-                        routePlan TEXT,
-                        slippageBps INTEGER NOT NULL
+                        errorMessage TEXT
                     )
-                """.trimIndent())
+                    """
+                )
 
-                // Create indices for swap history
-                database.execSQL("""
-                    CREATE INDEX IF NOT EXISTS index_decagon_swap_history_walletAddress 
-                    ON decagon_swap_history(walletAddress)
-                """.trimIndent())
-
-                database.execSQL("""
-                    CREATE INDEX IF NOT EXISTS index_decagon_swap_history_timestamp 
-                    ON decagon_swap_history(timestamp)
-                """.trimIndent())
-
-                database.execSQL("""
-                    CREATE INDEX IF NOT EXISTS index_decagon_swap_history_status 
-                    ON decagon_swap_history(status)
-                """.trimIndent())
-
-                // Create cached tokens table
-                database.execSQL("""
-                    CREATE TABLE IF NOT EXISTS decagon_cached_tokens (
-                        mint TEXT PRIMARY KEY NOT NULL,
-                        symbol TEXT NOT NULL,
+                // Create token_cache table
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS token_cache (
+                        address TEXT PRIMARY KEY NOT NULL,
                         name TEXT NOT NULL,
+                        symbol TEXT NOT NULL,
                         decimals INTEGER NOT NULL,
-                        logoUri TEXT,
-                        isVerified INTEGER NOT NULL DEFAULT 0,
-                        isStablecoin INTEGER NOT NULL DEFAULT 0,
-                        lastUpdated INTEGER NOT NULL
+                        logoURI TEXT,
+                        tags TEXT NOT NULL,
+                        dailyVolume REAL,
+                        hasFreezableAuthority INTEGER NOT NULL,
+                        hasMintableAuthority INTEGER NOT NULL,
+                        coingeckoId TEXT,
+                        cachedAt INTEGER NOT NULL
                     )
-                """.trimIndent())
+                    """
+                )
 
-                // Create index for token search
-                database.execSQL("""
-                    CREATE INDEX IF NOT EXISTS index_decagon_cached_tokens_symbol 
-                    ON decagon_cached_tokens(symbol)
-                """.trimIndent())
-
-                timber.log.Timber.i("Migration 7 → 8 completed successfully")
+                // Create indices for performance
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_swap_history_walletId ON swap_history(walletId)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_swap_history_timestamp ON swap_history(timestamp DESC)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_token_cache_symbol ON token_cache(symbol)"
+                )
             }
         }
     }

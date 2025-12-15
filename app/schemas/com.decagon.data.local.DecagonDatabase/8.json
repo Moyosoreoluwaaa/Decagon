@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 8,
-    "identityHash": "8d1d9480418f0630a35b5a956f454a6b",
+    "identityHash": "83c7635cd66d3966daecf5831ac1aefe",
     "entities": [
       {
         "tableName": "decagon_wallets",
@@ -305,8 +305,8 @@
         }
       },
       {
-        "tableName": "decagon_swap_history",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `walletAddress` TEXT NOT NULL, `inputMint` TEXT NOT NULL, `outputMint` TEXT NOT NULL, `inputAmount` REAL NOT NULL, `outputAmount` REAL NOT NULL, `inputSymbol` TEXT NOT NULL, `outputSymbol` TEXT NOT NULL, `signature` TEXT, `status` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `priceImpact` REAL NOT NULL, `routePlan` TEXT, `slippageBps` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "tableName": "swap_history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `walletId` TEXT NOT NULL, `inputMint` TEXT NOT NULL, `outputMint` TEXT NOT NULL, `inputAmount` REAL NOT NULL, `outputAmount` REAL NOT NULL, `inputSymbol` TEXT NOT NULL, `outputSymbol` TEXT NOT NULL, `signature` TEXT, `status` TEXT NOT NULL, `slippageBps` INTEGER NOT NULL, `priceImpactPct` REAL NOT NULL, `feeBps` INTEGER NOT NULL, `priorityFee` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `errorMessage` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -315,8 +315,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "walletAddress",
-            "columnName": "walletAddress",
+            "fieldPath": "walletId",
+            "columnName": "walletId",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -368,27 +368,39 @@
             "notNull": true
           },
           {
+            "fieldPath": "slippageBps",
+            "columnName": "slippageBps",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "priceImpactPct",
+            "columnName": "priceImpactPct",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "feeBps",
+            "columnName": "feeBps",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "priorityFee",
+            "columnName": "priorityFee",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
             "fieldPath": "timestamp",
             "columnName": "timestamp",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "priceImpact",
-            "columnName": "priceImpact",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
-            "fieldPath": "routePlan",
-            "columnName": "routePlan",
+            "fieldPath": "errorMessage",
+            "columnName": "errorMessage",
             "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "slippageBps",
-            "columnName": "slippageBps",
-            "affinity": "INTEGER",
-            "notNull": true
           }
         ],
         "primaryKey": {
@@ -396,50 +408,15 @@
           "columnNames": [
             "id"
           ]
-        },
-        "indices": [
-          {
-            "name": "index_decagon_swap_history_walletAddress",
-            "unique": false,
-            "columnNames": [
-              "walletAddress"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_decagon_swap_history_walletAddress` ON `${TABLE_NAME}` (`walletAddress`)"
-          },
-          {
-            "name": "index_decagon_swap_history_timestamp",
-            "unique": false,
-            "columnNames": [
-              "timestamp"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_decagon_swap_history_timestamp` ON `${TABLE_NAME}` (`timestamp`)"
-          },
-          {
-            "name": "index_decagon_swap_history_status",
-            "unique": false,
-            "columnNames": [
-              "status"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_decagon_swap_history_status` ON `${TABLE_NAME}` (`status`)"
-          }
-        ]
+        }
       },
       {
-        "tableName": "decagon_cached_tokens",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mint` TEXT NOT NULL, `symbol` TEXT NOT NULL, `name` TEXT NOT NULL, `decimals` INTEGER NOT NULL, `logoUri` TEXT, `isVerified` INTEGER NOT NULL, `isStablecoin` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`mint`))",
+        "tableName": "token_cache",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`address` TEXT NOT NULL, `name` TEXT NOT NULL, `symbol` TEXT NOT NULL, `decimals` INTEGER NOT NULL, `logoURI` TEXT, `tags` TEXT NOT NULL, `dailyVolume` REAL, `hasFreezableAuthority` INTEGER NOT NULL, `hasMintableAuthority` INTEGER NOT NULL, `coingeckoId` TEXT, `cachedAt` INTEGER NOT NULL, PRIMARY KEY(`address`))",
         "fields": [
           {
-            "fieldPath": "mint",
-            "columnName": "mint",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "symbol",
-            "columnName": "symbol",
+            "fieldPath": "address",
+            "columnName": "address",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -450,31 +427,53 @@
             "notNull": true
           },
           {
+            "fieldPath": "symbol",
+            "columnName": "symbol",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
             "fieldPath": "decimals",
             "columnName": "decimals",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "logoUri",
-            "columnName": "logoUri",
+            "fieldPath": "logoURI",
+            "columnName": "logoURI",
             "affinity": "TEXT"
           },
           {
-            "fieldPath": "isVerified",
-            "columnName": "isVerified",
+            "fieldPath": "tags",
+            "columnName": "tags",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dailyVolume",
+            "columnName": "dailyVolume",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "hasFreezableAuthority",
+            "columnName": "hasFreezableAuthority",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "isStablecoin",
-            "columnName": "isStablecoin",
+            "fieldPath": "hasMintableAuthority",
+            "columnName": "hasMintableAuthority",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "lastUpdated",
-            "columnName": "lastUpdated",
+            "fieldPath": "coingeckoId",
+            "columnName": "coingeckoId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "cachedAt",
+            "columnName": "cachedAt",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -482,25 +481,14 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "mint"
+            "address"
           ]
-        },
-        "indices": [
-          {
-            "name": "index_decagon_cached_tokens_symbol",
-            "unique": false,
-            "columnNames": [
-              "symbol"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_decagon_cached_tokens_symbol` ON `${TABLE_NAME}` (`symbol`)"
-          }
-        ]
+        }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8d1d9480418f0630a35b5a956f454a6b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '83c7635cd66d3966daecf5831ac1aefe')"
     ]
   }
 }

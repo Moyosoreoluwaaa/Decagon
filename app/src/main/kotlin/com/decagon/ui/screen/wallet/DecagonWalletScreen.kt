@@ -47,6 +47,7 @@ import com.decagon.ui.components.CopyableAddress
 import com.decagon.ui.components.DecagonQuickActions
 import com.decagon.ui.components.DecagonReceiveSheet
 import com.decagon.ui.components.DecagonWalletSelector
+import com.decagon.ui.components.NetworkSwitcher
 import com.decagon.ui.screen.send.DecagonSendSheet
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
@@ -62,7 +63,8 @@ fun DecagonWalletScreen(
     onImportWallet: () -> Unit = {},
     onNavigateToSettings: (String) -> Unit = {},
     onNavigateToHistory: () -> Unit = {},
-    onNavigateToBuy: () -> Unit  = {}
+    onNavigateToBuy: () -> Unit  = {},
+    onNavigateToSwap: () -> Unit  = {},
 ) {
     val walletState by viewModel.walletState.collectAsState()
     val allWallets by viewModel.allWallets.collectAsState()
@@ -87,6 +89,11 @@ fun DecagonWalletScreen(
                     }
                 },
                 actions = {
+                    // ← ADD NETWORK SWITCHER
+                    NetworkSwitcher()
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     if (walletState is DecagonLoadingState.Success) {
                         IconButton(onClick = onNavigateToHistory) {
                             Icon(Icons.Default.History, "Transaction History")
@@ -135,7 +142,8 @@ fun DecagonWalletScreen(
                     wallet = state.data,
                     viewModel = viewModel,
                     modifier = Modifier.padding(padding),
-                    onNavigateToBuy = onNavigateToBuy
+                    onNavigateToBuy = onNavigateToBuy,
+                    onNavigateToSwap = onNavigateToSwap
                 )
             }
             is DecagonLoadingState.Error -> {
@@ -154,7 +162,8 @@ private fun WalletContent(
     wallet: com.decagon.domain.model.DecagonWallet,
     viewModel: DecagonWalletViewModel,
     modifier: Modifier = Modifier,
-    onNavigateToBuy: () -> Unit  = {}
+    onNavigateToBuy: () -> Unit  = {},
+    onNavigateToSwap: () -> Unit  = {}
 ) {
     var showSendSheet by remember { mutableStateOf(false) }
     var showCurrencyMenu by remember { mutableStateOf(false) }
@@ -318,7 +327,8 @@ private fun WalletContent(
             wallet = wallet,
             onSendClick = { showSendSheet = true },
             onReceiveClick = { showReceiveSheet = true }, // ✅ ENABLE
-            onBuyClick = onNavigateToBuy
+            onBuyClick = onNavigateToBuy,
+            onNavigateToSwap = onNavigateToSwap
         )
 
         Spacer(modifier = Modifier.height(16.dp))

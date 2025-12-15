@@ -3,27 +3,21 @@ package com.decagon.ui.screen.wallet
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.decagon.core.chains.ChainType
+import com.decagon.core.network.NetworkManager
+import com.decagon.core.network.RpcClientFactory
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.data.remote.CoinPriceService
-import com.decagon.data.remote.SolanaRpcClient
 import com.decagon.domain.model.DecagonWallet
 import com.decagon.domain.repository.DecagonWalletRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class DecagonWalletViewModel(
     private val repository: DecagonWalletRepository,
-    private val rpcClient: SolanaRpcClient,
+    private val rpcFactory: RpcClientFactory,  // ← CHANGED
+    private val networkManager: NetworkManager,  // ← NEW
     private val priceService: CoinPriceService
 ) : ViewModel() {
 
@@ -45,27 +39,27 @@ class DecagonWalletViewModel(
                 combine(
                     flow { emit(wallet) },
                     _selectedCurrency,
-                    // ✅ Re-emit when wallet updates (e.g., active chain changes)
-                    repository.getWalletById(wallet.id).filterNotNull()
-                ) { _, currency, updatedWallet ->
-                    Timber.d("Updating wallet data for currency: $currency, activeChain: ${updatedWallet.activeChainId}")
+                    repository.getWalletById(wallet.id).filterNotNull(),
+                    networkManager.currentNetwork  // ← TRIGGERS RE-FETCH ON NETWORK CHANGE
+                ) { _, currency, updatedWallet, currentNetwork ->
+                    Timber.d("Updating: currency=$currency, activeChain=${updatedWallet.activeChainId}, network=$currentNetwork")
 
                     try {
-                        // Get active chain for balance fetch
                         val activeChain = updatedWallet.activeChain
                             ?: throw IllegalStateException("No active chain")
 
-                        // Fetch balance for active chain
+                        // Create network-aware RPC client
+                        val rpcClient = rpcFactory.createSolanaClient(activeChain.chainId)
+
                         val balanceResult = when (activeChain.chainType) {
                             ChainType.Solana -> rpcClient.getBalance(activeChain.address)
-                            else -> Result.success(0L) // Other chains not implemented yet
+                            else -> Result.success(0L)
                         }
 
                         val balance = balanceResult.getOrNull()?.let {
-                            it / 1_000_000_000.0 // Convert lamports to SOL
+                            it / 1_000_000_000.0
                         } ?: 0.0
 
-                        // Fetch price for active chain
                         val coinId = when (activeChain.chainType) {
                             ChainType.Solana -> CoinPriceService.COIN_ID_SOLANA
                             ChainType.Ethereum -> CoinPriceService.COIN_ID_ETHEREUM
@@ -76,9 +70,8 @@ class DecagonWalletViewModel(
                         val price = priceResult.getOrNull()?.get(coinId) ?: 0.0
                         _fiatPrice.value = price
 
-                        Timber.i("Wallet balance: $balance ${activeChain.chainType.name}, Price: $price $currency")
+                        Timber.i("Balance: $balance ${activeChain.chainType.name} on $currentNetwork, Price: $price $currency")
 
-                        // Update active chain's balance
                         val updatedChains = updatedWallet.chains.map { chain ->
                             if (chain.chainId == updatedWallet.activeChainId) {
                                 chain.copy(balance = balance)

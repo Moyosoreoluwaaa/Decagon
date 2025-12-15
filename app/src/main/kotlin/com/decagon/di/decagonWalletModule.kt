@@ -14,7 +14,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val decagonWalletModule = module {
-    
+
     // Repository
     single<DecagonWalletRepository> {
         DecagonWalletRepositoryImpl(
@@ -31,31 +31,37 @@ val decagonWalletModule = module {
         DecagonSettingsRepositoryImpl(
             walletDao = get(),
             enclaveManager = get(),
-//            mnemonicHelper = get(),
             keyDerivation = get(),
             biometricAuthenticator = get()
         )
     }
-    
+
     // UseCases
     factory { DecagonCreateWalletUseCase(get(), get()) }
     factory { DecagonImportWalletUseCase(get(), get()) }
 
     // ViewModels
     viewModel { DecagonOnboardingViewModel(get(), get(), get()) }
-    viewModel { DecagonWalletViewModel(get(), get(), get()) }
 
-    // Settings ViewModel
+    viewModel {
+        DecagonWalletViewModel(
+            repository = get(),
+            rpcFactory = get(),      // ← Already uses factory
+            networkManager = get(),
+            priceService = get()
+        )
+    }
+
+    // Settings ViewModel - now with RpcClientFactory
     viewModel {
         DecagonSettingsViewModel(
             settingsRepository = get(),
             walletRepository = get(),
-            transactionRepository = get(), // ✅ Add
-            rpcClient = get() // ✅ Add
+            transactionRepository = get(),
+            rpcFactory = get()  // ← CHANGED: Factory instead of client
         )
     }
 
-    // decagonWalletModule.kt - ADD:
     viewModel {
         DecagonSupportedChainsViewModel(
             walletRepository = get()

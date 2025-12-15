@@ -139,7 +139,7 @@ fun DecagonOnRampScreen(
                         onWebViewCreated = { webView = it },
                         onPageFinished = {
                             Timber.d("✅ Widget loaded, starting balance monitoring")
-                            viewModel.startMonitoring(wallet.address)
+                            viewModel.startMonitoring(wallet.address, wallet.activeChainId)
                         }
                     )
                 }

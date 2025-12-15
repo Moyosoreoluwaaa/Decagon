@@ -2,8 +2,8 @@ package com.decagon.domain.usecase
 
 import androidx.fragment.app.FragmentActivity
 import com.decagon.core.crypto.DecagonKeyDerivation
+import com.decagon.core.network.RpcClientFactory
 import com.decagon.core.security.DecagonBiometricAuthenticator
-import com.decagon.data.remote.SolanaRpcClient
 import com.decagon.domain.model.*
 import com.decagon.domain.repository.DecagonWalletRepository
 import com.decagon.domain.repository.SwapRepository
@@ -21,8 +21,12 @@ class ExecuteSwapUseCase(
     private val walletRepository: DecagonWalletRepository,
     private val keyDerivation: DecagonKeyDerivation,
     private val biometricAuthenticator: DecagonBiometricAuthenticator,
-    private val rpcClient: SolanaRpcClient
+    private val rpcFactory: RpcClientFactory  // ← CHANGED: Factory instead of client
 ) {
+    init {
+        Timber.d("ExecuteSwapUseCase initialized with RpcClientFactory")
+    }
+
     suspend operator fun invoke(
         swapOrder: SwapOrder,
         walletId: String,
@@ -33,7 +37,7 @@ class ExecuteSwapUseCase(
     ): Result<String> = withContext(Dispatchers.Default) {
 
         try {
-            Timber.d("Executing swap: ${inputToken.symbol} â†’ ${outputToken.symbol}")
+            Timber.d("Executing swap: ${inputToken.symbol} → ${outputToken.symbol}")
 
             // 1. Biometric authentication
             Timber.i("Requesting biometric authentication for swap...")
@@ -66,20 +70,30 @@ class ExecuteSwapUseCase(
                     ?: throw IllegalStateException("No active wallet")
             }
 
+            // Get active chain
+            val activeChain = wallet.activeChain
+                ?: throw IllegalStateException("No active chain selected")
+
+            Timber.d("Active chain: ${activeChain.chainId} (${activeChain.chainType.name})")
+
+            // ✅ CREATE NETWORK-AWARE RPC CLIENT
+            val rpcClient = rpcFactory.createSolanaClient(activeChain.chainId)
+            Timber.d("RPC client created for swap on chain: ${activeChain.chainId}")
+
             // 3. Derive keypair
             val (privateKey, _) = keyDerivation.deriveSolanaKeypair(seed, wallet.accountIndex)
             val keypair = Keypair.fromSecretKey(privateKey)
 
             Timber.d("Keypair derived for swap signing")
 
-            // 5. Sign transaction using Sol4k no need to encode and decode
-            val transaction = Transaction.from(swapOrder.transaction) // Use original string
+            // 4. Sign transaction using Sol4k
+            val transaction = Transaction.from(swapOrder.transaction)
             transaction.sign(keypair)
             val signedTxBytes = transaction.serialize()
 
             Timber.d("Transaction signed: ${signedTxBytes.size} bytes")
 
-            // 6. Create swap history entry (PENDING)
+            // 5. Create swap history entry (PENDING)
             val swapId = UUID.randomUUID().toString()
             val inputAmount = swapOrder.inAmount.toDoubleOrNull() ?: 0.0
             val outputAmount = swapOrder.outAmount.toDoubleOrNull() ?: 0.0
@@ -107,12 +121,16 @@ class ExecuteSwapUseCase(
             }
             Timber.d("Swap history saved: $swapId")
 
-            // 7. Execute swap via Jupiter Ultra API
+            // 6. Execute swap via Jupiter Ultra API
+            Timber.i("Executing swap on network: ${activeChain.chainId}")
             val executeResult = swapRepository.executeSwap(swapOrder, signedTxBytes)
 
             executeResult.fold(
                 onSuccess = { signature ->
-                    Timber.i("âœ… Swap executed successfully: $signature")
+                    Timber.i("✅ Swap executed successfully: $signature")
+                    Timber.i("   Network: ${activeChain.chainId}")
+                    Timber.i("   Input: ${inputToken.symbol}")
+                    Timber.i("   Output: ${outputToken.symbol}")
 
                     // Update swap history to CONFIRMED
                     withContext(Dispatchers.IO) {
@@ -126,7 +144,7 @@ class ExecuteSwapUseCase(
                     Result.success(signature)
                 },
                 onFailure = { error ->
-                    Timber.e(error, "Swap execution failed")
+                    Timber.e(error, "Swap execution failed on ${activeChain.chainId}")
 
                     // Update swap history to FAILED
                     withContext(Dispatchers.IO) {

@@ -1,8 +1,3 @@
-// ============================================================================
-// FILE: di/decagonOnRampModule.kt
-// UPDATED: Multi-provider dependency injection
-// ============================================================================
-
 package com.decagon.di
 
 import com.decagon.data.provider.MoonPayProvider
@@ -22,7 +17,7 @@ import org.koin.dsl.module
  * - Provider implementations (Ramp, MoonPay, Transak)
  * - Provider factory (orchestrator)
  * - Repository
- * - ViewModel
+ * - ViewModel (now with RpcClientFactory)
  *
  * Pattern: Orchestration via factory
  */
@@ -84,13 +79,13 @@ val decagonOnRampModule = module {
     // ========================================================================
 
     /**
-     * On-ramp ViewModel with multi-provider support.
+     * On-ramp ViewModel with multi-provider support and network-aware RPC.
      */
     viewModel {
         DecagonOnRampViewModel(
             onRampRepository = get(),
-            rpcClient = get(),
-            providerFactory = get() // ✅ Inject factory, not specific provider
+            rpcFactory = get(),  // ← CHANGED: Factory instead of client
+            providerFactory = get()
         )
     }
 }

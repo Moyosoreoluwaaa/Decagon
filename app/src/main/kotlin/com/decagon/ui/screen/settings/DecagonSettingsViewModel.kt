@@ -4,8 +4,8 @@ import android.annotation.SuppressLint
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.decagon.core.network.RpcClientFactory
 import com.decagon.core.util.DecagonLoadingState
-import com.decagon.data.remote.SolanaRpcClient
 import com.decagon.domain.repository.DecagonSettingsRepository
 import com.decagon.domain.repository.DecagonTransactionRepository
 import com.decagon.domain.repository.DecagonWalletRepository
@@ -19,8 +19,8 @@ import timber.log.Timber
 class DecagonSettingsViewModel(
     private val settingsRepository: DecagonSettingsRepository,
     private val walletRepository: DecagonWalletRepository,
-    private val transactionRepository: DecagonTransactionRepository, // ✅ Inject
-    private val rpcClient: SolanaRpcClient // ✅ Inject
+    private val transactionRepository: DecagonTransactionRepository,
+    private val rpcFactory: RpcClientFactory  // ← CHANGED: Factory instead of client
 ) : ViewModel() {
 
     @SuppressLint("StaticFieldLeak")
@@ -47,7 +47,7 @@ class DecagonSettingsViewModel(
     val editNameState: StateFlow<DecagonLoadingState<Unit>> = _editNameState.asStateFlow()
 
     init {
-        Timber.d("DecagonSettingsViewModel initialized")
+        Timber.d("DecagonSettingsViewModel initialized with RpcClientFactory")
     }
 
     fun loadMnemonic(walletId: String) {
@@ -147,6 +147,22 @@ class DecagonSettingsViewModel(
         }
     }
 
+    /**
+     * Fix stuck transactions using network-aware diagnostic.
+     */
+    fun fixStuckTransactions(walletAddress: String) {
+        Timber.i("Starting stuck transaction fix for: ${walletAddress.take(8)}...")
+        viewModelScope.launch {
+            val diagnostic = TransactionDiagnostic(
+                transactionRepository = transactionRepository,
+                rpcFactory = rpcFactory,  // ← CHANGED: Pass factory
+                walletRepository = walletRepository
+            )
+            val fixed = diagnostic.diagnoseAndFixPending(walletAddress)
+            Timber.i("✅ Fixed $fixed stuck transactions")
+        }
+    }
+
     fun resetMnemonicState() {
         _mnemonicState.value = DecagonLoadingState.Idle
     }
@@ -157,13 +173,5 @@ class DecagonSettingsViewModel(
 
     fun resetEditNameState() {
         _editNameState.value = DecagonLoadingState.Idle
-    }
-
-    fun fixStuckTransactions(walletAddress: String) {
-        viewModelScope.launch {
-            val diagnostic = TransactionDiagnostic(transactionRepository, rpcClient)
-            val fixed = diagnostic.diagnoseAndFixPending(walletAddress)
-            Timber.i("Fixed $fixed stuck transactions")
-        }
     }
 }

@@ -47,6 +47,7 @@ import com.decagon.ui.components.CopyableAddress
 import com.decagon.ui.components.DecagonQuickActions
 import com.decagon.ui.components.DecagonReceiveSheet
 import com.decagon.ui.components.DecagonWalletSelector
+import com.decagon.ui.components.NetworkSwitcher
 import com.decagon.ui.screen.send.DecagonSendSheet
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
@@ -88,6 +89,11 @@ fun DecagonWalletScreen(
                     }
                 },
                 actions = {
+                    // ← ADD NETWORK SWITCHER
+                    NetworkSwitcher()
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     if (walletState is DecagonLoadingState.Success) {
                         IconButton(onClick = onNavigateToHistory) {
                             Icon(Icons.Default.History, "Transaction History")

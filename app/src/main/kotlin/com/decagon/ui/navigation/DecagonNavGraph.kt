@@ -1,5 +1,8 @@
 package com.decagon.ui.navigation
 
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -9,6 +12,9 @@ import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.decagon.core.network.NetworkEnvironment
+import com.decagon.core.network.NetworkManager
+import com.decagon.core.util.DecagonLoadingState
 import com.decagon.ui.screen.chains.DecagonSupportedChainsScreen
 import com.decagon.ui.screen.create.DecagonCreateWalletScreen
 import com.decagon.ui.screen.history.DecagonTransactionDetailScreen
@@ -22,7 +28,9 @@ import com.decagon.ui.screen.settings.DecagonSettingsScreen
 import com.decagon.ui.screen.swap.SwapScreen
 import com.decagon.ui.screen.swap.SwapViewModel
 import com.decagon.ui.screen.wallet.DecagonWalletScreen
+import com.decagon.ui.screen.wallet.DecagonWalletViewModel
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import timber.log.Timber
 
 @Composable
@@ -88,7 +96,8 @@ fun DecagonNavGraph(
         composable("wallet") {
             Timber.d("NavGraph: Showing wallet")
 
-            val walletViewModel: com.decagon.ui.screen.wallet.DecagonWalletViewModel = koinViewModel()
+            val walletViewModel: com.decagon.ui.screen.wallet.DecagonWalletViewModel =
+                koinViewModel()
             val walletState by walletViewModel.walletState.collectAsState()
 
             DecagonWalletScreen(
@@ -120,31 +129,40 @@ fun DecagonNavGraph(
         }
 
         // ✅ NEW: On-Ramp Screen
+        // :ui:navigation:DecagonNavGraph.kt - UPDATE onramp composable
         composable("onramp") {
-            Timber.d("NavGraph: Showing on-ramp screen")
+            val networkManager: NetworkManager = koinInject()
+            val currentNetwork by networkManager.currentNetwork.collectAsState()
 
-            val walletViewModel: com.decagon.ui.screen.wallet.DecagonWalletViewModel = koinViewModel()
-            val walletState by walletViewModel.walletState.collectAsState()
-
-            when (val state = walletState) {
-                is com.decagon.core.util.DecagonLoadingState.Success -> {
-                    DecagonOnRampScreen(
-                        wallet = state.data,
-                        onBackClick = {
-                            Timber.i("NavGraph: Back from on-ramp")
-                            navController.popBackStack()
-                        },
-                        onTransactionComplete = { txId ->
-                            Timber.i("NavGraph: On-ramp complete, showing wallet")
-                            navController.navigate("wallet") {
-                                popUpTo("wallet") { inclusive = true }
-                            }
+            if (currentNetwork != NetworkEnvironment.MAINNET) {
+                AlertDialog(
+                    onDismissRequest = { navController.popBackStack() },
+                    title = { Text("Mainnet Required") },
+                    text = { Text("Buying crypto is only available on Mainnet. Please switch networks.") },
+                    confirmButton = {
+                        TextButton(onClick = { navController.popBackStack() }) {
+                            Text("OK")
                         }
-                    )
-                }
-                else -> {
-                    // Loading or error - show nothing or redirect
-                    Timber.w("NavGraph: Wallet not loaded for on-ramp")
+                    }
+                )
+            } else {
+                val walletViewModel: DecagonWalletViewModel = koinViewModel()
+                val walletState by walletViewModel.walletState.collectAsState()
+
+                when (val state = walletState) {
+                    is DecagonLoadingState.Success -> {
+                        DecagonOnRampScreen(
+                            wallet = state.data,
+                            onBackClick = { navController.popBackStack() },
+                            onTransactionComplete = { txId ->
+                                navController.navigate("wallet") {
+                                    popUpTo("wallet") { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+
+                    else -> {}
                 }
             }
         }

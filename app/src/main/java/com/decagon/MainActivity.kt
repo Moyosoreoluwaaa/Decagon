@@ -6,7 +6,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import com.decagon.data.remote.SolanaRpcClient
 import com.decagon.domain.repository.DecagonWalletRepository
 import com.decagon.ui.navigation.DecagonNavGraph
 import com.decagon.ui.theme.DecagonTheme
@@ -18,11 +17,13 @@ import timber.log.Timber
 class MainActivity : FragmentActivity() {
 
     private val walletRepository: DecagonWalletRepository by inject()
-    private val rpcClient: SolanaRpcClient by inject() // ← ADD THIS
-
+    // ❌ REMOVED: Direct RpcClient injection
+    // Balance checks are now handled by ViewModels with network-aware clients
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Timber.d("MainActivity onCreate")
 
         lifecycleScope.launch {
             // Check if wallet exists
@@ -30,12 +31,14 @@ class MainActivity : FragmentActivity() {
                 .first()
                 .isNotEmpty()
 
-            val wallet = walletRepository.getActiveWallet().first()
-            wallet?.let {
-                val balanceResult = rpcClient.getBalance(it.address)
-                Timber.d("Balance check: ${balanceResult.getOrNull()} lamports")
-            }
+            Timber.d("Has wallet: $hasWallet")
+
+            // ✅ REMOVED: Balance check from MainActivity
+            // Let DecagonWalletViewModel handle balance fetching with network-aware RPC
+            // This ensures correct network is used based on user settings
+
             val startDestination = if (hasWallet) "wallet" else "choice"
+            Timber.i("Starting app at: $startDestination")
 
             setContent {
                 DecagonTheme {
@@ -45,5 +48,20 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Timber.d("MainActivity onResume")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Timber.d("MainActivity onPause")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Timber.d("MainActivity onDestroy")
     }
 }

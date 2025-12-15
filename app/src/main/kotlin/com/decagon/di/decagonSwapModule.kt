@@ -31,13 +31,14 @@ val decagonSwapModule = module {
     // Use Cases
     factory { GetSwapQuoteUseCase(get()) }
 
+    // Execute Swap - now with RpcClientFactory
     factory {
         ExecuteSwapUseCase(
             swapRepository = get(),
             walletRepository = get(),
             keyDerivation = get(),
             biometricAuthenticator = get(),
-            rpcClient = get()
+            rpcFactory = get()  // ← CHANGED: Factory instead of client
         )
     }
 

@@ -1,30 +1,18 @@
 package com.decagon.ui.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.CallReceived
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.decagon.core.network.FeatureFlags
+import com.decagon.core.network.NetworkManager
 import com.decagon.domain.model.DecagonWallet
+import org.koin.compose.koinInject
 
-// :ui:components/DecagonQuickActions.kt
 @Composable
 fun DecagonQuickActions(
     wallet: DecagonWallet,
@@ -32,61 +20,75 @@ fun DecagonQuickActions(
     onReceiveClick: () -> Unit,
     onBuyClick: () -> Unit,
     onNavigateToSwap: () -> Unit,
-    modifier: Modifier = Modifier
+    networkManager: NetworkManager = koinInject()  // ← NEW
 ) {
+    val currentNetwork by networkManager.currentNetwork.collectAsState()
+    val canBuy = FeatureFlags.isBuyEnabled(currentNetwork)
+    val canSwap = FeatureFlags.isSwapEnabled(currentNetwork)
+
     Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         QuickActionButton(
-            icon = Icons.AutoMirrored.Filled.Send,
+            icon = Icons.Default.Send,
             label = "Send",
-            onClick = onSendClick,
-            modifier = Modifier.weight(1f)
-        )
-        
-        QuickActionButton(
-            icon = Icons.AutoMirrored.Filled.CallReceived,
-            label = "Receive",
-            onClick = onReceiveClick,
-            modifier = Modifier.weight(1f)
+            enabled = true,
+            onClick = onSendClick
         )
 
-        // ✅ NEW: Buy/Add Funds Button
         QuickActionButton(
-            icon = Icons.Default.AccountBalanceWallet,
-            label = "Buy",
-            onClick = onBuyClick,
-            modifier = Modifier.weight(1f)
+            icon = Icons.Default.Download,
+            label = "Receive",
+            enabled = true,
+            onClick = onReceiveClick
         )
-        // ✅ NEW: Swap Button
+
+        QuickActionButton(
+            icon = Icons.Default.ShoppingCart,
+            label = "Buy",
+            enabled = canBuy,
+            onClick = if (canBuy) onBuyClick else { {} },
+            disabledReason = if (!canBuy) "Mainnet only" else null
+        )
+
         QuickActionButton(
             icon = Icons.Default.SwapHoriz,
             label = "Swap",
-            onClick = onNavigateToSwap,
-            modifier = Modifier.weight(1f)
+            enabled = canSwap,
+            onClick = if (canSwap) onNavigateToSwap else { {} },
+            disabledReason = if (!canSwap) "Mainnet only" else null
         )
     }
 }
 
 @Composable
 private fun QuickActionButton(
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
+    enabled: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    disabledReason: String? = null
 ) {
-    OutlinedCard(
-        onClick = onClick,
-        modifier = modifier
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        FilledTonalIconButton(
+            onClick = onClick,
+            enabled = enabled
         ) {
-            Icon(icon, null, modifier = Modifier.size(24.dp))
-            Spacer(Modifier.height(4.dp))
-            Text(label, style = MaterialTheme.typography.labelMedium)
+            Icon(icon, contentDescription = label)
         }
+
+        Text(
+            text = if (!enabled && disabledReason != null) disabledReason else label,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (enabled) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
+        )
     }
 }

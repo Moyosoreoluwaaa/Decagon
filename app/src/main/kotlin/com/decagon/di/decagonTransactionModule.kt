@@ -18,12 +18,12 @@ val decagonTransactionModule = module {
         )
     }
 
-    // Use Case
+    // Use Case - now with RpcClientFactory
     factory {
         DecagonSendTokenUseCase(
             walletRepository = get(),
             transactionRepository = get(),
-            rpcClient = get(),
+            rpcFactory = get(),  // ← CHANGED: Factory instead of client
             keyDerivation = get(),
             biometricAuthenticator = get()
         )
@@ -32,7 +32,6 @@ val decagonTransactionModule = module {
     // ViewModels
     viewModel { DecagonSendViewModel(get()) }
 
-    // ✅ NEW: Transaction history ViewModels
     viewModel {
         DecagonTransactionHistoryViewModel(
             transactionRepository = get(),

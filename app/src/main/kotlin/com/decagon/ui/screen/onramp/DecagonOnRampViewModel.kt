@@ -1,16 +1,11 @@
-// ============================================================================
-// FILE: ui/screen/onramp/DecagonOnRampViewModel.kt
-// UPDATED: Manual provider selection support
-// ============================================================================
-
 package com.decagon.ui.screen.onramp
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.decagon.core.config.OnRampConfig
 import com.decagon.core.config.OnRampProviderType
+import com.decagon.core.network.RpcClientFactory
 import com.decagon.data.provider.ProviderInfoHelper
-import com.decagon.data.remote.SolanaRpcClient
 import com.decagon.domain.model.DecagonWallet
 import com.decagon.domain.provider.OnRampProviderFactory
 import com.decagon.domain.repository.OnRampRepository
@@ -24,7 +19,7 @@ import timber.log.Timber
 
 class DecagonOnRampViewModel(
     private val onRampRepository: OnRampRepository,
-    private val rpcClient: SolanaRpcClient,
+    private val rpcFactory: RpcClientFactory,  // ← CHANGED: Factory instead of client
     private val providerFactory: OnRampProviderFactory
 ) : ViewModel() {
 
@@ -43,7 +38,7 @@ class DecagonOnRampViewModel(
     private var currentCryptoAsset: String? = null
 
     init {
-        Timber.d("DecagonOnRampViewModel initialized with multi-provider support")
+        Timber.d("DecagonOnRampViewModel initialized with RpcClientFactory and multi-provider support")
     }
 
     /**
@@ -61,8 +56,10 @@ class DecagonOnRampViewModel(
             // Show provider selection UI
             _showProviderSelection.value = true
             _onRampState.value = OnRampState.SelectingProvider
+            Timber.d("Showing provider selection UI")
         } else {
             // Use automatic provider selection
+            Timber.d("Using automatic provider selection")
             initializeOnRamp(wallet, cryptoAsset, preferredProvider = null)
         }
     }
@@ -77,6 +74,7 @@ class DecagonOnRampViewModel(
         val wallet = currentWallet ?: return
         val asset = currentCryptoAsset ?: return
 
+        Timber.i("Provider manually selected: ${provider.name}")
         initializeOnRamp(wallet, asset, preferredProvider = provider)
     }
 
@@ -106,8 +104,11 @@ class DecagonOnRampViewModel(
             val activeChain = wallet.activeChain
             if (activeChain == null) {
                 _onRampState.value = OnRampState.Error("No active chain selected")
+                Timber.e("No active chain selected")
                 return@launch
             }
+
+            Timber.d("Active chain: ${activeChain.chainId}")
 
             // Get provider (respecting manual selection)
             val providerResult = providerFactory.getProvider(preferredProvider)
@@ -177,7 +178,10 @@ class DecagonOnRampViewModel(
                         provider = provider.getDisplayName(),
                         transactionId = txId
                     )
-                    Timber.i("On-ramp initialized: $txId via ${provider.getDisplayName()}")
+                    Timber.i("✅ On-ramp initialized:")
+                    Timber.i("   Transaction ID: $txId")
+                    Timber.i("   Provider: ${provider.getDisplayName()}")
+                    Timber.i("   Network: ${activeChain.chainId}")
                 },
                 onFailure = { error ->
                     _onRampState.value = OnRampState.Error(
@@ -195,23 +199,29 @@ class DecagonOnRampViewModel(
     fun cancelProviderSelection() {
         _showProviderSelection.value = false
         _onRampState.value = OnRampState.Idle
+        Timber.d("Provider selection cancelled")
     }
 
     /**
      * Start monitoring blockchain for balance changes.
+     * Uses network-aware RPC client.
      */
-    fun startMonitoring(walletAddress: String) {
+    fun startMonitoring(walletAddress: String, chainId: String) {
         val txId = currentTransactionId ?: return
 
         monitoringJob?.cancel()
         monitoringJob = viewModelScope.launch {
-            Timber.d("Starting balance monitoring for on-ramp: $txId")
+            Timber.d("Starting balance monitoring for on-ramp: $txId on chain: $chainId")
+
+            // ✅ CREATE NETWORK-AWARE RPC CLIENT
+            val rpcClient = rpcFactory.createSolanaClient(chainId)
+            Timber.d("RPC client created for monitoring: $chainId")
 
             var previousBalance = 0L
 
             rpcClient.getBalance(walletAddress).getOrNull()?.let { balance ->
                 previousBalance = balance
-                Timber.d("Initial balance: $previousBalance lamports")
+                Timber.d("Initial balance: $previousBalance lamports on $chainId")
             }
 
             val maxAttempts = (OnRampConfig.MONITORING_DURATION_MINUTES * 60) /
@@ -226,7 +236,7 @@ class DecagonOnRampViewModel(
                     val difference = currentBalance - previousBalance
                     val solAmount = difference / 1_000_000_000.0
 
-                    Timber.i("Balance increased! Received $solAmount SOL")
+                    Timber.i("✅ Balance increased! Received $solAmount SOL on $chainId")
 
                     onRampRepository.markTransactionCompleted(
                         txId = txId,
@@ -237,9 +247,8 @@ class DecagonOnRampViewModel(
                     _onRampState.value = OnRampState.Completed(solAmount)
                     return@launch
                 }
-
                 if (attempt % 6 == 0) {
-                    Timber.d("Still monitoring... attempt ${attempt + 1}/$maxAttempts")
+                    Timber.d("Still monitoring... attempt ${attempt + 1}/$maxAttempts (network: $chainId)")
                 }
             }
 
@@ -257,23 +266,23 @@ class DecagonOnRampViewModel(
     override fun onCleared() {
         super.onCleared()
         stopMonitoring()
+        Timber.d("DecagonOnRampViewModel cleared")
     }
 }
 
 /**
- * On-ramp UI state.
+
+On-ramp UI state.
  */
 sealed interface OnRampState {
     data object Idle : OnRampState
     data object SelectingProvider : OnRampState
     data object Loading : OnRampState
-
     data class Ready(
         val widgetUrl: String,
         val provider: String,
         val transactionId: String
     ) : OnRampState
-
     data class Completed(val amount: Double) : OnRampState
     data class Error(val message: String) : OnRampState
 }

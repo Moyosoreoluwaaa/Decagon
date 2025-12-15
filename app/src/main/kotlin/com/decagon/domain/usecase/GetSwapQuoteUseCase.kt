@@ -18,16 +18,29 @@ class GetSwapQuoteUseCase(
         outputToken: TokenInfo,
         inputAmount: Double,
         userPublicKey: String,
-        slippageTolerance: Double = 0.5 // Jupiter recommended: 0.5%
+        slippageTolerance: Double = 0.5
     ): Result<SwapOrder> {
+
+        // Validate inputs first
+        if (inputAmount <= 0) {
+            return Result.failure(IllegalArgumentException("Amount must be greater than zero"))
+        }
+
+        if (inputToken.address == outputToken.address) {
+            return Result.failure(IllegalArgumentException("Cannot swap the same token"))
+        }
 
         // Convert UI amount to smallest unit
         val amountInSmallestUnit = (inputAmount * 10.0.pow(inputToken.decimals)).toLong()
 
-        // Convert slippage % to basis points (1% = 100 bps)
+        if (amountInSmallestUnit <= 0) {
+            return Result.failure(IllegalArgumentException("Amount too small"))
+        }
+
+        // Convert slippage % to basis points
         val slippageBps = (slippageTolerance * 100).toInt()
 
-        Timber.d("Getting quote: ${inputToken.symbol} -> ${outputToken.symbol}, amount: $inputAmount")
+        Timber.d("Getting quote: ${inputToken.symbol} -> ${outputToken.symbol}, amount: $inputAmount ($amountInSmallestUnit smallest units)")
 
         return repository.getSwapQuote(
             inputMint = inputToken.address,
@@ -35,14 +48,26 @@ class GetSwapQuoteUseCase(
             amount = amountInSmallestUnit,
             userPublicKey = userPublicKey,
             slippageBps = if (slippageBps > 0) slippageBps else null
-        ) .mapCatching { order ->
-            // Validate transaction exists
-            if (order.transaction.isBlank()) {
-                throw IllegalStateException("API returned empty transaction. This may indicate insufficient liquidity or invalid token pair.")
+        )
+            .mapCatching { order ->
+            // Validate the response
+            when {
+                order.transaction.isBlank() -> {
+                    throw IllegalStateException(
+                        "Jupiter API returned empty transaction. " +
+                                "This may indicate: insufficient liquidity, invalid token pair, " +
+                                "or the tokens are not available on Jupiter."
+                    )
+                }
+                order.outAmount.toDoubleOrNull() == null || order.outAmount.toDouble() <= 0 -> {
+                    throw IllegalStateException(
+                        "Invalid output amount received from Jupiter API. " +
+                                "The token pair may not have sufficient liquidity."
+                    )
+                }
+                else -> order
             }
-            order
         }
-
     }
 }
 

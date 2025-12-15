@@ -23,6 +23,7 @@ import com.decagon.ui.components.SwapPreviewCard
 import com.decagon.ui.components.TokenSelectorSheet
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
+import kotlin.math.pow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -145,11 +146,17 @@ fun SwapScreen(
                     }
                 }
 
-                // Output Token Card
+                // Output Token Card with rate conversion from the smallest unit
+                // to the standard
                 TokenSelectionCard(
                     label = "You receive",
                     token = outputToken,
-                    amount = currentQuote?.outAmount ?: "",
+                    amount = currentQuote?.let { quote ->
+                        val outputUiAmount = quote.outAmount.toDoubleOrNull()?.let {
+                            it / (10.0.pow(outputToken.decimals))
+                        } ?: 0.0
+                        "%.6f".format(outputUiAmount)
+                    } ?: "",
                     onAmountChange = {},
                     onTokenClick = { showOutputTokenSelector = true },
                     balance = tokenBalances.find { it.mint == outputToken.address }?.uiAmount,

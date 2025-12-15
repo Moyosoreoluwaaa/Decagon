@@ -76,8 +76,13 @@ data class JupiterExecuteResponse(
 
 @Serializable
 data class JupiterBalancesResponse(
-    val holdings: List<TokenHoldingDto>
-)
+    val balances: List<TokenHoldingDto>? = null, // ✅ FIX: Changed from "holdings" to "balances"
+    val tokens: List<TokenHoldingDto>? = null     // ✅ Alternative field name
+) {
+    // Helper to get the actual list regardless of field name
+    val actualBalances: List<TokenHoldingDto>
+        get() = balances ?: tokens ?: emptyList()
+}
 
 @Serializable
 data class TokenHoldingDto(
@@ -85,8 +90,8 @@ data class TokenHoldingDto(
     val amount: String,                  // Raw amount in smallest unit
     val decimals: Int,
     val uiAmount: Double,                // Human-readable amount
-    val tokenAccount: String,            // SPL token account address
-    val isNative: Boolean                // True for SOL
+    val tokenAccount: String? = null,    // ✅ FIX: Made optional
+    val isNative: Boolean = false        // ✅ FIX: Default to false
 )
 
 // ==================== SEARCH ENDPOINT ====================

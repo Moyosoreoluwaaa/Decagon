@@ -145,13 +145,14 @@ class SwapRepositoryImpl(
                 val balancesResult = apiService.getBalances(publicKey)
 
                 balancesResult.map { response ->
-                    val mints = response.holdings.map { it.mint }
+                    val holdings = response.actualBalances // ✅ Use helper property
+                    val mints = holdings.map { it.mint }
 
                     // Try to enrich with cached token info
                     val cachedTokens = tokenCacheDao.getByAddresses(mints)
                         .associateBy { it.address }
 
-                    response.holdings.map { holding ->
+                    holdings.map { holding ->
                         holding.toDomain(
                             tokenInfo = cachedTokens[holding.mint]?.toDomain()
                         )

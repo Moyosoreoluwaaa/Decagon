@@ -54,15 +54,18 @@ fun TokenInfoDto.toDomain(): TokenInfo {
     )
 }
 
+
 fun TokenHoldingDto.toDomain(tokenInfo: TokenInfo? = null): TokenBalance {
     return TokenBalance(
         mint = mint,
         amount = amount,
         decimals = decimals,
         uiAmount = uiAmount,
-        tokenAccount = tokenAccount,
+        tokenAccount = tokenAccount ?: mint, // ✅ FIX: Fallback to mint if null
         isNative = isNative,
-        tokenInfo = tokenInfo
+        tokenInfo = tokenInfo,
+        symbol = tokenInfo?.symbol ?: "???",
+        name = tokenInfo?.name ?: "Unknown"
     )
 }
 

@@ -11,11 +11,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.decagon.domain.model.SwapOrder
 import com.decagon.domain.model.WarningSeverity
+import kotlin.math.pow
 
 @Composable
 fun SwapPreviewCard(quote: SwapOrder) {
     val inputToken = quote.inputToken
     val outputToken = quote.outputToken
+
+    // Convert raw amounts to UI amounts
+    val outputUiAmount = quote.outAmount.toDoubleOrNull()?.let {
+        it / (10.0.pow(outputToken.decimals))
+    } ?: 0.0
+
+    val inputUiAmount = quote.inAmount.toDoubleOrNull()?.let {
+        it / (10.0.pow(inputToken.decimals))
+    } ?: 1.0
 
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -30,7 +40,7 @@ fun SwapPreviewCard(quote: SwapOrder) {
 
             HorizontalDivider()
 
-            // Expected output
+            // Expected output (converted)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -41,13 +51,13 @@ fun SwapPreviewCard(quote: SwapOrder) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "${quote.expectedOutputAmount} ${outputToken.symbol}",
+                    text = "%.6f %s".format(outputUiAmount, outputToken.symbol),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
 
-            // Rate
+            // Rate (converted)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -55,9 +65,7 @@ fun SwapPreviewCard(quote: SwapOrder) {
                 Text("Exchange Rate", style = MaterialTheme.typography.bodyMedium)
                 Text(
                     text = "1 ${inputToken.symbol} ≈ %.6f ${outputToken.symbol}".format(
-                        quote.expectedOutputAmount.toDoubleOrNull()?.div(
-                            quote.inAmount.toDoubleOrNull() ?: 1.0
-                        ) ?: 0.0
+                        outputUiAmount / inputUiAmount
                     ),
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -128,62 +136,3 @@ fun SwapPreviewCard(quote: SwapOrder) {
         }
     }
 }
-
-//@Composable
-//private fun DetailRow(
-//    label: String,
-//    value: String,
-//    highlight: Boolean = false,
-//    valueColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
-//    indent: Boolean = false
-//) {
-//    Row(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(start = if (indent) 16.dp else 0.dp),
-//        horizontalArrangement = Arrangement.SpaceBetween,
-//        verticalAlignment = Alignment.CenterVertically
-//    ) {
-//        Text(
-//            text = label,
-//            style = MaterialTheme.typography.bodyMedium,
-//            color = MaterialTheme.colorScheme.onSurfaceVariant
-//        )
-//        Text(
-//            text = value,
-//            style = if (highlight) {
-//                MaterialTheme.typography.titleMedium
-//            } else {
-//                MaterialTheme.typography.bodyMedium
-//            },
-//            fontWeight = if (highlight) FontWeight.Bold else FontWeight.Normal,
-//            color = valueColor
-//        )
-//    }
-//}
-//
-//@Composable
-//private fun RouteInfo(quote: SwapOrder) {
-//    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-//        Text(
-//            text = "Route",
-//            style = MaterialTheme.typography.labelMedium,
-//            color = MaterialTheme.colorScheme.onSurfaceVariant
-//        )
-//        Row(
-//            modifier = Modifier.fillMaxWidth(),
-//            horizontalArrangement = Arrangement.SpaceBetween,
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            quote.routePlan.forEachIndexed { index, step ->
-//                Text(
-//                    text = step.token.symbol,
-//                    style = MaterialTheme.typography.bodySmall
-//                )
-//                if (index < quote.routePlan.size - 1) {
-//                    Text(" → ", style = MaterialTheme.typography.bodySmall)
-//                }
-//            }
-//        }
-//    }
-//}

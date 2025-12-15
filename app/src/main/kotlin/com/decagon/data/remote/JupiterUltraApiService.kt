@@ -111,7 +111,7 @@ class JupiterUltraApiService(
                 }
 
                 val balancesResponse = response.body<JupiterBalancesResponse>()
-                Timber.i("Fetched ${balancesResponse.holdings.size} token balances")
+                Timber.i("Fetched ${balancesResponse.balances} token balances")
 
                 Result.success(balancesResponse)
 

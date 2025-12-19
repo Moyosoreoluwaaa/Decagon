@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.ktorfit)
+    id("kotlin-parcelize")
 }
 
 android {
@@ -13,7 +14,7 @@ android {
 
     defaultConfig {
         applicationId = "com.decagon"
-        minSdk = 24
+        minSdk = 25
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -66,6 +67,9 @@ dependencies {
     // Compose (UI)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.wear.compose.material3)
+    implementation(libs.androidx.wear.compose.foundation)
+    implementation(libs.androidx.wear.compose.navigation)
     implementation(libs.compose.animation)
     implementation(libs.navigation.compose) // Keeping this for simple screen navigation
     implementation(libs.androidx.ui)

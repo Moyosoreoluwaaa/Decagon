@@ -13,19 +13,15 @@ sealed interface DecagonRoute {
     @Serializable
     data object ImportWallet : DecagonRoute
 
-    // ========== MAIN TABS (Bottom Nav - 4 tabs) ==========
+    // ========== MAIN TABS (Bottom Nav - 3 tabs) ==========
     @Serializable
-    data object Portfolio : DecagonRoute      // Wallet + Balance + Quick Actions
+    data object Portfolio : DecagonRoute      // Wallet + Balance + Quick Actions (replaces old Portfolio)
     @Serializable
-    data object Discover : DecagonRoute       // ✅ Tokens + Perps + DApps (from Octane)
-    @Serializable
-    data object Swap : DecagonRoute           // Existing swap screen
+    data object Swap : DecagonRoute           // Swap screen
     @Serializable
     data object Activity : DecagonRoute       // Transaction history
 
     // ========== WALLET MANAGEMENT ==========
-    @Serializable
-    data object Wallets : DecagonRoute        // Keep as separate full screen
     @Serializable
     data class WalletSettings(val walletId: String) : DecagonRoute
     @Serializable
@@ -36,12 +32,6 @@ sealed interface DecagonRoute {
     ) : DecagonRoute
 
     // ========== DETAIL SCREENS ==========
-    @Serializable
-    data class TokenDetail(val tokenId: String, val symbol: String) : DecagonRoute
-    @Serializable
-    data class PerpDetail(val perpSymbol: String) : DecagonRoute
-    @Serializable
-    data class DAppBrowser(val url: String, val title: String) : DecagonRoute
     @Serializable
     data class TransactionDetail(val txId: String) : DecagonRoute
 

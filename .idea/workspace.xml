@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AndroidLayouts">
+    <shared>
+      <config />
+    </shared>
+  </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="90e32f5b-d68b-42b4-997c-b5b779bfa59e" name="Changes" comment="Refactor: Modernize Wallet UI, introduce composable components, and enhance navigation&#10;&#10;This commit introduces a major user interface overhaul for the main wallet screen, replacing the previous design with a modern, &quot;glassmorphic&quot; aesthetic. It modularizes UI elements into reusable Jetpack Compose components and refactors navigation to be type-safe.&#10;&#10;**UI/UX Overhaul (Jetpack Compose)**&#10;*   **New `DecagonWalletScreen`:** Implemented a completely new wallet screen with a modern, gradient-based UI. It features a vertical scroll layout with distinct sections for the top bar, balance hero, portfolio chart, and quick actions.&#10;*   **`FloatingTopBar` Component:** Created a new top bar component that includes a wallet switcher trigger (profile icon), a `NetworkPillBadge`, and a notifications icon.&#10;*   **`BalanceHeroSection` Component:** Implemented a central display for the wallet balance, fiat value, and a copyable truncated address.&#10;*   **`DecagonQuickActionsBar`:** Redesigned the quick actions (Send, Receive, Buy, Swap) into a floating bar with updated styling. It now disables &quot;Send&quot; and &quot;Swap&quot; for view-only wallets.&#10;*   **`PortfolioPerformanceChart`:** Added a new, animated line chart to visualize portfolio history, complete with a `TimeRangeSelector` (1D, 1W, 1M, 1Y, ALL).&#10;*   **Modal &amp; Sheet Redesign:**&#10;    *   `DecagonSendSheet`, `DecagonReceiveSheet`, and `TokenSelectorSheet` have been restyled with a consistent dark, transparent background, updated fields, and improved button aesthetics.&#10;    *   Introduced `WalletSwitcherModal` and `NetworkSelectorModal` for improved wallet and network management directly from the main screen.&#10;&#10;**Navigation &amp; Architecture**&#10;*   **Type-Safe Navigation (`DecagonRoute`):** Introduced a sealed interface `DecagonRoute` with `kotlinx.serialization` to replace string-based navigation routes, making navigation more robust and less error-prone.&#10;*   **Refactored `DecagonNavGraph`:** Updated the navigation graph to use the new type-safe `DecagonRoute` objects for all destinations.&#10;*   **Startup Logic:** `MainActivity` now uses `produceState` to determine the initial route (`Onboarding` or `Portfolio`) based on whether a wallet exists, simplifying the startup flow.&#10;&#10;**Domain &amp; Data**&#10;*   **Extended Data Models:** Added `isViewOnly` to `DecagonWallet` and `logoUrl`, `valueUsd`, and `change24h` to `TokenBalance`.&#10;*   **New Entities:** Added `PortfolioHistoryEntity` and `NotificationEntity` to the local database schema to support future features.&#10;&#10;**Legacy &amp; Code Cleanup**&#10;*   **Deleted `DecagonSendSheet`:** The old send sheet was removed and replaced with a redesigned version in the `components` package.&#10;*   **Removed Unused IDE files:** Deleted `.idea/.gitignore` and `.idea/inspectionProfiles/Project_Default.xml`.&#10;*   Removed commented-out Firebase dependencies from `gradle/libs.versions.toml`.">
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/KoinCryptoAppMainActivity.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/app/notification/NotificationService.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/components/BottomNavBar.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinChartEntity.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinDao.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinDatabase.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinDetailDto.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinEntity.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinGeckoApiService.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinMappers.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinRepositoryImpl.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/Mappers.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/NetworkUtil.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/TimeRange.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/dto/CoinMarketChartResponse.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/notification/NotificationDao.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/notification/NotificationDatabase.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/notification/NotificationRepository.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioBalanceEntity.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioDao.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioHoldingEntity.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioInitializer.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioMappers.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioRepositoryImpl.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioTransactionEntity.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/session/SessionManager.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/transaction/TransactionRepositoryImpl.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/user/LocalUserRepository.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/user/Mappers.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/user/UserDao.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/user/UserDatabase.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/user/UserEntity.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/watchlist/WatchlistDao.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/watchlist/WatchlistEntity.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/watchlist/WatchlistMappers.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/watchlist/WatchlistRepositoryImpl.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/di/coinModule.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/di/koinCoreModule.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/di/koinPortfolioModule.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/di/koinTransactionModule.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/di/koinUserModule.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/di/koinWatchlistModule.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/coin/CoinRepository.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/coin/GetCoinByIdUseCase.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/coin/GetCoinsUseCase.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/coin/RefreshCoinsUseCase.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/model/Coin.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/model/Transaction.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/notification/Notification.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/portfolio/Portfolio.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/portfolio/PortfolioRepository.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/portfolio/PortfolioUseCases.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/transaction/GetTransactionsUseCase.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/transaction/TransactionRepository.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/user/User.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/user/UserRepository.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/watchlist/WatchlistItem.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/watchlist/WatchlistRepository.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/navigation/NavGraph.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/navigation/Screen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/auth/AuthScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/auth/AuthViewModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/base/BaseViewModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coindetail/CoinDetailScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coindetail/CoinDetailViewModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coindetail/PriceChart.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coindetail/SetPriceAlertDialog.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coinlist/BuyBottomSheet.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coinlist/BuySuccessBottomSheet.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coinlist/CoinListScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coinlist/CoinListStates.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coinlist/CoinListToolbar.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coinlist/CoinListViewModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/notification/NotificationDetailScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/notification/NotificationDetailViewModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/notification/NotificationScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/notification/NotificationViewModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/BuyCoinDialog.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/BuySuccessBottomSheet.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/BuyTransactionDetails.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/PortfolioChart.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/PortfolioHoldingsBottomSheet.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/PortfolioPerformanceChart.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/PortfolioScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/PortfolioStates.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/PortfolioViewModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfoliodetail/PortfolioDetailScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfoliodetail/PortfolioDetailUiEvent.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfoliodetail/PortfolioDetailUiState.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfoliodetail/PortfolioDetailViewModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfoliodetail/SellSuccessBottomSheet.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/profile/EditProfileScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/profile/ProfileScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/profile/ProfileViewModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/session/SessionViewModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/settings/SettingsScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/settings/SettingsViewModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/splash/SplashScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/theme/Color.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/theme/Theme.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/theme/Type.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactiondetail/TransactionDetailScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactiondetail/TransactionDetailUiState.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactiondetail/TransactionDetailViewModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactionhistory/TransactionCard.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactionhistory/TransactionHistoryScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactionhistory/TransactionHistoryViewModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactionsuccess/TransactionSuccessScreen.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/util/NetworkEntryPoint.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/util/NetworkMonitor.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/DecagonBottomNavBar.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/executionHistory/executionHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.11.1/executionHistory/executionHistory.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/executionHistory/executionHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.11.1/executionHistory/executionHistory.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/fileHashes.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/fileHashes.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/resourceHashesCache.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/resourceHashesCache.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/file-system.probe" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/file-system.probe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/decagon/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/decagon/MainActivity.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/navigation/DecagonNavGraph.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/navigation/DecagonNavGraph.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/navigation/DecagonRoute.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/navigation/DecagonRoute.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[]" />
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Kotlin File" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Moyosoreoluwaaa&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Moyosoreoluwaaa/Decagon&quot;,
+    &quot;accountId&quot;: &quot;bab2e1a3-359f-4c60-9f31-61a9c6cbcc29&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 4
+}</component>
+  <component name="ProjectId" id="372R1ajN22BTGaPgajVYDoKXeey" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Android App.app.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Users/Mo/AndroidStudioProjects/Decagon/app/src/main/kotlin/com/decagon"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Mo\AndroidStudioProjects\Decagon\app\src\main\kotlin\com\decagon" />
+    </key>
+    <key name="K2MoveDeclarationsDialog.RECENT_PACKAGE_KEY">
+      <recent name="com.decagon.ui.components" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="app" type="AndroidRunConfigurationType" factoryName="Android App" activateToolWindowBeforeRun="false">
+      <module name="Decagon.app" />
+      <option name="ANDROID_RUN_CONFIGURATION_SCHEMA_VERSION" value="1" />
+      <option name="DEPLOY" value="true" />
+      <option name="DEPLOY_APK_FROM_BUNDLE" value="false" />
+      <option name="DEPLOY_AS_INSTANT" value="false" />
+      <option name="ARTIFACT_NAME" value="" />
+      <option name="PM_INSTALL_OPTIONS" value="" />
+      <option name="ALL_USERS" value="false" />
+      <option name="ALWAYS_INSTALL_WITH_PM" value="false" />
+      <option name="ALLOW_ASSUME_VERIFIED" value="false" />
+      <option name="CLEAR_APP_STORAGE" value="false" />
+      <option name="DYNAMIC_FEATURES_DISABLED_LIST" value="" />
+      <option name="ACTIVITY_EXTRA_FLAGS" value="" />
+      <option name="MODE" value="default_activity" />
+      <option name="RESTORE_ENABLED" value="false" />
+      <option name="RESTORE_FILE" value="" />
+      <option name="RESTORE_FRESH_INSTALL_ONLY" value="false" />
+      <option name="CLEAR_LOGCAT" value="false" />
+      <option name="SHOW_LOGCAT_AUTOMATICALLY" value="false" />
+      <option name="TARGET_SELECTION_MODE" value="DEVICE_AND_SNAPSHOT_COMBO_BOX" />
+      <option name="SELECTED_CLOUD_MATRIX_CONFIGURATION_ID" value="-1" />
+      <option name="SELECTED_CLOUD_MATRIX_PROJECT_ID" value="" />
+      <option name="DEBUGGER_TYPE" value="Auto" />
+      <Auto>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Auto>
+      <Hybrid>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Hybrid>
+      <Java>
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Java>
+      <Native>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Native>
+      <Profilers>
+        <option name="ADVANCED_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_CONFIGURATION_NAME" value="Java/Kotlin Method Sample (legacy)" />
+        <option name="STARTUP_NATIVE_MEMORY_PROFILING_ENABLED" value="false" />
+        <option name="NATIVE_MEMORY_SAMPLE_RATE_BYTES" value="2048" />
+      </Profilers>
+      <option name="DEEP_LINK" value="" />
+      <option name="ACTIVITY" value="" />
+      <option name="ACTIVITY_CLASS" value="" />
+      <option name="SEARCH_ACTIVITY_IN_GLOBAL_SCOPE" value="false" />
+      <option name="SKIP_ACTIVITY_VALIDATION" value="false" />
+      <method v="2">
+        <option name="Android.Gradle.BeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="90e32f5b-d68b-42b4-997c-b5b779bfa59e" name="Changes" comment="" />
+      <created>1766098970417</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1766098970417</updated>
+    </task>
+    <task id="LOCAL-00001" summary="Refactor: Modernize Wallet UI, introduce composable components, and enhance navigation&#10;&#10;This commit introduces a major user interface overhaul for the main wallet screen, replacing the previous design with a modern, &quot;glassmorphic&quot; aesthetic. It modularizes UI elements into reusable Jetpack Compose components and refactors navigation to be type-safe.&#10;&#10;**UI/UX Overhaul (Jetpack Compose)**&#10;*   **New `DecagonWalletScreen`:** Implemented a completely new wallet screen with a modern, gradient-based UI. It features a vertical scroll layout with distinct sections for the top bar, balance hero, portfolio chart, and quick actions.&#10;*   **`FloatingTopBar` Component:** Created a new top bar component that includes a wallet switcher trigger (profile icon), a `NetworkPillBadge`, and a notifications icon.&#10;*   **`BalanceHeroSection` Component:** Implemented a central display for the wallet balance, fiat value, and a copyable truncated address.&#10;*   **`DecagonQuickActionsBar`:** Redesigned the quick actions (Send, Receive, Buy, Swap) into a floating bar with updated styling. It now disables &quot;Send&quot; and &quot;Swap&quot; for view-only wallets.&#10;*   **`PortfolioPerformanceChart`:** Added a new, animated line chart to visualize portfolio history, complete with a `TimeRangeSelector` (1D, 1W, 1M, 1Y, ALL).&#10;*   **Modal &amp; Sheet Redesign:**&#10;    *   `DecagonSendSheet`, `DecagonReceiveSheet`, and `TokenSelectorSheet` have been restyled with a consistent dark, transparent background, updated fields, and improved button aesthetics.&#10;    *   Introduced `WalletSwitcherModal` and `NetworkSelectorModal` for improved wallet and network management directly from the main screen.&#10;&#10;**Navigation &amp; Architecture**&#10;*   **Type-Safe Navigation (`DecagonRoute`):** Introduced a sealed interface `DecagonRoute` with `kotlinx.serialization` to replace string-based navigation routes, making navigation more robust and less error-prone.&#10;*   **Refactored `DecagonNavGraph`:** Updated the navigation graph to use the new type-safe `DecagonRoute` objects for all destinations.&#10;*   **Startup Logic:** `MainActivity` now uses `produceState` to determine the initial route (`Onboarding` or `Portfolio`) based on whether a wallet exists, simplifying the startup flow.&#10;&#10;**Domain &amp; Data**&#10;*   **Extended Data Models:** Added `isViewOnly` to `DecagonWallet` and `logoUrl`, `valueUsd`, and `change24h` to `TokenBalance`.&#10;*   **New Entities:** Added `PortfolioHistoryEntity` and `NotificationEntity` to the local database schema to support future features.&#10;&#10;**Legacy &amp; Code Cleanup**&#10;*   **Deleted `DecagonSendSheet`:** The old send sheet was removed and replaced with a redesigned version in the `components` package.&#10;*   **Removed Unused IDE files:** Deleted `.idea/.gitignore` and `.idea/inspectionProfiles/Project_Default.xml`.&#10;*   Removed commented-out Firebase dependencies from `gradle/libs.versions.toml`.">
+      <option name="closed" value="true" />
+      <created>1766103468622</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1766103468622</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
+    <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Refactor: Modernize Wallet UI, introduce composable components, and enhance navigation&#10;&#10;This commit introduces a major user interface overhaul for the main wallet screen, replacing the previous design with a modern, &quot;glassmorphic&quot; aesthetic. It modularizes UI elements into reusable Jetpack Compose components and refactors navigation to be type-safe.&#10;&#10;**UI/UX Overhaul (Jetpack Compose)**&#10;*   **New `DecagonWalletScreen`:** Implemented a completely new wallet screen with a modern, gradient-based UI. It features a vertical scroll layout with distinct sections for the top bar, balance hero, portfolio chart, and quick actions.&#10;*   **`FloatingTopBar` Component:** Created a new top bar component that includes a wallet switcher trigger (profile icon), a `NetworkPillBadge`, and a notifications icon.&#10;*   **`BalanceHeroSection` Component:** Implemented a central display for the wallet balance, fiat value, and a copyable truncated address.&#10;*   **`DecagonQuickActionsBar`:** Redesigned the quick actions (Send, Receive, Buy, Swap) into a floating bar with updated styling. It now disables &quot;Send&quot; and &quot;Swap&quot; for view-only wallets.&#10;*   **`PortfolioPerformanceChart`:** Added a new, animated line chart to visualize portfolio history, complete with a `TimeRangeSelector` (1D, 1W, 1M, 1Y, ALL).&#10;*   **Modal &amp; Sheet Redesign:**&#10;    *   `DecagonSendSheet`, `DecagonReceiveSheet`, and `TokenSelectorSheet` have been restyled with a consistent dark, transparent background, updated fields, and improved button aesthetics.&#10;    *   Introduced `WalletSwitcherModal` and `NetworkSelectorModal` for improved wallet and network management directly from the main screen.&#10;&#10;**Navigation &amp; Architecture**&#10;*   **Type-Safe Navigation (`DecagonRoute`):** Introduced a sealed interface `DecagonRoute` with `kotlinx.serialization` to replace string-based navigation routes, making navigation more robust and less error-prone.&#10;*   **Refactored `DecagonNavGraph`:** Updated the navigation graph to use the new type-safe `DecagonRoute` objects for all destinations.&#10;*   **Startup Logic:** `MainActivity` now uses `produceState` to determine the initial route (`Onboarding` or `Portfolio`) based on whether a wallet exists, simplifying the startup flow.&#10;&#10;**Domain &amp; Data**&#10;*   **Extended Data Models:** Added `isViewOnly` to `DecagonWallet` and `logoUrl`, `valueUsd`, and `change24h` to `TokenBalance`.&#10;*   **New Entities:** Added `PortfolioHistoryEntity` and `NotificationEntity` to the local database schema to support future features.&#10;&#10;**Legacy &amp; Code Cleanup**&#10;*   **Deleted `DecagonSendSheet`:** The old send sheet was removed and replaced with a redesigned version in the `components` package.&#10;*   **Removed Unused IDE files:** Deleted `.idea/.gitignore` and `.idea/inspectionProfiles/Project_Default.xml`.&#10;*   Removed commented-out Firebase dependencies from `gradle/libs.versions.toml`." />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactor: Modernize Wallet UI, introduce composable components, and enhance navigation&#10;&#10;This commit introduces a major user interface overhaul for the main wallet screen, replacing the previous design with a modern, &quot;glassmorphic&quot; aesthetic. It modularizes UI elements into reusable Jetpack Compose components and refactors navigation to be type-safe.&#10;&#10;**UI/UX Overhaul (Jetpack Compose)**&#10;*   **New `DecagonWalletScreen`:** Implemented a completely new wallet screen with a modern, gradient-based UI. It features a vertical scroll layout with distinct sections for the top bar, balance hero, portfolio chart, and quick actions.&#10;*   **`FloatingTopBar` Component:** Created a new top bar component that includes a wallet switcher trigger (profile icon), a `NetworkPillBadge`, and a notifications icon.&#10;*   **`BalanceHeroSection` Component:** Implemented a central display for the wallet balance, fiat value, and a copyable truncated address.&#10;*   **`DecagonQuickActionsBar`:** Redesigned the quick actions (Send, Receive, Buy, Swap) into a floating bar with updated styling. It now disables &quot;Send&quot; and &quot;Swap&quot; for view-only wallets.&#10;*   **`PortfolioPerformanceChart`:** Added a new, animated line chart to visualize portfolio history, complete with a `TimeRangeSelector` (1D, 1W, 1M, 1Y, ALL).&#10;*   **Modal &amp; Sheet Redesign:**&#10;    *   `DecagonSendSheet`, `DecagonReceiveSheet`, and `TokenSelectorSheet` have been restyled with a consistent dark, transparent background, updated fields, and improved button aesthetics.&#10;    *   Introduced `WalletSwitcherModal` and `NetworkSelectorModal` for improved wallet and network management directly from the main screen.&#10;&#10;**Navigation &amp; Architecture**&#10;*   **Type-Safe Navigation (`DecagonRoute`):** Introduced a sealed interface `DecagonRoute` with `kotlinx.serialization` to replace string-based navigation routes, making navigation more robust and less error-prone.&#10;*   **Refactored `DecagonNavGraph`:** Updated the navigation graph to use the new type-safe `DecagonRoute` objects for all destinations.&#10;*   **Startup Logic:** `MainActivity` now uses `produceState` to determine the initial route (`Onboarding` or `Portfolio`) based on whether a wallet exists, simplifying the startup flow.&#10;&#10;**Domain &amp; Data**&#10;*   **Extended Data Models:** Added `isViewOnly` to `DecagonWallet` and `logoUrl`, `valueUsd`, and `change24h` to `TokenBalance`.&#10;*   **New Entities:** Added `PortfolioHistoryEntity` and `NotificationEntity` to the local database schema to support future features.&#10;&#10;**Legacy &amp; Code Cleanup**&#10;*   **Deleted `DecagonSendSheet`:** The old send sheet was removed and replaced with a redesigned version in the `components` package.&#10;*   **Removed Unused IDE files:** Deleted `.idea/.gitignore` and `.idea/inspectionProfiles/Project_Default.xml`.&#10;*   Removed commented-out Firebase dependencies from `gradle/libs.versions.toml`." />
+  </component>
+  <component name="play_dynamic_filters_status">
+    <option name="appIdToCheckInfo">
+      <map>
+        <entry key="com.decagon">
+          <value>
+            <CheckInfo lastCheckTimestamp="1766103917351" />
+          </value>
+        </entry>
+        <entry key="com.decagon.test">
+          <value>
+            <CheckInfo lastCheckTimestamp="1766103917350" />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

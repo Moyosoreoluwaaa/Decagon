@@ -16,11 +16,20 @@ data class DecagonWallet(
     val balance: Double = 0.0, // SOL balance (mocked in 0.1)
     val createdAt: Long,
     val isActive: Boolean = false,
+    val isViewOnly: Boolean = false, // Add this property
     val chains: List<ChainWallet> = listOf(),
     val activeChainId: String = ChainType.Solana.id
 ) {
     val activeChain: ChainWallet?
         get() = chains.find { it.chainId == activeChainId }
+
     val truncatedAddress: String
         get() = "${address.take(4)}...${address.takeLast(4)}"
 }
+//
+//data class ChainWallet(
+//    val chainId: String,
+//    val chainType: ChainType,
+//    val address: String,
+//    val balance: Double = 0.0
+//)

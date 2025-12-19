@@ -98,7 +98,7 @@ androidxWork = "2.11.0"  # For background tasks (e.g., scheduled transactions, o
 androidxBenchmarkMacro = "1.3.3"  # For macrobenchmark testing
 
 # NEW: Firebase Additions (for push notifications, crash reporting, remote config/flags)
-firebaseBom = "33.13.0"  # Latest BoM for Firebase
+#firebaseBom = "33.13.0"  # Latest BoM for Firebase
 firebaseMessaging = "24.1.0"  # For push notifications (e.g., transaction confirms, whale alerts); KTX deprecated, use main
 firebaseCrashlytics = "19.4.4"  # For crash reporting; KTX deprecated, use main
 firebaseRemoteConfig = "22.1.1"  # For feature flags/remote config; KTX deprecated, use main

@@ -68,9 +68,21 @@ data class TokenBalance(
     val uiAmount: Double,
     val tokenAccount: String,
     val isNative: Boolean,
-    val symbol: String = "???",        // Add this
-    val name: String = "Unknown",      // Add this
-    val tokenInfo: TokenInfo? = null
+    val symbol: String = "???",
+    val name: String = "Unknown",
+    val tokenInfo: TokenInfo? = null,
+    // Additional properties for UI display
+    val logoUrl: String? = tokenInfo?.logoURI,
+    val valueUsd: Double = 0.0,
+    val change24h: Double? = null
+)
+
+// ==================== PORTFOLIO HISTORY ====================
+
+data class PortfolioHistoryPoint(
+    val timestamp: Long,
+    val totalValueUsd: Double,
+    val tokens: Map<String, Double> = emptyMap() // token mint -> value
 )
 
 // ==================== SECURITY WARNING ====================

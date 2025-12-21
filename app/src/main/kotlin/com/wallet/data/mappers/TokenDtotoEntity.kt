@@ -27,21 +27,18 @@ fun TokenDto.toEntity(): TokenEntity {
         id = id,
         symbol = symbol,
         name = name,
-        logoUrl = image,
+        logoUrl = image, // ✅ Direct from API
         currentPrice = currentPrice,
         priceChange24h = priceChange24h ?: 0.0,
         marketCap = marketCap,
         volume24h = totalVolume,
         rank = marketCapRank ?: 999,
         isVerified = true,
-        tags = "", // CoinGecko /markets doesn't provide tags
-
-        // Extract Solana mint address from platforms map
+        tags = "",
         mintAddress = platforms?.get("solana"),
-
         lastUpdated = System.currentTimeMillis()
     ).also {
-        Timber.d("✅ TokenEntity created: ${it.symbol} - Logo: ${it.logoUrl}")
+        Timber.d("✅ TokenEntity: ${it.symbol} - Logo: ${it.logoUrl}")
     }
 }
 
@@ -69,16 +66,6 @@ fun TokenEntity.toDomain(): Token {
 
 // ==================== LIST EXTENSIONS ====================
 
-fun List<TokenDto>.toEntities(): List<TokenEntity> {
-    Timber.d("📦 Converting ${this.size} TokenDTOs to Entities")
-    val entities = map { it.toEntity() }
-
-    // Log first 3 for verification
-    entities.take(3).forEach {
-        Timber.d("  • ${it.symbol}: ${it.logoUrl?.take(50)}...")
-    }
-
-    return entities
-}
+fun List<TokenDto>.toEntities(): List<TokenEntity> = map { it.toEntity() }
 
 fun List<TokenEntity>.toDomainTokens(): List<Token> = map { it.toDomain() }

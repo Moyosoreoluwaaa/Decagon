@@ -49,7 +49,6 @@ val repositoryModule = module {
             discoverDao = get(),
             networkMonitor = get(),
             driftApi = get(),
-            tokenLogoResolver = get()
         )
     }
 }

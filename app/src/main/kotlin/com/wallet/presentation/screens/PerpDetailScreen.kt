@@ -41,7 +41,7 @@ import com.octane.wallet.presentation.theme.AppColors
 import com.octane.wallet.presentation.theme.AppTypography
 import com.octane.wallet.presentation.theme.Dimensions
 import com.octane.wallet.presentation.utils.UiFormatters
-import com.octane.wallet.presentation.viewmodel.PerpDetailViewModel
+import com.wallet.presentation.viewmodel.PerpDetailViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

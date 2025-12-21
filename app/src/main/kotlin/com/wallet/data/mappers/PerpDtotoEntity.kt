@@ -27,7 +27,7 @@ fun DriftContractDto.toEntity(
         id = tickerId,
         symbol = tickerId,
         name = "$baseCurrency-$quoteCurrency Perpetual",
-        logoUrl = logoUrl!!,
+        logoUrl = logoUrl,
 
         // Prices (convert from String)
         indexPrice = indexPrice.toDoubleOrNull() ?: 0.0,

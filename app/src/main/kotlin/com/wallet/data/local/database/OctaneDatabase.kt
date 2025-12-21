@@ -7,7 +7,7 @@ import com.octane.wallet.data.local.database.converters.OctaneTypeConverters
 import com.octane.wallet.data.local.database.dao.ApprovalDao
 import com.octane.wallet.data.local.database.dao.AssetDao
 import com.octane.wallet.data.local.database.dao.ContactDao
-import com.octane.wallet.data.local.database.dao.DiscoverDao
+import com.wallet.data.local.database.dao.DiscoverDao
 import com.octane.wallet.data.local.database.dao.StakingDao
 import com.octane.wallet.data.local.database.dao.TransactionDao
 import com.octane.wallet.data.local.database.dao.WalletDao

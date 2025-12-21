@@ -1,10 +1,11 @@
 package com.wallet.data.repository
 
 import com.octane.wallet.core.network.NetworkMonitor
-import com.octane.wallet.data.local.database.dao.DiscoverDao
+import com.wallet.data.local.database.dao.DiscoverDao
 import com.octane.wallet.data.mappers.toDomainDApps
 import com.octane.wallet.data.mappers.toDomainPerps
 import com.octane.wallet.data.mappers.toEntities
+import com.octane.wallet.data.mappers.toEntity
 import com.octane.wallet.data.remote.api.DeFiLlamaApi
 import com.octane.wallet.data.remote.api.DiscoverApi
 import com.octane.wallet.data.remote.api.DriftApi
@@ -15,8 +16,10 @@ import com.octane.wallet.domain.models.Token
 import com.wallet.domain.repository.DiscoverRepository
 import com.wallet.core.util.LoadingState
 import com.wallet.data.mappers.toDomainTokens
-import com.wallet.data.mappers.toEntities
-import com.wallet.data.service.TokenLogoResolver
+import com.wallet.data.mappers.toEntity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -33,385 +36,260 @@ class DiscoverRepositoryImpl(
     private val defiLlamaApi: DeFiLlamaApi,
     private val driftApi: DriftApi,
     private val discoverDao: DiscoverDao,
-    private val networkMonitor: NetworkMonitor,
-    private val tokenLogoResolver: TokenLogoResolver
+    private val networkMonitor: NetworkMonitor
 ) : DiscoverRepository {
-
-    init {
-        Timber.d("ðŸš€ DiscoverRepositoryImpl initialized")
-    }
 
     // ==================== TOKENS ====================
 
     override fun observeTokens(): Flow<LoadingState<List<Token>>> {
-        Timber.d("ðŸ“Š observeTokens() called - Starting token observation flow")
-
         return discoverDao.observeTokens()
             .map { entities ->
-                Timber.d("ðŸ’¾ Database emitted ${entities.size} token entities")
-
                 if (entities.isEmpty()) {
-                    Timber.w("âš ï¸  No tokens in database, emitting Loading state")
                     LoadingState.Loading
                 } else {
-                    Timber.d("âœ… Converting ${entities.size} entities to domain models")
                     val tokens = entities.toDomainTokens()
-                    Timber.d("âœ… Successfully converted to ${tokens.size} domain tokens")
-                    Timber.d(
-                        "ðŸ“‹ Sample tokens: ${tokens.take(3).map { "${it.symbol} - ${it.name}" }}"
-                    )
                     LoadingState.Success(tokens)
                 }
             }
             .onStart {
-                Timber.d("ðŸ”„ Flow started - Checking if tokens are stale")
-                val isStale = isTokensStale()
-                Timber.d("â ° Tokens stale check result: $isStale")
-
-                if (isStale) {
-                    Timber.i("ðŸ”„ Tokens are stale, triggering refresh")
+                // ✅ FIX 1: Only refresh if DB empty OR stale
+                val count = discoverDao.getTokensCount()
+                if (count == 0 || isTokensStale()) {
+                    Timber.i("🔄 Tokens refresh needed (count=$count)")
                     refreshTokens()
                 } else {
-                    Timber.d("âœ… Tokens are fresh, no refresh needed")
+                    Timber.d("✅ Using cached tokens (count=$count)")
                 }
             }
             .catch { e ->
-                Timber.e(e, "â Œ Error in observeTokens flow") // Timber: Exception first
-                emit(LoadingState.Error(e, "Failed to load tokens: ${e.message}"))
+                Timber.e(e, "❌ Error in observeTokens")
+                emit(LoadingState.Error(e, "Failed to load tokens"))
             }
             .distinctUntilChanged()
     }
 
     override fun observeTrendingTokens(): Flow<LoadingState<List<Token>>> {
-        Timber.d("ðŸ”¥ observeTrendingTokens() called")
-
         return discoverDao.observeTrendingTokens()
             .map { entities ->
-                Timber.d("ðŸ’¾ Database emitted ${entities.size} trending token entities")
-
-                if (entities.isEmpty()) {
-                    Timber.w("âš ï¸  No trending tokens in database")
-                    LoadingState.Loading
-                } else {
-                    val tokens = entities.toDomainTokens()
-                    Timber.d("âœ… Converted to ${tokens.size} trending tokens")
-                    LoadingState.Success(tokens)
-                }
+                if (entities.isEmpty()) LoadingState.Loading
+                else LoadingState.Success(entities.toDomainTokens())
             }
             .onStart {
-                val isStale = isTokensStale()
-                Timber.d("â ° Trending tokens stale check: $isStale")
-                if (isStale) {
-                    Timber.i("ðŸ”„ Refreshing trending tokens")
+                val count = discoverDao.getTokensCount()
+                if (count == 0 || isTokensStale()) {
                     refreshTokens()
                 }
             }
             .catch { e ->
-                Timber.e(e, "â Œ Error in observeTrendingTokens flow") // Timber: Exception first
-                emit(LoadingState.Error(e, "Failed to load trending tokens: ${e.message}"))
+                Timber.e(e, "❌ Error in observeTrendingTokens")
+                emit(LoadingState.Error(e, "Failed to load trending tokens"))
             }
             .distinctUntilChanged()
     }
 
     override fun searchTokens(query: String): Flow<LoadingState<List<Token>>> {
-        Timber.d("ðŸ”  searchTokens() called with query: '$query'")
-
         return discoverDao.searchTokens(query)
             .map { entities ->
-                Timber.d("ðŸ’¾ Search returned ${entities.size} token entities")
-                val tokens = entities.toDomainTokens()
-                Timber.d("âœ… Search converted to ${tokens.size} tokens")
-                LoadingState.Success(tokens)
+                LoadingState.Success(entities.toDomainTokens()) as LoadingState<List<Token>>
             }
             .catch { e ->
-                Timber.e(e, "â Œ Error in searchTokens flow") // Timber: Exception first
-                // The original code has an unsafe cast here, using `emit` with the correct type.
-                // Assuming the original intention was to emit the Error state, but it was cast incorrectly.
-                emit(
-                    LoadingState.Error(
-                        e,
-                        "Search failed: ${e.message}"
-                    ) as LoadingState.Success<List<Token>>
-                )
+                Timber.e(e, "❌ Error in searchTokens")
+                emit(LoadingState.Error(e, "Search failed"))
             }
     }
 
-    override suspend fun refreshTokens(): LoadingState<Unit> {
-        Timber.i("🔄 refreshTokens() called")
-
-        val isConnected = networkMonitor.isConnected.value
-        Timber.d("🌐 Network connected: $isConnected")
-
-        if (!isConnected) {
-            Timber.w("⚠️ No internet connection, cannot refresh tokens")
-            return LoadingState.Error(
+    override suspend fun refreshTokens(): LoadingState<Unit> = coroutineScope {
+        if (!networkMonitor.isConnected.value) {
+            Timber.w("⚠️ Offline - skipping token refresh")
+            return@coroutineScope LoadingState.Error(
                 Exception("Offline"),
-                "No internet connection. Showing cached data."
+                "No internet connection"
             )
         }
 
-        return try {
-            Timber.d("📡 Fetching tokens from CoinGecko API...")
+        try {
+            Timber.d("📡 Fetching tokens from CoinGecko...")
 
-            val tokensDto = discoverApi.getTokens(
-                vsCurrency = "usd",
-                order = "market_cap_desc",
-                perPage = 100,
-                page = 1
-            )
-
-            Timber.i("✅ API returned ${tokensDto.size} tokens")
-
-            // ✅ ADD: Log logo URLs from API response
-            Timber.d("📸 First 5 token logos from API:")
-            tokensDto.take(5).forEach { dto ->
-                Timber.d("  • ${dto.symbol}: ${dto.image}")
+            // ✅ FIX 3: Parallel operations
+            val fetchJob = async(Dispatchers.IO) {
+                discoverApi.getTokens(
+                    vsCurrency = "usd",
+                    order = "market_cap_desc",
+                    perPage = 100,
+                    page = 1
+                )
             }
 
-            // Convert DTO to Entity
-            Timber.d("🔄 Converting DTOs to entities...")
-            val entities = tokensDto.toEntities() // This now logs each entity
+            val tokensDto = fetchJob.await()
+            Timber.i("✅ API returned ${tokensDto.size} tokens")
 
-            // Save to database
-            Timber.d("💾 Inserting ${entities.size} tokens into database...")
+            // ✅ FIX 2: Use API logo directly (no resolver)
+            val entities = tokensDto.map { dto ->
+                dto.toEntity() // Already has `image` field from API
+            }
+
+            // Single bulk insert
             discoverDao.insertTokens(entities)
-            Timber.i("✅ Successfully inserted tokens into database")
+            Timber.i("✅ Inserted ${entities.size} tokens")
 
             LoadingState.Success(Unit)
         } catch (e: Exception) {
             Timber.e(e, "❌ Failed to refresh tokens")
-            LoadingState.Error(e, "Failed to refresh tokens: ${e.message}")
+            LoadingState.Error(e, "Failed to refresh tokens")
         }
     }
 
     private suspend fun isTokensStale(): Boolean {
-        Timber.d("â ° Checking token staleness...")
-
-        val lastUpdate = discoverDao.getTokensLastUpdateTime()
-        Timber.d("â ° Last update time: $lastUpdate")
-
-        if (lastUpdate == null) {
-            Timber.d("â ° No last update time found - tokens are stale")
-            return true
-        }
-
+        val lastUpdate = discoverDao.getTokensLastUpdateTime() ?: return true
         val age = System.currentTimeMillis() - lastUpdate
-        val ageMinutes = age / 60000
-        val staleThreshold = 5.minutes.inWholeMilliseconds
-        val isStale = age > staleThreshold
-
-        Timber.d("â ° Token age: ${ageMinutes}min, threshold: 5min, isStale: $isStale")
-
+        val isStale = age > 5.minutes.inWholeMilliseconds
+        Timber.d("⏰ Token age check: isStale=$isStale")
         return isStale
     }
 
     // ==================== PERPS ====================
 
     override fun observePerps(): Flow<LoadingState<List<Perp>>> {
-        Timber.d("ðŸ“Š observePerps() called")
-
         return discoverDao.observePerps()
             .map { entities ->
-                Timber.d("ðŸ’¾ Database emitted ${entities.size} perp entities")
-
-                if (entities.isEmpty()) {
-                    LoadingState.Loading
-                } else {
-                    LoadingState.Success(entities.toDomainPerps())
-                }
+                if (entities.isEmpty()) LoadingState.Loading
+                else LoadingState.Success(entities.toDomainPerps())
             }
             .onStart {
-                if (isPerpsStale()) {
-                    Timber.i("ðŸ”„ Perps are stale, refreshing")
+                val count = discoverDao.getPerpsCount()
+                if (count == 0 || isPerpsStale()) {
                     refreshPerps()
                 }
             }
             .catch { e ->
-                Timber.e(e, "â Œ Error in observePerps flow") // Timber: Exception first
+                Timber.e(e, "❌ Error in observePerps")
                 emit(LoadingState.Error(e, "Failed to load perps"))
             }
             .distinctUntilChanged()
     }
 
-    override suspend fun refreshPerps(): LoadingState<Unit> {
-        Timber.i("🔄 refreshPerps() called")
-
+    override suspend fun refreshPerps(): LoadingState<Unit> = coroutineScope {
         if (!networkMonitor.isConnected.value) {
-            Timber.w("⚠️ No internet connection, cannot refresh perps")
-            return LoadingState.Error(
+            return@coroutineScope LoadingState.Error(
                 Exception("Offline"),
-                "No internet connection. Showing cached data."
+                "No internet connection"
             )
         }
 
-        return try {
-            Timber.d("📡 Fetching perps from Drift API...")
-
+        try {
+            Timber.d("📡 Fetching perps from Drift...")
             val response = driftApi.getContracts()
 
-            // 1. Filter for PERP only, sort by volume, and take top 10
             val perpContracts = response.contracts
                 .filter { it.isPerpetual }
                 .sortedByDescending { it.quoteVolume.toDoubleOrNull() ?: 0.0 }
                 .take(10)
 
-            // 2. Resolve logos and filter out those that failed resolution
-            // We create a list of Pairs or a filtered list to ensure we don't have nulls
-            val entities = perpContracts.mapNotNull { dto ->
-                val baseSymbol = dto.baseCurrency.uppercase()
-                val logoUrl = tokenLogoResolver.resolveLogoUrl(baseSymbol)
-
-                // Only proceed if a logo was found
+            // ✅ Remove logo resolution - use placeholder
+            val entities = perpContracts.map { dto ->
+                dto.toEntity(logoUrl = null) // Let UI handle fallback
             }
 
-            Timber.i("🎨 Prepared ${entities.size} perps with logos for database insertion")
-
-            // 3. Save to database - ensure the DAO method accepts List<PerpEntity>
-//            if (entities.isNotEmpty()) {
-//                discoverDao.insertPerps(entities)
-//                Timber.i("✅ Successfully inserted ${entities.size} perps")
-//            }
+            discoverDao.insertPerps(entities)
+            Timber.i("✅ Inserted ${entities.size} perps")
 
             LoadingState.Success(Unit)
         } catch (e: Exception) {
             Timber.e(e, "❌ Failed to refresh perps")
-            LoadingState.Error(e, "Failed to refresh perps: ${e.message}")
+            LoadingState.Error(e, "Failed to refresh perps")
         }
     }
 
     override fun searchPerps(query: String): Flow<LoadingState<List<Perp>>> {
-        Timber.d("ðŸ”  searchPerps() called with query: '$query'")
-
         return discoverDao.searchPerps(query)
             .map { entities ->
-                LoadingState.Success(entities.toDomainPerps())
+                LoadingState.Success(entities.toDomainPerps()) as LoadingState<List<Perp>>
             }
             .catch { e ->
-                Timber.e(e, "â Œ Error in searchPerps flow") // Timber: Exception first
-                // The original code has an unsafe cast here, corrected to emit the Error state.
-                emit(LoadingState.Error(e, "Search failed") as LoadingState.Success<List<Perp>>)
+                Timber.e(e, "❌ Error in searchPerps")
+                emit(LoadingState.Error(e, "Search failed"))
             }
     }
 
     private suspend fun isPerpsStale(): Boolean {
         val lastUpdate = discoverDao.getPerpsLastUpdateTime() ?: return true
-        val age = System.currentTimeMillis() - lastUpdate
-        val isStale = age > 1.minutes.inWholeMilliseconds
-
-        Timber.d("â ° Perps age check: isStale=$isStale")
-        return isStale
+        return System.currentTimeMillis() - lastUpdate > 1.minutes.inWholeMilliseconds
     }
 
     // ==================== DAPPS ====================
 
     override fun observeDApps(): Flow<LoadingState<List<DApp>>> {
-        Timber.d("ðŸ“Š observeDApps() called")
-
         return discoverDao.observeDApps()
             .map { entities ->
-                Timber.d("ðŸ’¾ Database emitted ${entities.size} dApp entities")
-
-                if (entities.isEmpty()) {
-                    LoadingState.Loading
-                } else {
-                    LoadingState.Success(entities.toDomainDApps())
-                }
+                if (entities.isEmpty()) LoadingState.Loading
+                else LoadingState.Success(entities.toDomainDApps())
             }
             .onStart {
-                if (isDAppsStale()) {
-                    Timber.i("ðŸ”„ dApps are stale, refreshing")
+                val count = discoverDao.getDAppsCount()
+                if (count == 0 || isDAppsStale()) {
                     refreshDApps()
                 }
             }
             .catch { e ->
-                Timber.e(e, "â Œ Error in observeDApps flow") // Timber: Exception first
+                Timber.e(e, "❌ Error in observeDApps")
                 emit(LoadingState.Error(e, "Failed to load dApps"))
             }
             .distinctUntilChanged()
     }
 
     override fun observeDAppsByCategory(category: DAppCategory): Flow<LoadingState<List<DApp>>> {
-        Timber.d("ðŸ“Š observeDAppsByCategory() called for: ${category.name}")
-
         return discoverDao.observeDAppsByCategory(category.name)
             .map { entities ->
-                LoadingState.Success(entities.toDomainDApps())
+                LoadingState.Success(entities.toDomainDApps()) as LoadingState<List<DApp>>
             }
             .catch { e ->
-                Timber.e(e, "â Œ Error in observeDAppsByCategory flow") // Timber: Exception first
-                // The original code has an unsafe cast here, corrected to emit the Error state.
-                emit(
-                    LoadingState.Error(
-                        e,
-                        "Failed to load dApps"
-                    ) as LoadingState.Success<List<DApp>>
-                )
+                Timber.e(e, "❌ Error in observeDAppsByCategory")
+                emit(LoadingState.Error(e, "Failed to load dApps"))
             }
     }
 
     override fun searchDApps(query: String): Flow<LoadingState<List<DApp>>> {
-        Timber.d("ðŸ”  searchDApps() called with query: '$query'")
-
         return discoverDao.searchDApps(query)
             .map { entities ->
-                LoadingState.Success(entities.toDomainDApps())
+                LoadingState.Success(entities.toDomainDApps()) as LoadingState<List<DApp>>
             }
             .catch { e ->
-                Timber.e(e, "â Œ Error in searchDApps flow") // Timber: Exception first
-                // The original code has an unsafe cast here, corrected to emit the Error state.
-                emit(LoadingState.Error(e, "Search failed") as LoadingState.Success<List<DApp>>)
+                Timber.e(e, "❌ Error in searchDApps")
+                emit(LoadingState.Error(e, "Search failed"))
             }
     }
 
-    override suspend fun refreshDApps(): LoadingState<Unit> {
-        Timber.i("🔄 refreshDApps() called")
-
+    override suspend fun refreshDApps(): LoadingState<Unit> = coroutineScope {
         if (!networkMonitor.isConnected.value) {
-            Timber.w("⚠️ No internet connection for dApps refresh")
-            return LoadingState.Error(
+            return@coroutineScope LoadingState.Error(
                 Exception("Offline"),
                 "No internet connection"
             )
         }
 
-        return try {
-            Timber.d("📡 Fetching protocols from DeFiLlama...")
+        try {
+            Timber.d("📡 Fetching dApps from DeFiLlama...")
             val allProtocols = defiLlamaApi.getProtocols()
-            Timber.i("✅ DeFiLlama returned ${allProtocols.size} total protocols")
 
-            // Filter for Solana dApps
             val solanaApps = allProtocols.filter { dto ->
-                dto.chains.any { it.equals("Solana", ignoreCase = true) } ||
-                        dto.chain?.equals("Solana", ignoreCase = true) == true
+                dto.chains.any { it.equals("Solana", ignoreCase = true) }
             }
 
             Timber.i("✅ Filtered to ${solanaApps.size} Solana dApps")
 
-            // ✅ ADD: Log logo URLs from API
-            Timber.d("📸 First 5 dApp logos from API:")
-            solanaApps.take(5).forEach { dto ->
-                Timber.d("  • ${dto.name}: ${dto.logo ?: "NO LOGO (will use CDN fallback)"}")
-            }
-
-            // Convert DTO → Entity (logs inside mapper)
             val entities = solanaApps.toEntities()
-
             discoverDao.insertDApps(entities)
-            Timber.i("✅ dApps refresh completed - ${entities.size} inserted")
+            Timber.i("✅ Inserted ${entities.size} dApps")
 
             LoadingState.Success(Unit)
         } catch (e: Exception) {
             Timber.e(e, "❌ Failed to refresh dApps")
-            LoadingState.Error(e, "Failed to refresh dApps: ${e.message}")
+            LoadingState.Error(e, "Failed to refresh dApps")
         }
     }
 
     private suspend fun isDAppsStale(): Boolean {
         val lastUpdate = discoverDao.getDAppsLastUpdateTime() ?: return true
-        val age = System.currentTimeMillis() - lastUpdate
-        val isStale = age > 5.minutes.inWholeMilliseconds
-
-        Timber.d("â ° dApps age check: isStale=$isStale")
-        return isStale
+        return System.currentTimeMillis() - lastUpdate > 5.minutes.inWholeMilliseconds
     }
 }

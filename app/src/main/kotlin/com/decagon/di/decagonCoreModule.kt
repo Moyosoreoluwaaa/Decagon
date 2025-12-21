@@ -8,6 +8,8 @@ import com.decagon.core.security.DecagonBiometricAuthenticator
 import com.decagon.data.local.DecagonDatabase
 import com.decagon.data.repository.DecagonOnboardingStateRepository
 import com.decagon.data.repository.DecagonOnboardingStateRepositoryImpl
+import com.koin.data.session.SessionManager
+import com.koin.ui.session.SessionViewModel
 import com.octane.wallet.domain.usecases.discover.ObserveDAppsByCategoryUseCase
 import com.octane.wallet.domain.usecases.discover.ObserveDAppsUseCase
 import com.octane.wallet.domain.usecases.discover.ObservePerpsUseCase
@@ -23,7 +25,7 @@ import com.octane.wallet.domain.usecases.wallet.ObserveActiveWalletUseCase
 import com.octane.wallet.domain.usecases.wallet.SwitchActiveWalletUseCase
 import com.octane.wallet.presentation.viewmodel.DAppBrowserViewModel
 import com.octane.wallet.presentation.viewmodel.DiscoverViewModel
-import com.octane.wallet.presentation.viewmodel.PerpDetailViewModel
+import com.wallet.presentation.viewmodel.PerpDetailViewModel
 import com.octane.wallet.presentation.viewmodel.SettingsViewModel
 import com.octane.wallet.presentation.viewmodel.TokenDetailViewModel
 import com.wallet.data.repository.DiscoverRepositoryImpl
@@ -109,7 +111,6 @@ val decagonCoreModule = module {
             discoverDao = get(),
             networkMonitor = get(),
             driftApi = get(),
-            tokenLogoResolver = get()
         )
     }
 
@@ -146,5 +147,12 @@ val decagonCoreModule = module {
 
     // Token Details
     viewModel { TokenDetailViewModel(get()) }
+
+    single {
+        SessionManager(get())
+    }
+    viewModel {
+        SessionViewModel(get())
+    }
 
 }

@@ -1,4 +1,4 @@
-package com.octane.wallet.data.local.database.dao
+package com.wallet.data.local.database.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -135,4 +135,16 @@ interface DiscoverDao {
 
     @Query("DELETE FROM discover_dapps")
     suspend fun clearDApps()
+
+    /**
+     * Check if tokens table is empty (for first-load optimization).
+     */
+    @Query("SELECT COUNT(*) FROM discover_tokens")
+    suspend fun getTokensCount(): Int
+
+    @Query("SELECT COUNT(*) FROM discover_perps")
+    suspend fun getPerpsCount(): Int
+
+    @Query("SELECT COUNT(*) FROM discover_dapps")
+    suspend fun getDAppsCount(): Int
 }

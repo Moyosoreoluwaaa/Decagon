@@ -4,6 +4,7 @@ import com.octane.wallet.core.network.NetworkMonitor
 import com.wallet.core.util.LoadingState
 import com.octane.wallet.data.local.database.dao.AssetDao
 import com.octane.wallet.data.mappers.toDomain
+import com.wallet.data.mappers.toDomain
 import com.wallet.data.local.database.entities.AssetEntity
 import com.octane.wallet.data.remote.api.PriceApi
 import com.octane.wallet.data.remote.api.SolanaRpcApi

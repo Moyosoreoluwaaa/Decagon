@@ -3,6 +3,8 @@ package com.wallet.data.repository
 import com.octane.wallet.data.local.database.dao.WalletDao
 import com.octane.wallet.data.mappers.toDomain
 import com.octane.wallet.data.mappers.toEntity
+import com.wallet.data.mappers.toDomain
+import com.wallet.data.mappers.toEntity
 import com.octane.wallet.domain.models.Wallet
 import com.wallet.domain.repository.WalletRepository
 import kotlinx.coroutines.flow.Flow

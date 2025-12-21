@@ -2,6 +2,7 @@ package com.wallet.data.repository
 
 import com.octane.wallet.data.local.database.dao.ApprovalDao
 import com.octane.wallet.data.mappers.toDomain
+import com.wallet.data.mappers.toDomain
 import com.octane.wallet.data.remote.api.SolanaRpcApi
 import com.octane.wallet.domain.models.Approval
 import com.octane.wallet.domain.models.Transaction

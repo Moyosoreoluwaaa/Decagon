@@ -8,6 +8,8 @@ import com.octane.wallet.core.network.NetworkMonitor
 import com.octane.wallet.data.local.database.dao.TransactionDao
 import com.octane.wallet.data.mappers.toDomain
 import com.octane.wallet.data.mappers.toEntity
+import com.wallet.data.mappers.toDomain
+import com.wallet.data.mappers.toEntity
 import com.octane.wallet.data.remote.api.SolanaRpcApi
 import com.octane.wallet.data.remote.dto.solana.RpcRequest
 import com.octane.wallet.data.remote.dto.solana.SignaturesOptions

@@ -1,33 +1,38 @@
-package com.octane.wallet.data.mappers
+package com.wallet.data.mappers
 
 import com.octane.wallet.data.local.database.entities.PerpEntity
 import com.wallet.data.remote.dto.drift.DriftContractDto
 import com.octane.wallet.domain.models.Perp
+import com.wallet.data.service.PerpLogoProvider
 import timber.log.Timber
 
 /**
- * ✅ FIXED: Perp mappers with DYNAMIC logo resolution.
- * No longer limited to hardcoded list!
+ * ✅ FIXED: Perp mappers with INSTANT logo resolution.
+ * No API calls, no delays!
  */
 
-// ==================== DTO → ENTITY (WITH RESOLVER) ====================
+// ==================== DTO → ENTITY ====================
 
 /**
  * Convert Drift API DTO to Room Entity.
  *
- * IMPORTANT: Logo URL must be resolved separately via TokenLogoResolver.
- * This mapper just prepares the entity structure.
+ * ✅ NEW: Logo resolved instantly via PerpLogoProvider (no API call).
  */
-fun DriftContractDto.toEntity(
-    logoUrl: String? = null  // ⭐ Pass resolved logo from repository
-): PerpEntity {
-    Timber.d("📄 Mapping PerpDto: $tickerId - Logo: ${logoUrl ?: "NONE"}")
+fun DriftContractDto.toEntity(): PerpEntity {
+    // ✅ INSTANT logo resolution (O(1) map lookup)
+    val logoUrl = PerpLogoProvider.getLogoUrl(tickerId)
+
+    if (logoUrl == null) {
+        Timber.w("⚠️ No logo found for perp: $tickerId")
+    } else {
+        Timber.d("✅ Logo resolved: $tickerId -> ${logoUrl.take(50)}...")
+    }
 
     return PerpEntity(
         id = tickerId,
         symbol = tickerId,
         name = "$baseCurrency-$quoteCurrency Perpetual",
-        logoUrl = logoUrl,
+        logoUrl = logoUrl, // ✅ Instant, no delay
 
         // Prices (convert from String)
         indexPrice = indexPrice.toDoubleOrNull() ?: 0.0,
@@ -49,7 +54,7 @@ fun DriftContractDto.toEntity(
         exchange = "Drift",
         lastUpdated = System.currentTimeMillis()
     ).also {
-        Timber.d("✅ PerpEntity created: ${it.symbol}")
+        Timber.d("📝 PerpEntity created: ${it.symbol} - Logo: ${it.logoUrl != null}")
     }
 }
 

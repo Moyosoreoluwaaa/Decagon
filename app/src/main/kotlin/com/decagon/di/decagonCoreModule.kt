@@ -8,8 +8,31 @@ import com.decagon.core.security.DecagonBiometricAuthenticator
 import com.decagon.data.local.DecagonDatabase
 import com.decagon.data.repository.DecagonOnboardingStateRepository
 import com.decagon.data.repository.DecagonOnboardingStateRepositoryImpl
+import com.octane.wallet.domain.usecases.discover.ObserveDAppsByCategoryUseCase
+import com.octane.wallet.domain.usecases.discover.ObserveDAppsUseCase
+import com.octane.wallet.domain.usecases.discover.ObservePerpsUseCase
+import com.octane.wallet.domain.usecases.discover.ObserveTokensUseCase
+import com.octane.wallet.domain.usecases.discover.ObserveTrendingTokensUseCase
+import com.octane.wallet.domain.usecases.discover.RefreshDAppsUseCase
+import com.octane.wallet.domain.usecases.discover.RefreshPerpsUseCase
+import com.octane.wallet.domain.usecases.discover.RefreshTokensUseCase
+import com.octane.wallet.domain.usecases.discover.SearchDAppsUseCase
+import com.octane.wallet.domain.usecases.discover.SearchPerpsUseCase
+import com.octane.wallet.domain.usecases.discover.SearchTokensUseCase
+import com.octane.wallet.domain.usecases.wallet.ObserveActiveWalletUseCase
+import com.octane.wallet.domain.usecases.wallet.SwitchActiveWalletUseCase
+import com.octane.wallet.presentation.viewmodel.DAppBrowserViewModel
+import com.octane.wallet.presentation.viewmodel.DiscoverViewModel
+import com.octane.wallet.presentation.viewmodel.PerpDetailViewModel
+import com.octane.wallet.presentation.viewmodel.SettingsViewModel
+import com.octane.wallet.presentation.viewmodel.TokenDetailViewModel
+import com.wallet.data.repository.DiscoverRepositoryImpl
+import com.wallet.domain.repository.DiscoverRepository
+import com.wallet.domain.usecases.wallet.ObserveWalletsUseCase
+import com.wallet.domain.usecases.wallet.SetActiveWalletUseCase
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
@@ -57,4 +80,71 @@ val decagonCoreModule = module {
 
     // Security
     single { DecagonBiometricAuthenticator(androidContext()) }
+
+    // Discover Use Cases - Tokens
+    factory { ObserveTokensUseCase(get()) }
+    factory { ObserveTrendingTokensUseCase(get()) }
+    factory { SearchTokensUseCase(get()) }
+    factory { RefreshTokensUseCase(get()) }
+
+// Discover Use Cases - Perps
+    factory { ObservePerpsUseCase(get()) }
+    factory { SearchPerpsUseCase(get()) }
+    factory { RefreshPerpsUseCase(get()) }
+
+// Discover Use Cases - dApps
+    factory { ObserveDAppsUseCase(get()) }
+    factory { ObserveDAppsByCategoryUseCase(get()) }
+    factory { SearchDAppsUseCase(get()) }
+    factory { RefreshDAppsUseCase(get()) }
+    factory { SetActiveWalletUseCase(get()) }
+    factory { SwitchActiveWalletUseCase(get(), get()) }
+    factory { ObserveWalletsUseCase(get()) }
+    factory { ObserveActiveWalletUseCase(get()) }
+
+    single<DiscoverRepository> {
+        DiscoverRepositoryImpl(
+            discoverApi = get(),
+            defiLlamaApi = get(),
+            discoverDao = get(),
+            networkMonitor = get(),
+            driftApi = get(),
+            tokenLogoResolver = get()
+        )
+    }
+
+    // Discover/Search
+    viewModel {
+        DiscoverViewModel(
+            observeTrendingTokensUseCase = get(),
+            searchTokensUseCase = get(),
+            refreshTokensUseCase = get(),
+            observePerpsUseCase = get(),
+            searchPerpsUseCase = get(),
+            refreshPerpsUseCase = get(),
+            observeDAppsUseCase = get(),
+            searchDAppsUseCase = get(),
+            refreshDAppsUseCase = get()
+        )
+    }
+
+    viewModel {
+        DAppBrowserViewModel(
+            observeActiveWalletUseCase = get(),
+            oObserveWalletsUseCase = get(),
+            setActiveWalletUseCase = get(),
+            dappPreferencesStore = get()
+        )
+    }
+
+    viewModel {
+        PerpDetailViewModel(get())
+    }
+
+    // Settings
+    viewModel { SettingsViewModel(get(), get(), get(), get(), get(), get(), get()) }
+
+    // Token Details
+    viewModel { TokenDetailViewModel(get()) }
+
 }

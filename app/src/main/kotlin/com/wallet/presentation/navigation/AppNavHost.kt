@@ -276,17 +276,7 @@ fun AppNavHost(
             SettingsScreen(
                 viewModel = koinViewModel(),
                 onBack = { navController.popBackStack() },
-//                onNavigateToSecurity = {
-//                    navController.navigate(AppRoute.Security)
-//                }
             )
         }
-
-//        composable<AppRoute.Security> {
-//            SecurityScreen(
-//                viewModel = koinViewModel(),
-//                onBack = { navController.popBackStack() }
-//            )
-//        }
     }
 }

@@ -2,34 +2,15 @@ package com.decagon.ui.screen.wallet
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -39,19 +20,14 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.decagon.core.network.NetworkEnvironment
 import com.decagon.core.network.NetworkManager
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.domain.model.DecagonWallet
 import com.decagon.domain.model.PortfolioHistoryPoint
-import com.decagon.ui.components.DecagonQuickActionsBar
-import com.decagon.ui.components.FloatingTopBar
-import com.decagon.ui.components.NetworkSelectorModal
-import com.decagon.ui.components.PortfolioPerformanceChart
-import com.decagon.ui.components.TimeRange
-import com.decagon.ui.components.TimeRangeSelector
-import com.decagon.ui.components.WalletSwitcherModal
-import com.decagon.ui.components.formatCurrency
+import com.decagon.ui.components.*
+import com.decagon.ui.navigation.UnifiedBottomNavBar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -61,6 +37,7 @@ import timber.log.Timber
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DecagonWalletScreen(
+    navController: NavController, // ✅ ADD
     viewModel: DecagonWalletViewModel = koinViewModel(),
     networkManager: NetworkManager = koinInject(),
     onNavigateToOnboarding: () -> Unit = {},
@@ -85,7 +62,6 @@ fun DecagonWalletScreen(
     var showCopiedSnackbar by remember { mutableStateOf(false) }
     var selectedTimeRange by remember { mutableStateOf(TimeRange.ONE_WEEK) }
 
-    // Dismiss snackbar after 2s
     LaunchedEffect(showCopiedSnackbar) {
         if (showCopiedSnackbar) {
             delay(2000)
@@ -93,113 +69,120 @@ fun DecagonWalletScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Background and main content
+    // ✅ ADD SCAFFOLD WITH BOTTOM NAV
+    Scaffold(
+        bottomBar = {
+            UnifiedBottomNavBar(navController = navController)
+        }
+    ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF0A0A0F),
-                            Color(0xFF12121A),
-                            Color(0xFF1A1A24)
+                .padding(paddingValues) // ✅ RESPECT BOTTOM NAV PADDING
+        ) {
+            // Background and main content
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color(0xFF0A0A0F),
+                                Color(0xFF12121A),
+                                Color(0xFF1A1A24)
+                            )
                         )
                     )
-                )
-        ) {
-            when (val state = walletState) {
-                is DecagonLoadingState.Loading -> {
-                    LoadingView()
-                }
-
-                is DecagonLoadingState.Success -> {
-                    ModernWalletContent(
-                        wallet = state.data,
-                        currentNetwork = currentNetwork,
-                        selectedCurrency = selectedCurrency,
-                        fiatPrice = fiatPrice,
-                        selectedTimeRange = selectedTimeRange,
-                        onProfileClick = { showWalletSwitcher = true },
-                        onNetworkClick = { showNetworkSelector = true },
-                        onNotificationClick = onNavigateToHistory,
-                        onAddressCopy = {
-                            showCopiedSnackbar = true
-                        },
-                        onCurrencyClick = { /* TODO: Show currency selector */ },
-                        onSendClick = { showSendSheet = true },
-                        onReceiveClick = { showReceiveSheet = true },
-                        onBuyClick = onNavigateToBuy,
-                        onSwapClick = onNavigateToSwap,
-                        onTimeRangeChange = { selectedTimeRange = it }
-                    )
-                }
-
-                is DecagonLoadingState.Error -> {
-                    ErrorView(message = state.message)
-                }
-
-                is DecagonLoadingState.Idle -> {}
-            }
-
-            // Snackbar for copy confirmation
-            if (showCopiedSnackbar) {
-                Snackbar(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(16.dp)
-                ) {
-                    Text("Address copied to clipboard")
-                }
-            }
-        }
-
-        // Modals render on top
-        if (showWalletSwitcher) {
-            WalletSwitcherModal(
-                wallets = allWallets,
-                activeWalletId = (walletState as? DecagonLoadingState.Success)?.data?.id ?: "",
-                onWalletSelect = { walletId ->
-                    viewModel.switchWallet(walletId)
-                },
-                onAddWallet = onNavigateToOnboarding,
-                onSettings = {
-                    val wallet = (walletState as? DecagonLoadingState.Success)?.data
-                    wallet?.let { onNavigateToSettings(it.id) }
-                },
-                onLogOut = { /* TODO */ },
-                onDismiss = { showWalletSwitcher = false }
-            )
-        }
-
-        if (showNetworkSelector) {
-            NetworkSelectorModal(
-                currentNetwork = currentNetwork,
-                onNetworkSelect = { network ->
-                    scope.launch {
-                        networkManager.switchNetwork(network)
-                        Timber.d("Network switched to: $network")
+            ) {
+                when (val state = walletState) {
+                    is DecagonLoadingState.Loading -> {
+                        LoadingView()
                     }
-                },
-                onDismiss = { showNetworkSelector = false }
-            )
-        }
 
-        if (showSendSheet) {
-            com.decagon.ui.components.DecagonSendSheet(
-                onDismiss = { showSendSheet = false }
-            )
-        }
+                    is DecagonLoadingState.Success -> {
+                        ModernWalletContent(
+                            wallet = state.data,
+                            currentNetwork = currentNetwork,
+                            selectedCurrency = selectedCurrency,
+                            fiatPrice = fiatPrice,
+                            selectedTimeRange = selectedTimeRange,
+                            onProfileClick = { showWalletSwitcher = true },
+                            onNetworkClick = { showNetworkSelector = true },
+                            onNotificationClick = onNavigateToHistory,
+                            onAddressCopy = { showCopiedSnackbar = true },
+                            onCurrencyClick = { /* TODO */ },
+                            onSendClick = { showSendSheet = true },
+                            onReceiveClick = { showReceiveSheet = true },
+                            onBuyClick = onNavigateToBuy,
+                            onSwapClick = onNavigateToSwap,
+                            onTimeRangeChange = { selectedTimeRange = it }
+                        )
+                    }
 
-        if (showReceiveSheet && walletState is DecagonLoadingState.Success) {
-            com.decagon.ui.components.DecagonReceiveSheet(
-                wallet = (walletState as DecagonLoadingState.Success).data,
-                onDismiss = { showReceiveSheet = false }
-            )
+                    is DecagonLoadingState.Error -> {
+                        ErrorView(message = state.message)
+                    }
+
+                    is DecagonLoadingState.Idle -> {}
+                }
+
+                // Snackbar
+                if (showCopiedSnackbar) {
+                    Snackbar(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(16.dp)
+                    ) {
+                        Text("Address copied to clipboard")
+                    }
+                }
+            }
+
+            // Modals
+            if (showWalletSwitcher) {
+                WalletSwitcherModal(
+                    wallets = allWallets,
+                    activeWalletId = (walletState as? DecagonLoadingState.Success)?.data?.id ?: "",
+                    onWalletSelect = { viewModel.switchWallet(it) },
+                    onAddWallet = onNavigateToOnboarding,
+                    onSettings = {
+                        (walletState as? DecagonLoadingState.Success)?.data?.let {
+                            onNavigateToSettings(it.id)
+                        }
+                    },
+                    onLogOut = { /* TODO */ },
+                    onDismiss = { showWalletSwitcher = false }
+                )
+            }
+
+            if (showNetworkSelector) {
+                NetworkSelectorModal(
+                    currentNetwork = currentNetwork,
+                    onNetworkSelect = { network ->
+                        scope.launch {
+                            networkManager.switchNetwork(network)
+                            Timber.d("Network switched to: $network")
+                        }
+                    },
+                    onDismiss = { showNetworkSelector = false }
+                )
+            }
+
+            if (showSendSheet) {
+                DecagonSendSheet(onDismiss = { showSendSheet = false })
+            }
+
+            if (showReceiveSheet && walletState is DecagonLoadingState.Success) {
+                DecagonReceiveSheet(
+                    wallet = (walletState as DecagonLoadingState.Success).data,
+                    onDismiss = { showReceiveSheet = false }
+                )
+            }
         }
     }
 }
 
+// Rest of the composables remain unchanged...
 @Composable
 private fun ModernWalletContent(
     wallet: DecagonWallet,
@@ -227,7 +210,6 @@ private fun ModernWalletContent(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        // Floating Top Bar
         FloatingTopBar(
             wallet = wallet,
             currentNetwork = currentNetwork,
@@ -239,7 +221,6 @@ private fun ModernWalletContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Balance Hero Section
         BalanceHeroSection(
             wallet = wallet,
             fiatValue = fiatValue,
@@ -254,7 +235,6 @@ private fun ModernWalletContent(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Portfolio Performance Chart
         PortfolioPerformanceChart(
             historyPoints = generateMockPortfolioHistory(fiatValue, selectedTimeRange),
             selectedTimeRange = selectedTimeRange,
@@ -263,7 +243,6 @@ private fun ModernWalletContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Time Range Selector
         TimeRangeSelector(
             selected = selectedTimeRange,
             onSelect = onTimeRangeChange
@@ -271,7 +250,6 @@ private fun ModernWalletContent(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Quick Actions Bar (BELOW CHART)
         DecagonQuickActionsBar(
             wallet = wallet,
             onSendClick = onSendClick,
@@ -300,7 +278,6 @@ private fun BalanceHeroSection(
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Truncated Address with Copy
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -308,12 +285,10 @@ private fun BalanceHeroSection(
         ) {
             Text(
                 text = wallet.truncatedAddress,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFF7E7E8F)
-                )
+                style = MaterialTheme.typography.bodyMedium.copy(color = Color(0xFF7E7E8F))
             )
             Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.ContentCopy,
+                imageVector = Icons.Rounded.ContentCopy,
                 contentDescription = null,
                 tint = Color(0xFF7E7E8F),
                 modifier = Modifier.size(16.dp)
@@ -322,7 +297,6 @@ private fun BalanceHeroSection(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Dramatic Balance Typography
         Text(
             text = "%.4f ${wallet.activeChain?.chainType?.symbol ?: "SOL"}".format(wallet.balance),
             style = MaterialTheme.typography.displayLarge.copy(
@@ -335,7 +309,6 @@ private fun BalanceHeroSection(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Fiat Value with Currency Selector
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.clickable(onClick = onCurrencyClick)
@@ -346,7 +319,7 @@ private fun BalanceHeroSection(
                 color = Color(0xFFB4B4C6)
             )
             Icon(
-                imageVector = androidx.compose.material.icons.Icons.Default.ArrowDropDown,
+                imageVector = Icons.Rounded.ArrowDropDown,
                 contentDescription = null,
                 tint = Color(0xFFB4B4C6),
                 modifier = Modifier.size(20.dp)
@@ -355,20 +328,13 @@ private fun BalanceHeroSection(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Change Indicator (mock)
         Text(
             text = androidx.compose.ui.text.buildAnnotatedString {
-                withStyle(
-                    style = androidx.compose.ui.text.SpanStyle(
-                        color = Color(0xFF14F195)
-                    )
-                ) {
+                withStyle(style = androidx.compose.ui.text.SpanStyle(color = Color(0xFF14F195))) {
                     append("+$72.30")
                 }
                 append(" ")
-                withStyle(
-                    style = androidx.compose.ui.text.SpanStyle(color = Color(0xFFB4B4C6))
-                ) {
+                withStyle(style = androidx.compose.ui.text.SpanStyle(color = Color(0xFFB4B4C6))) {
                     append("(5.24%) Today")
                 }
             },
@@ -379,30 +345,15 @@ private fun BalanceHeroSection(
 
 @Composable
 private fun LoadingView(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator(
-            color = Color(0xFF9945FF)
-        )
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(color = Color(0xFF9945FF))
     }
 }
 
 @Composable
-private fun ErrorView(
-    message: String,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            color = Color(0xFFFF6B6B)
-        )
+private fun ErrorView(message: String, modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = message, style = MaterialTheme.typography.bodyLarge, color = Color(0xFFFF6B6B))
     }
 }
 

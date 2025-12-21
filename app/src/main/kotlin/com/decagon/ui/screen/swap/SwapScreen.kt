@@ -16,20 +16,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
+import androidx.navigation.NavHostController
 import com.decagon.domain.model.TokenInfo
 import com.decagon.ui.components.SecurityWarningDialog
 import com.decagon.ui.components.SlippageSettingsSheet
 import com.decagon.ui.components.SwapPreviewCard
 import com.decagon.ui.components.TokenSelectorSheet
+import com.decagon.ui.navigation.UnifiedBottomNavBar
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 import kotlin.math.pow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SwapScreen(
+fun DecagonSwapScreen(
     onNavigateBack: () -> Unit = {},
-    viewModel: SwapViewModel = koinViewModel()
+    viewModel: SwapViewModel = koinViewModel(),
+    navController: NavHostController
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val inputToken by viewModel.inputToken.collectAsState()
@@ -76,7 +79,8 @@ fun SwapScreen(
                     }
                 }
             )
-        }
+        },
+        bottomBar = {UnifiedBottomNavBar(navController = navController)}
     ) { padding ->
         Box(
             modifier = Modifier

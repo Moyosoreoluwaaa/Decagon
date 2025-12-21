@@ -17,8 +17,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
+import androidx.navigation.NavHostController
 import com.decagon.domain.model.DecagonWallet
 import com.decagon.ui.components.CopyableAddress
+import com.decagon.ui.navigation.UnifiedBottomNavBar
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
@@ -31,6 +33,7 @@ fun DecagonSettingsScreen(
     onShowRecoveryPhrase: () -> Unit,
     onShowPrivateKey: () -> Unit,
     onNavigateToChains: () -> Unit,
+    navController: NavHostController,
     viewModel: DecagonSettingsViewModel = koinViewModel()
 ) {
     val context = LocalContext.current
@@ -67,6 +70,7 @@ fun DecagonSettingsScreen(
                 }
             )
         },
+        bottomBar = { UnifiedBottomNavBar(navController = navController) },
         snackbarHost = {
             if (showCopiedSnackbar) {
                 Snackbar(modifier = Modifier.padding(16.dp)) {

@@ -13,6 +13,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -195,7 +198,7 @@ private fun ProviderCard(
             ) {
                 IconButton(onClick = onInfoClick) {
                     Icon(
-                        imageVector = Icons.Default.Info,
+                        imageVector = Icons.Rounded.Info,
                         contentDescription = "Provider details",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -203,13 +206,13 @@ private fun ProviderCard(
 
                 if (isSelected) {
                     Icon(
-                        imageVector = Icons.Default.Check,
+                        imageVector = Icons.Rounded.Check,
                         contentDescription = "Selected",
                         tint = MaterialTheme.colorScheme.primary
                     )
                 } else if (!provider.isAvailableInRegion) {
                     Icon(
-                        imageVector = Icons.Default.Close,
+                        imageVector = Icons.Rounded.Close,
                         contentDescription = "Unavailable",
                         tint = MaterialTheme.colorScheme.error
                     )
@@ -301,7 +304,7 @@ private fun ProviderDetailsDialog(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Info,
+                                imageVector = Icons.Rounded.Info,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onErrorContainer
                             )

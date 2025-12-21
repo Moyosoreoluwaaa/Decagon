@@ -31,6 +31,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.decagon.ui.navigation.UnifiedBottomNavBar
 import com.wallet.core.util.LoadingState
 import com.octane.wallet.domain.models.DApp
 import com.octane.wallet.domain.models.Perp
@@ -160,7 +161,7 @@ fun DiscoverScreen(
     // ==================== UI ====================
 
     Scaffold(
-        bottomBar = { BottomNavBar(navController = navController) }
+        bottomBar = { UnifiedBottomNavBar(navController = navController) }
     ) { innerPadding ->
         Box(
             modifier = modifier

@@ -12,6 +12,7 @@ import com.decagon.di.decagonOnRampModule
 import com.decagon.di.decagonSwapModule
 import com.decagon.di.decagonTransactionModule
 import com.decagon.di.decagonWalletModule
+import com.decagon.di.unifiedAppModule
 import com.decagon.worker.BalanceSyncManager
 import com.decagon.worker.TransactionHistoryWorker
 import com.decagon.worker.TransactionSyncManager
@@ -55,14 +56,7 @@ class DecagonApplication : Application() {
         startKoin {
             androidLogger(if (BuildConfig.DEBUG) Level.WARNING else Level.ERROR)
             androidContext(this@DecagonApplication)
-            modules(
-                decagonCoreModule,
-                decagonNetworkModule,      // ADD
-                decagonWalletModule,
-                decagonTransactionModule,   // ADD
-                decagonOnRampModule,
-                decagonSwapModule// ✅ ADD NEW MODULE
-            )
+            modules(unifiedAppModule)
         }
         Timber.d("Koin initialized with all modules including on-ramp")
 

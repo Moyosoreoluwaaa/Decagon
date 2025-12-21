@@ -9,7 +9,7 @@ import com.wallet.core.blockchain.JupiterQuoteResponse
 import com.wallet.core.util.LoadingState
 import com.octane.wallet.domain.usecases.transaction.EstimateTransactionFeeUseCase
 import com.octane.wallet.domain.usecases.transaction.SwapTokensUseCase
-import com.octane.wallet.domain.usecases.security.AuthenticateWithBiometricsUseCase
+import com.wallet.domain.usecases.security.AuthenticateWithBiometricsUseCase
 import com.wallet.presentation.viewmodel.BasePortfolioViewModel
 import com.wallet.presentation.viewmodel.BaseWalletViewModel
 import kotlinx.coroutines.Job

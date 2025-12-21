@@ -4,7 +4,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wallet.core.util.LoadingState
-import com.octane.wallet.domain.usecases.security.AuthenticateWithBiometricsUseCase
+import com.wallet.domain.usecases.security.AuthenticateWithBiometricsUseCase
 import com.octane.wallet.domain.usecases.security.ValidateSolanaAddressUseCase
 import com.octane.wallet.domain.usecases.transaction.EstimateTransactionFeeUseCase
 import com.octane.wallet.domain.usecases.transaction.SendTokenUseCase

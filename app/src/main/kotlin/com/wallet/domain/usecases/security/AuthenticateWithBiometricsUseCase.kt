@@ -1,4 +1,4 @@
-package com.octane.wallet.domain.usecases.security
+package com.wallet.domain.usecases.security
 
 import androidx.fragment.app.FragmentActivity
 import com.octane.wallet.core.security.BiometricConfig

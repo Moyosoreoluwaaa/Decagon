@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -12,8 +13,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavHostController
@@ -48,7 +52,6 @@ fun DecagonSwapScreen(
     var showSlippageSettings by remember { mutableStateOf(false) }
     var showSecurityWarning by remember { mutableStateOf(false) }
 
-    // Pass activity to ViewModel for biometric auth
     val context = LocalContext.current
     LaunchedEffect(Unit) {
         (context as? FragmentActivity)?.let { activity ->
@@ -56,7 +59,6 @@ fun DecagonSwapScreen(
         }
     }
 
-    // Handle success state
     LaunchedEffect(uiState) {
         if (uiState is SwapUiState.SwapSuccess) {
             Timber.i("Swap successful!")
@@ -67,7 +69,7 @@ fun DecagonSwapScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Swap Tokens") },
+                title = { Text("Swap") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -80,7 +82,7 @@ fun DecagonSwapScreen(
                 }
             )
         },
-        bottomBar = {UnifiedBottomNavBar(navController = navController)}
+        bottomBar = { UnifiedBottomNavBar(navController = navController) }
     ) { padding ->
         Box(
             modifier = Modifier
@@ -92,15 +94,21 @@ fun DecagonSwapScreen(
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Wallet Info Card
+                // Wallet Balance (Flat card)
                 currentWallet?.let { wallet ->
-                    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable { }
+                            .padding(12.dp)
+                    ) {
                         Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column {
                                 Text(
@@ -114,7 +122,6 @@ fun DecagonSwapScreen(
                                 )
                             }
 
-                            // Use activeChain balance if available
                             val displayBalance = wallet.activeChain?.balance ?: wallet.balance
                             val chainSymbol = wallet.activeChain?.chainType?.symbol ?: "SOL"
 
@@ -127,7 +134,7 @@ fun DecagonSwapScreen(
                     }
                 }
 
-                // Input Token Card
+                // Input Token (Flat design)
                 TokenSelectionCard(
                     label = "You pay",
                     token = inputToken,
@@ -144,14 +151,13 @@ fun DecagonSwapScreen(
                 ) {
                     FilledIconButton(
                         onClick = { viewModel.onSwapDirectionFlipped() },
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
-                        Icon(Icons.Default.SwapVert, "Flip direction")
+                        Icon(Icons.Default.SwapVert, "Flip", modifier = Modifier.size(20.dp))
                     }
                 }
 
-                // Output Token Card with rate conversion from the smallest unit
-                // to the standard
+                // Output Token (Flat design)
                 TokenSelectionCard(
                     label = "You receive",
                     token = outputToken,
@@ -167,33 +173,43 @@ fun DecagonSwapScreen(
                     readOnly = true
                 )
 
-                // Quote Display
+                // Quote Display (Simplified)
                 AnimatedVisibility(visible = currentQuote != null) {
                     currentQuote?.let { quote ->
                         SwapPreviewCard(quote = quote)
                     }
                 }
 
-                // Slippage Info
-                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                // Slippage Info (Minimal)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.small)
+                        .clickable { showSlippageSettings = true }
+                        .padding(12.dp)
+                ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showSlippageSettings = true }
-                            .padding(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Slippage Tolerance")
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Slippage",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
                             Text(
                                 text = "%.2f%%".format(slippageTolerance),
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Icon(
                                 Icons.Default.ChevronRight,
                                 null,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
@@ -212,7 +228,7 @@ fun DecagonSwapScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .height(52.dp),
                     enabled = when (uiState) {
                         is SwapUiState.QuoteReady,
                         is SwapUiState.QuoteWithWarnings -> true
@@ -222,31 +238,32 @@ fun DecagonSwapScreen(
                     when (uiState) {
                         SwapUiState.Idle -> Text("Enter amount")
                         SwapUiState.LoadingQuote -> CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(20.dp),
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                         is SwapUiState.QuoteReady,
                         is SwapUiState.QuoteWithWarnings -> Text("Review Swap")
                         SwapUiState.ExecutingSwap -> CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(20.dp),
                             color = MaterialTheme.colorScheme.onPrimary
                         )
-                        is SwapUiState.SwapSuccess -> Text("✓ Swap Successful")
+                        is SwapUiState.SwapSuccess -> Text("✓ Success")
                         is SwapUiState.Error -> Text("Try Again")
                     }
                 }
 
-                // Error Message
+                // Error Message (Flat)
                 if (uiState is SwapUiState.Error) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.small)
+                            .padding(12.dp)
                     ) {
                         Text(
                             text = (uiState as SwapUiState.Error).message,
-                            modifier = Modifier.padding(16.dp),
-                            color = MaterialTheme.colorScheme.onErrorContainer
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
                 }
@@ -272,7 +289,7 @@ fun DecagonSwapScreen(
         }
     }
 
-    // Token Selectors
+    // Bottom Sheets (keep as-is)
     if (showInputTokenSelector) {
         TokenSelectorSheet(
             tokens = tokenBalances.mapNotNull { it.toTokenInfo() },
@@ -297,7 +314,6 @@ fun DecagonSwapScreen(
         )
     }
 
-    // Slippage Settings
     if (showSlippageSettings) {
         SlippageSettingsSheet(
             currentSlippage = slippageTolerance,
@@ -306,7 +322,6 @@ fun DecagonSwapScreen(
         )
     }
 
-    // Security Warning
     if (showSecurityWarning && currentQuote != null) {
         SecurityWarningDialog(
             warnings = currentQuote!!.securityWarnings.values.flatten(),
@@ -329,8 +344,14 @@ private fun TokenSelectionCard(
     balance: Double?,
     readOnly: Boolean = false
 ) {
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .padding(12.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Label + Balance
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -340,57 +361,62 @@ private fun TokenSelectionCard(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (balance != null) {
+                balance?.let {
                     Text(
-                        text = "Balance: %.4f".format(balance),
+                        text = "%.4f".format(it),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
+            // Token + Amount Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Token selector
-                Surface(
-                    onClick = onTokenClick,
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.secondaryContainer
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = token.symbol,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(
-                            Icons.Default.ArrowDropDown,
-                            null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                // Token Selector (Flat button)
+                TextButton(onClick = onTokenClick) {
+                    Text(
+                        text = token.symbol,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        Icons.Default.ArrowDropDown,
+                        null,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
 
-                // Amount input
+                // Amount Input
                 if (!readOnly) {
-                    OutlinedTextField(
+                    BasicTextField(
                         value = amount,
                         onValueChange = onAmountChange,
-                        modifier = Modifier.width(150.dp),
                         textStyle = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textAlign = TextAlign.End
                         ),
-                        placeholder = { Text("0.0") },
-                        singleLine = true
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        modifier = Modifier.width(140.dp),
+                        singleLine = true,
+                        decorationBox = { innerTextField ->
+                            Box(contentAlignment = Alignment.CenterEnd) {
+                                if (amount.isEmpty()) {
+                                    Text(
+                                        "0.0",
+                                        style = MaterialTheme.typography.titleLarge.copy(
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        }
                     )
                 } else {
                     Text(
@@ -404,7 +430,6 @@ private fun TokenSelectionCard(
     }
 }
 
-// Helper extension - only convert if tokenInfo exists
 private fun com.decagon.domain.model.TokenBalance.toTokenInfo(): TokenInfo? {
     return tokenInfo ?: TokenInfo(
         address = mint,

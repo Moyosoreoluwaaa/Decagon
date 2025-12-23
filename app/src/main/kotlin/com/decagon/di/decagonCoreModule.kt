@@ -8,6 +8,10 @@ import com.decagon.core.security.DecagonBiometricAuthenticator
 import com.decagon.data.local.DecagonDatabase
 import com.decagon.data.repository.DecagonOnboardingStateRepository
 import com.decagon.data.repository.DecagonOnboardingStateRepositoryImpl
+import com.decagon.domain.usecase.ObserveAllPerpsUseCase
+import com.decagon.ui.screen.all.AllDAppsViewModel
+import com.decagon.ui.screen.all.AllPerpsViewModel
+import com.decagon.ui.screen.all.AllTokensViewModel
 import com.koin.data.session.SessionManager
 import com.koin.ui.session.SessionViewModel
 import com.octane.wallet.domain.usecases.discover.ObserveDAppsByCategoryUseCase
@@ -30,6 +34,7 @@ import com.octane.wallet.presentation.viewmodel.SettingsViewModel
 import com.octane.wallet.presentation.viewmodel.TokenDetailViewModel
 import com.wallet.data.repository.DiscoverRepositoryImpl
 import com.wallet.domain.repository.DiscoverRepository
+import com.wallet.domain.usecases.discover.ObserveAllTokensUseCase
 import com.wallet.domain.usecases.wallet.ObserveWalletsUseCase
 import com.wallet.domain.usecases.wallet.SetActiveWalletUseCase
 import kotlinx.coroutines.Dispatchers
@@ -90,6 +95,8 @@ val decagonCoreModule = module {
     factory { RefreshTokensUseCase(get()) }
 
 // Discover Use Cases - Perps
+    factory { ObserveAllTokensUseCase(get()) }
+    factory { ObserveAllPerpsUseCase(get()) }
     factory { ObservePerpsUseCase(get()) }
     factory { SearchPerpsUseCase(get()) }
     factory { RefreshPerpsUseCase(get()) }
@@ -141,6 +148,11 @@ val decagonCoreModule = module {
     viewModel {
         PerpDetailViewModel(get())
     }
+
+    // ViewModels
+    viewModel { AllTokensViewModel(get(), get(), get()) }
+    viewModel { AllPerpsViewModel(get(), get()) }
+    viewModel { AllDAppsViewModel(get(), get()) }
 
     // Settings
     viewModel { SettingsViewModel(get(), get(), get(), get(), get(), get(), get()) }

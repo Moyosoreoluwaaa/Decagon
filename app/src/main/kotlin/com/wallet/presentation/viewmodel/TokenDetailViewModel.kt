@@ -10,10 +10,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class TokenDetailViewModel(
     private val discoverRepository: DiscoverRepository
 ) : ViewModel() {
+
+    private val TAG = "TokenDetailViewModel"
 
     private val _tokenDetail = MutableStateFlow<LoadingState<Token>>(LoadingState.Loading)
     val tokenDetail: StateFlow<LoadingState<Token>> = _tokenDetail.asStateFlow()
@@ -24,34 +27,45 @@ class TokenDetailViewModel(
     private val _selectedTimeframe = MutableStateFlow("1D")
     val selectedTimeframe: StateFlow<String> = _selectedTimeframe.asStateFlow()
 
-    // ✅ Reactive observation of token from cache
     fun loadToken(tokenId: String, symbol: String) {
         viewModelScope.launch {
-            discoverRepository.observeTokens()
+            // ✅ CRITICAL FIX: Use observeAllTokens() to search entire cache
+            discoverRepository.observeAllTokens()
                 .map { state ->
                     when (state) {
                         is LoadingState.Success -> {
+                            Timber.tag(TAG).d("🔍 Searching ${state.data.size} tokens for: id='$tokenId', symbol='$symbol'")
+
                             val token = state.data.find {
-                                it.id == tokenId || it.symbol.equals(symbol, ignoreCase = true)
+                                it.id.equals(tokenId, ignoreCase = true) ||
+                                        it.symbol.equals(symbol, ignoreCase = true)
                             }
+
                             if (token != null) {
+                                Timber.tag(TAG).i("✅ Token found: ${token.name} (${token.symbol})")
                                 LoadingState.Success(token)
                             } else {
+                                Timber.tag(TAG).e("❌ Token NOT FOUND in ${state.data.size} cached tokens")
+                                Timber.tag(TAG).d("Available tokens: ${state.data.map { "${it.symbol}(${it.id})" }}")
                                 LoadingState.Error(
                                     IllegalArgumentException("Token not found"),
-                                    "Token not found in cache"
+                                    "Token '$symbol' not found in cache"
                                 )
                             }
                         }
-
-                        is LoadingState.Loading -> LoadingState.Loading
-                        is LoadingState.Error -> state
+                        is LoadingState.Loading -> {
+                            Timber.tag(TAG).d("🔄 Loading tokens...")
+                            LoadingState.Loading
+                        }
+                        is LoadingState.Error -> {
+                            Timber.tag(TAG).e("❌ Error loading tokens: ${state.message}")
+                            state
+                        }
                         else -> LoadingState.Loading
                     }
                 }
                 .collect {
                     _tokenDetail.value = it
-                    // ✅ Auto-fetch chart on successful load
                     if (it is LoadingState.Success && _chartData.value is LoadingState.Idle) {
                         fetchChartData(_selectedTimeframe.value)
                     }
@@ -59,9 +73,8 @@ class TokenDetailViewModel(
         }
     }
 
-    // ✅ One-shot chart fetch (only when timeframe changes)
     fun onTimeframeSelected(timeframe: String) {
-        if (_selectedTimeframe.value == timeframe) return // Skip if same
+        if (_selectedTimeframe.value == timeframe) return
 
         _selectedTimeframe.value = timeframe
         fetchChartData(timeframe)
@@ -72,8 +85,7 @@ class TokenDetailViewModel(
             _chartData.value = LoadingState.Loading
 
             try {
-                // TODO: Replace with actual chart API call
-                kotlinx.coroutines.delay(1000) // Simulate network
+                kotlinx.coroutines.delay(1000)
 
                 val mockData = List(50) {
                     100.0 + (Math.random() * 20 - 10)

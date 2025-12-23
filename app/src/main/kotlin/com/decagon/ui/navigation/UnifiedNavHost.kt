@@ -17,6 +17,9 @@ import androidx.navigation.toRoute
 import com.decagon.core.network.NetworkEnvironment
 import com.decagon.core.network.NetworkManager
 import com.decagon.core.util.DecagonLoadingState
+import com.decagon.ui.screen.all.AllDAppsScreen
+import com.decagon.ui.screen.all.AllPerpsScreen
+import com.decagon.ui.screen.all.AllTokensScreen
 import com.decagon.ui.screen.wallet.DecagonWalletScreen
 import com.decagon.ui.screen.wallet.DecagonWalletViewModel
 import com.decagon.ui.screen.swap.SwapViewModel
@@ -105,12 +108,45 @@ fun UnifiedNavHost(
                 onNavigateToDAppDetails = { url ->
                     navController.navigate(UnifiedRoute.DAppBrowser(url, "DApp"))
                 },
-                onTokenArrow = {},
-                onPerpArrow = {},
-                onDAppArrow = {}
+                onNavigateToAllTokens = {
+                    navController.navigate(UnifiedRoute.AllTokens)
+                },
+                onNavigateToAllPerps = {
+                    navController.navigate(UnifiedRoute.AllPerps)
+                },
+                onNavigateToAllDApps = {
+                    navController.navigate(UnifiedRoute.AllDApps)
+                }
             )
         }
 
+        // ========== FULL LIST SCREENS ==========
+        composable<UnifiedRoute.AllTokens> {
+            AllTokensScreen(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToTokenDetails = { id, symbol ->
+                    navController.navigate(UnifiedRoute.TokenDetails(id, symbol))
+                }
+            )
+        }
+
+        composable<UnifiedRoute.AllPerps> {
+            AllPerpsScreen(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToPerpDetails = { symbol ->
+                    navController.navigate(UnifiedRoute.PerpDetail(symbol))
+                }
+            )
+        }
+
+        composable<UnifiedRoute.AllDApps> {
+            AllDAppsScreen(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToDAppBrowser = { url, title ->
+                    navController.navigate(UnifiedRoute.DAppBrowser(url, title))
+                }
+            )
+        }
         composable<UnifiedRoute.TransactionHistory> {
             DecagonTransactionHistoryScreen(
                 onBackClick = { navController.popBackStack() },

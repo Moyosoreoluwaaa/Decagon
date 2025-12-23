@@ -11,10 +11,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class PerpDetailViewModel(
     private val discoverRepository: DiscoverRepository
 ) : ViewModel() {
+
+    private val TAG = "PerpDetailViewModel"
 
     private val _perpDetail = MutableStateFlow<LoadingState<Perp>>(LoadingState.Loading)
     val perpDetail: StateFlow<LoadingState<Perp>> = _perpDetail.asStateFlow()
@@ -30,31 +33,42 @@ class PerpDetailViewModel(
 
     fun loadPerp(perpSymbol: String) {
         viewModelScope.launch {
-            discoverRepository.observePerps()
+            // ✅ CRITICAL FIX: Use observeAllPerps() to search entire cache
+            discoverRepository.observeAllPerps()
                 .map { state ->
                     when (state) {
                         is LoadingState.Success -> {
+                            Timber.tag(TAG).d("🔍 Searching ${state.data.size} perps for: symbol='$perpSymbol'")
+
                             val perp = state.data.find {
                                 it.symbol.equals(perpSymbol, ignoreCase = true)
                             }
+
                             if (perp != null) {
+                                Timber.tag(TAG).i("✅ Perp found: ${perp.name} (${perp.symbol})")
                                 LoadingState.Success(perp)
                             } else {
+                                Timber.tag(TAG).e("❌ Perp NOT FOUND in ${state.data.size} cached perps")
+                                Timber.tag(TAG).d("Available perps: ${state.data.map { it.symbol }}")
                                 LoadingState.Error(
                                     IllegalArgumentException("Perp not found"),
-                                    "Perp not found in cache"
+                                    "Perp '$perpSymbol' not found in cache"
                                 )
                             }
                         }
-
-                        is LoadingState.Loading -> LoadingState.Loading
-                        is LoadingState.Error -> state
+                        is LoadingState.Loading -> {
+                            Timber.tag(TAG).d("🔄 Loading perps...")
+                            LoadingState.Loading
+                        }
+                        is LoadingState.Error -> {
+                            Timber.tag(TAG).e("❌ Error loading perps: ${state.message}")
+                            state
+                        }
                         else -> LoadingState.Loading
                     }
                 }
                 .collect {
                     _perpDetail.value = it
-                    // ✅ Auto-fetch chart on successful load
                     if (it is LoadingState.Success && _chartData.value is LoadingState.Idle) {
                         fetchChartData(_selectedTimeframe.value)
                     }

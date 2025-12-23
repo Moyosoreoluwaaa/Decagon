@@ -56,7 +56,7 @@ class DiscoverRepositoryImpl(
                     LoadingState.Loading
                 } else {
                     // ✅ Limit to top 10 for Discover screen performance
-                    val tokens = entities.take(10).toDomainTokens()
+                    val tokens = entities.toDomainTokens()
                     LoadingState.Success(tokens)
                 }
             }
@@ -82,7 +82,7 @@ class DiscoverRepositoryImpl(
                 if (entities.isEmpty()) LoadingState.Loading
                 else {
                     // ✅ Limit to top 10
-                    val tokens = entities.take(10).toDomainTokens()
+                    val tokens = entities.toDomainTokens()
                     LoadingState.Success(tokens)
                 }
             }
@@ -103,7 +103,7 @@ class DiscoverRepositoryImpl(
         return discoverDao.searchTokens(query)
             .map { entities ->
                 // ✅ Search results also limited to 10 for performance
-                LoadingState.Success(entities.take(10).toDomainTokens()) as LoadingState<List<Token>>
+                LoadingState.Success(entities.toDomainTokens()) as LoadingState<List<Token>>
             }
             .catch { e ->
                 Timber.e(e, "❌ Error in searchTokens")
@@ -122,7 +122,7 @@ class DiscoverRepositoryImpl(
                 if (entities.isEmpty()) {
                     LoadingState.Loading
                 } else {
-                    // ✅ NO .take(10) - return all tokens
+                    // ✅ NO  - return all tokens
                     val tokens = entities.toDomainTokens()
                     LoadingState.Success(tokens)
                 }
@@ -147,7 +147,7 @@ class DiscoverRepositoryImpl(
     override fun searchAllTokens(query: String): Flow<LoadingState<List<Token>>> {
         return discoverDao.searchTokens(query)
             .map { entities ->
-                // ✅ NO .take(10) - return all search results
+                // ✅ NO  - return all search results
                 LoadingState.Success(entities.toDomainTokens()) as LoadingState<List<Token>>
             }
             .catch { e ->
@@ -215,8 +215,7 @@ class DiscoverRepositoryImpl(
             .map { entities ->
                 if (entities.isEmpty()) LoadingState.Loading
                 else {
-                    // ✅ Limit to top 10
-                    val perps = entities.take(10).toDomainPerps()
+                    val perps = entities.toDomainPerps()
                     LoadingState.Success(perps)
                 }
             }
@@ -233,6 +232,19 @@ class DiscoverRepositoryImpl(
             .distinctUntilChanged()
     }
 
+    override fun searchPerps(query: String): Flow<LoadingState<List<Perp>>> {
+        return discoverDao.searchPerps(query)
+            .map { entities ->
+                // ✅ REMOVED  - returns ALL search results
+                LoadingState.Success(entities.toDomainPerps()) as LoadingState<List<Perp>>
+            }
+            .catch { e ->
+                Timber.e(e, "❌ Error in searchPerps")
+                emit(LoadingState.Error(e, "Search failed"))
+            }
+    }
+
+    // Line 172: Increase perp fetch limit
     override suspend fun refreshPerps(): LoadingState<Unit> = coroutineScope {
         if (!networkMonitor.isConnected.value) {
             return@coroutineScope LoadingState.Error(
@@ -248,11 +260,10 @@ class DiscoverRepositoryImpl(
             val perpContracts = response.contracts
                 .filter { it.isPerpetual }
                 .sortedByDescending { it.quoteVolume.toDoubleOrNull() ?: 0.0 }
-                .take(20) // Fetch 20, but only show 10 on Discover
+                .take(100) // ✅ FIXED: Increased from 20 to 100
 
-            // ✅ NO LOGO RESOLVER - logos resolved instantly in mapper
             val entities = perpContracts.map { dto ->
-                dto.toEntity() // Instant logo via PerpLogoProvider
+                dto.toEntity()
             }
 
             discoverDao.insertPerps(entities)
@@ -265,23 +276,10 @@ class DiscoverRepositoryImpl(
         }
     }
 
-    override fun searchPerps(query: String): Flow<LoadingState<List<Perp>>> {
-        return discoverDao.searchPerps(query)
-            .map { entities ->
-                // ✅ Search limited to 10
-                LoadingState.Success(entities.take(10).toDomainPerps()) as LoadingState<List<Perp>>
-            }
-            .catch { e ->
-                Timber.e(e, "❌ Error in searchPerps")
-                emit(LoadingState.Error(e, "Search failed"))
-            }
-    }
-
 
 // ==================== PERPS (UNLIMITED) ====================
 
     /**
-     * ✅ NEW: Observe ALL perps (no 10-item limit).
      * Used by AllPerpsScreen.
      */
     override fun observeAllPerps(): Flow<LoadingState<List<Perp>>> {
@@ -289,7 +287,6 @@ class DiscoverRepositoryImpl(
             .map { entities ->
                 if (entities.isEmpty()) LoadingState.Loading
                 else {
-                    // ✅ NO .take(10) - return all perps
                     val perps = entities.toDomainPerps()
                     LoadingState.Success(perps)
                 }
@@ -313,7 +310,7 @@ class DiscoverRepositoryImpl(
     override fun searchAllPerps(query: String): Flow<LoadingState<List<Perp>>> {
         return discoverDao.searchPerps(query)
             .map { entities ->
-                // ✅ NO .take(10) - return all search results
+                // ✅ NO  - return all search results
                 LoadingState.Success(entities.toDomainPerps()) as LoadingState<List<Perp>>
             }
             .catch { e ->
@@ -338,7 +335,7 @@ class DiscoverRepositoryImpl(
                 if (entities.isEmpty()) LoadingState.Loading
                 else {
                     // ✅ Limit to top 10
-                    val dapps = entities.take(10).toDomainDApps()
+                    val dapps = entities.toDomainDApps()
                     LoadingState.Success(dapps)
                 }
             }
@@ -359,7 +356,7 @@ class DiscoverRepositoryImpl(
         return discoverDao.observeDAppsByCategory(category.name)
             .map { entities ->
                 // ✅ Limit to 10 per category
-                LoadingState.Success(entities.take(10).toDomainDApps()) as LoadingState<List<DApp>>
+                LoadingState.Success(entities.toDomainDApps()) as LoadingState<List<DApp>>
             }
             .catch { e ->
                 Timber.e(e, "❌ Error in observeDAppsByCategory")
@@ -371,7 +368,7 @@ class DiscoverRepositoryImpl(
         return discoverDao.searchDApps(query)
             .map { entities ->
                 // ✅ Search limited to 10
-                LoadingState.Success(entities.take(10).toDomainDApps()) as LoadingState<List<DApp>>
+                LoadingState.Success(entities.toDomainDApps()) as LoadingState<List<DApp>>
             }
             .catch { e ->
                 Timber.e(e, "❌ Error in searchDApps")
@@ -391,7 +388,7 @@ class DiscoverRepositoryImpl(
             .map { entities ->
                 if (entities.isEmpty()) LoadingState.Loading
                 else {
-                    // ✅ NO .take(10) - return all dApps
+                    // ✅ NO  - return all dApps
                     val dapps = entities.toDomainDApps()
                     LoadingState.Success(dapps)
                 }
@@ -415,7 +412,7 @@ class DiscoverRepositoryImpl(
     override fun searchAllDApps(query: String): Flow<LoadingState<List<DApp>>> {
         return discoverDao.searchDApps(query)
             .map { entities ->
-                // ✅ NO .take(10) - return all search results
+                // ✅ NO  - return all search results
                 LoadingState.Success(entities.toDomainDApps()) as LoadingState<List<DApp>>
             }
             .catch { e ->

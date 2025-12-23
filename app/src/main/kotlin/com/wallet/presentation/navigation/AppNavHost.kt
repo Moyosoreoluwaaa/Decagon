@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.decagon.ui.navigation.UnifiedRoute
 import com.octane.wallet.presentation.screens.ActivityScreen
 import com.octane.wallet.presentation.screens.DAppBrowserScreen
 import com.octane.wallet.presentation.screens.DiscoverScreen
@@ -152,27 +153,27 @@ fun AppNavHost(
             )
         }
 
-        composable<AppRoute.Search> {
+        composable<UnifiedRoute.Discover> {
             DiscoverScreen(
                 viewModel = koinViewModel(),
                 navController = navController,
-                onNavigateToTokenDetails = { assetId, symbol ->
-                    navController.navigate(AppRoute.TokenDetails(assetId, symbol))
+                onNavigateToTokenDetails = { id, symbol ->
+                    navController.navigate(UnifiedRoute.TokenDetails(id, symbol))
                 },
-                onNavigateToPerpDetails = { perpSymbol ->
-                    navController.navigate(AppRoute.PerpDetailRoute(perpSymbol))
+                onNavigateToPerpDetails = { symbol ->
+                    navController.navigate(UnifiedRoute.PerpDetail(symbol))
                 },
                 onNavigateToDAppDetails = { url ->
-                    navController.navigate(AppRoute.DAppWebViewRoute(url, "DApp"))
+                    navController.navigate(UnifiedRoute.DAppBrowser(url, "DApp"))
                 },
-                onTokenArrow = {
-                    // TODO:
+                onNavigateToAllTokens = {
+                    navController.navigate(UnifiedRoute.AllTokens)
                 },
-                onPerpArrow = {
-                    // TODO:
+                onNavigateToAllPerps = {
+                    navController.navigate(UnifiedRoute.AllPerps)
                 },
-                onDAppArrow = {
-                    // TODO:
+                onNavigateToAllDApps = {
+                    navController.navigate(UnifiedRoute.AllDApps)
                 }
             )
         }

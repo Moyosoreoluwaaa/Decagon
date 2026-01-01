@@ -1,13 +1,11 @@
 package com.decagon.ui.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -22,23 +20,23 @@ import com.decagon.core.util.DecagonLoadingState
 import com.decagon.ui.screen.all.AllDAppsScreen
 import com.decagon.ui.screen.all.AllPerpsScreen
 import com.decagon.ui.screen.all.AllTokensScreen
-import com.decagon.ui.screen.wallet.DecagonWalletScreen
-import com.decagon.ui.screen.wallet.DecagonWalletViewModel
-import com.decagon.ui.screen.swap.SwapViewModel
+import com.decagon.ui.screen.chains.DecagonSupportedChainsScreen
 import com.decagon.ui.screen.create.DecagonCreateWalletScreen
+import com.decagon.ui.screen.discover.DiscoverScreen
+import com.decagon.ui.screen.history.DecagonTransactionDetailScreen
+import com.decagon.ui.screen.history.DecagonTransactionHistoryScreen
 import com.decagon.ui.screen.imports.DecagonImportWalletScreen
 import com.decagon.ui.screen.imports.DecagonWalletChoiceScreen
-import com.decagon.ui.screen.history.DecagonTransactionHistoryScreen
-import com.decagon.ui.screen.history.DecagonTransactionDetailScreen
 import com.decagon.ui.screen.onramp.DecagonOnRampScreen
-import com.decagon.ui.screen.settings.DecagonSettingsScreen
-import com.decagon.ui.screen.settings.DecagonRevealRecoveryScreen
-import com.decagon.ui.screen.settings.DecagonRevealPrivateKeyScreen
-import com.decagon.ui.screen.chains.DecagonSupportedChainsScreen
-import com.decagon.ui.screen.swap.DecagonSwapScreen
-import com.decagon.ui.screen.discover.DiscoverScreen
 import com.decagon.ui.screen.perps.PerpDetailScreen
+import com.decagon.ui.screen.settings.DecagonRevealPrivateKeyScreen
+import com.decagon.ui.screen.settings.DecagonRevealRecoveryScreen
+import com.decagon.ui.screen.settings.DecagonSettingsScreen
+import com.decagon.ui.screen.swap.DecagonSwapScreen
+import com.decagon.ui.screen.swap.SwapViewModel
 import com.decagon.ui.screen.token.TokenDetailsScreen
+import com.decagon.ui.screen.wallet.DecagonWalletScreen
+import com.decagon.ui.screen.wallet.DecagonWalletViewModel
 import com.octane.wallet.presentation.screens.DAppBrowserScreen
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
@@ -49,6 +47,14 @@ fun UnifiedNavHost(
 ) {
     val navController = rememberNavController()
     val hapticFeedback = LocalHapticFeedback.current
+
+    val activity = LocalContext.current.findActivity()
+
+    // ✅ Create Activity-scoped ViewModel ONCE
+    val walletViewModel: DecagonWalletViewModel = koinViewModel(
+        viewModelStoreOwner = activity
+    )
+
 
     NavHost(
         navController = navController,
@@ -263,46 +269,25 @@ fun UnifiedNavHost(
 
         // ========== SETTINGS ==========
         composable<UnifiedRoute.Settings> {
-            val walletViewModel: DecagonWalletViewModel = koinViewModel()
-            val walletState by walletViewModel.walletState.collectAsState()
+            // ✅ Direct access - no loading check needed
+            // ✅ Use static wallet (no balance fetching)
+            val wallet by walletViewModel.activeWallet.collectAsState()
 
-            when (val state = walletState) {
-                is DecagonLoadingState.Success -> {
-                    DecagonSettingsScreen(
-                        wallet = state.data,
-                        onBackClick = { /* Bottom nav handles navigation - no back action */ },
-                        onShowRecoveryPhrase = {
-                            navController.navigate(UnifiedRoute.RevealRecovery(state.data.id))
-                        },
-                        onShowPrivateKey = {
-                            navController.navigate(UnifiedRoute.RevealPrivateKey(state.data.id))
-                        },
-                        onNavigateToChains = {
-                            navController.navigate(UnifiedRoute.ManageChains(state.data.id))
-                        },
-                        navController = navController
-                    )
-                }
-                is DecagonLoadingState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-                is DecagonLoadingState.Error -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = state.message,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-                else -> {}
+            wallet?.let {
+                DecagonSettingsScreen(
+                    wallet = it,
+                    onBackClick = { /* handled by bottom nav */ },
+                    onShowRecoveryPhrase = {
+                        navController.navigate(UnifiedRoute.RevealRecovery(wallet!!.id))
+                    },
+                    onShowPrivateKey = {
+                        navController.navigate(UnifiedRoute.RevealPrivateKey(wallet!!.id))
+                    },
+                    onNavigateToChains = {
+                        navController.navigate(UnifiedRoute.ManageChains(wallet!!.id))
+                    },
+                    navController = navController
+                )
             }
         }
 
@@ -331,4 +316,16 @@ fun UnifiedNavHost(
             )
         }
     }
+}
+
+
+
+// Extension
+private fun Context.findActivity(): FragmentActivity {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is FragmentActivity) return context
+        context = context.baseContext
+    }
+    throw IllegalStateException("No FragmentActivity found")
 }

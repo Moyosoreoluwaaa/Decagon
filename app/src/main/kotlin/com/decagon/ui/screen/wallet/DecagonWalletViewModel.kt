@@ -48,6 +48,15 @@ class DecagonWalletViewModel(
     private val _chartData = MutableStateFlow<LoadingState<List<Double>>>(LoadingState.Idle)
     val chartData: StateFlow<LoadingState<List<Double>>> = _chartData.asStateFlow()
 
+    // ✅ NEW: Static wallet data (no balance fetching)
+    val activeWallet: StateFlow<DecagonWallet?> =
+        repository.getActiveWallet()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = null
+            )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val walletState: StateFlow<DecagonLoadingState<DecagonWallet>> =
         repository.getActiveWallet()
@@ -57,9 +66,9 @@ class DecagonWalletViewModel(
                     flow { emit(wallet) },
                     _selectedCurrency,
                     repository.getWalletById(wallet.id).filterNotNull(),
-                    networkManager.currentNetwork  // ← TRIGGERS RE-FETCH ON NETWORK CHANGE
+                    networkManager.currentNetwork
                 ) { _, currency, updatedWallet, currentNetwork ->
-                    Timber.d("Updating: currency=$currency, activeChain=${updatedWallet.activeChainId}, network=$currentNetwork")
+                Timber.d("Updating: currency=$currency, activeChain=${updatedWallet.activeChainId}, network=$currentNetwork")
 
                     try {
                         val activeChain = updatedWallet.activeChain

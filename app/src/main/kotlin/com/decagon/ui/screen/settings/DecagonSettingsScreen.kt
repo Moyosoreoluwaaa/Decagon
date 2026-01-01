@@ -201,25 +201,6 @@ fun DecagonSettingsScreen(
                     subtitle = "Export for external use",
                     onClick = onShowPrivateKey
                 )
-
-                // Advanced Action Button (Unified with Primary Style)
-                Surface(
-                    onClick = { viewModel.fixStuckTransactions(wallet.address) },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = Color.Transparent
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Fix Stuck Transactions",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
             }
 
             // Danger Zone

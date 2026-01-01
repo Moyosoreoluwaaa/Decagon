@@ -32,6 +32,7 @@ import com.octane.wallet.presentation.viewmodel.DiscoverViewModel
 import com.decagon.ui.screen.perps.PerpDetailViewModel
 import com.octane.wallet.presentation.viewmodel.SettingsViewModel
 import com.decagon.ui.screen.token.TokenDetailViewModel
+import com.decagon.worker.TransactionCleanupWorker
 import com.wallet.data.repository.DiscoverRepositoryImpl
 import com.wallet.domain.repository.DiscoverRepository
 import com.wallet.domain.usecases.discover.ObserveAllTokensUseCase
@@ -167,4 +168,13 @@ val decagonCoreModule = module {
         SessionViewModel(get())
     }
 
+    single {
+        TransactionCleanupWorker(
+            context = get(),
+            params = get(),
+            transactionRepository = get(),
+            walletRepository = get(),
+            rpcFactory = get()
+        )
+    }
 }

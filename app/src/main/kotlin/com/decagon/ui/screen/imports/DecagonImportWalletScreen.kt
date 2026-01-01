@@ -17,8 +17,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -52,6 +52,7 @@ import androidx.fragment.app.FragmentActivity
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.ui.screen.onboarding.DecagonOnboardingViewModel
 import com.decagon.ui.screen.onboarding.ValidationState
+import com.octane.wallet.presentation.theme.AppTypography
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 
@@ -91,7 +92,7 @@ fun DecagonImportWalletScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Import Wallet") },
+                title = { Text("Import Wallet", style = AppTypography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -175,7 +176,7 @@ fun DecagonImportWalletScreen(
                         modifier = Modifier.align(Alignment.Start)
                     ) {
                         Icon(
-                            Icons.Default.Check,
+                            Icons.Rounded.Check,
                             null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
@@ -195,7 +196,7 @@ fun DecagonImportWalletScreen(
                         modifier = Modifier.align(Alignment.Start)
                     ) {
                         Icon(
-                            Icons.Default.Error,
+                            Icons.Rounded.Error,
                             null,
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(16.dp)

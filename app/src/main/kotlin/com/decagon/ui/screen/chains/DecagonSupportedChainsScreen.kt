@@ -1,15 +1,40 @@
 package com.decagon.ui.screen.chains
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,6 +50,7 @@ import com.decagon.core.util.DecagonExplorerUtil
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.domain.model.ChainWallet
 import com.decagon.domain.model.DecagonWallet
+import com.octane.wallet.presentation.theme.AppTypography
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
@@ -42,7 +68,7 @@ fun DecagonSupportedChainsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Supported Chains") },
+                title = { Text("Supported Chains", style = AppTypography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -199,7 +225,7 @@ private fun ChainItem(
                                 modifier = Modifier.size(20.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.ContentCopy,
+                                    imageVector = Icons.Rounded.ContentCopy,
                                     contentDescription = "Copy address",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(14.dp)

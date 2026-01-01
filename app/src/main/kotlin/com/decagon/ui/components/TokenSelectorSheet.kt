@@ -1,24 +1,42 @@
 package com.decagon.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.decagon.domain.model.TokenInfo
+import com.decagon.util.ItemShape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,62 +59,54 @@ fun TokenSelectorSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxHeight(0.9f),
-        containerColor = Color(0xFF1A1A24),
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .width(40.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(Color(0xFF3A3A44))
-            )
-        }
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = { BottomSheetDragHandle() } // Using the uniform handle
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 20.dp)
         ) {
             Text(
                 text = "Select Token",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                ),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            OutlinedTextField(
+            // Search Bar (Unified with Swap Card style)
+            TextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF2A2A34).copy(alpha = 0.5f)),
-                placeholder = { Text("Search tokens", color = Color(0xFF7E7E8F)) },
+                    .clip(ItemShape),
+                placeholder = {
+                    Text("Search tokens", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                },
                 leadingIcon = {
                     Icon(
                         Icons.Default.Search,
-                        "Search",
-                        tint = Color(0xFF9945FF)
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF9945FF),
-                    unfocusedBorderColor = Color(0xFF3A3A44),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color(0xFF9945FF)
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
                 ),
                 singleLine = true
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 items(filteredTokens) { token ->
                     TokenListItem(
@@ -116,69 +126,42 @@ private fun TokenListItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                if (isSelected) {
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF9945FF).copy(alpha = 0.2f),
-                            Color(0xFF9945FF).copy(alpha = 0.1f)
-                        )
-                    )
-                } else {
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF2A2A34).copy(alpha = 0.5f),
-                            Color(0xFF1A1A24).copy(alpha = 0.7f)
-                        )
-                    )
-                }
-            )
-            .border(
-                width = 1.dp,
-                color = if (isSelected) Color(0xFF9945FF).copy(alpha = 0.4f)
-                else Color(0xFF3A3A44),
-                shape = RoundedCornerShape(16.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(16.dp)
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = ItemShape,
+        color = if (isSelected) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        }
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     text = token.symbol,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = token.name,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF7E7E8F)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             if (isSelected) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFF9945FF))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "✓",
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }

@@ -3,6 +3,7 @@ package com.decagon
 // :app/MainActivity.kt
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +24,7 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
+            enableEdgeToEdge()
             DecagonTheme {
                 Surface(
                     color = MaterialTheme.colorScheme.background,

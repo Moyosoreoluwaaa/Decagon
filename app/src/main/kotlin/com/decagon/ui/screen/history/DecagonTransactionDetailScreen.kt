@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.domain.model.DecagonTransaction
 import com.decagon.domain.model.TransactionStatus
+import com.octane.wallet.presentation.theme.AppTypography
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -57,7 +58,7 @@ fun DecagonTransactionDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Transaction Details") },
+                title = { Text("Transaction Details", style = AppTypography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")

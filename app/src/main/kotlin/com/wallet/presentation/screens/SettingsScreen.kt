@@ -41,7 +41,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.octane.wallet.presentation.components.MetallicCard
+import com.wallet.presentation.components.MetallicCard
 import com.octane.wallet.presentation.theme.AppColors
 import com.octane.wallet.presentation.theme.AppTypography
 import com.octane.wallet.presentation.theme.Dimensions

@@ -1,10 +1,11 @@
-package com.octane.wallet.presentation.viewmodel
+package com.decagon.ui.screen.token
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.wallet.core.util.LoadingState
 import com.octane.wallet.domain.models.Token
+import com.wallet.core.util.LoadingState
 import com.wallet.domain.repository.DiscoverRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,14 +28,25 @@ class TokenDetailViewModel(
     private val _selectedTimeframe = MutableStateFlow("1D")
     val selectedTimeframe: StateFlow<String> = _selectedTimeframe.asStateFlow()
 
+    // ✅ NEW: Pull-to-refresh state
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    // ✅ NEW: Watchlist state
+    private val _isInWatchlist = MutableStateFlow(false)
+    val isInWatchlist: StateFlow<Boolean> = _isInWatchlist.asStateFlow()
+
+    // ✅ NEW: Toast message
+    private val _toastMessage = MutableStateFlow<String?>(null)
+    val toastMessage: StateFlow<String?> = _toastMessage.asStateFlow()
+
     fun loadToken(tokenId: String, symbol: String) {
         viewModelScope.launch {
-            // ✅ CRITICAL FIX: Use observeAllTokens() to search entire cache
             discoverRepository.observeAllTokens()
                 .map { state ->
                     when (state) {
                         is LoadingState.Success -> {
-                            Timber.tag(TAG).d("🔍 Searching ${state.data.size} tokens for: id='$tokenId', symbol='$symbol'")
+                            Timber.Forest.tag(TAG).d("🔍 Searching ${state.data.size} tokens for: id='$tokenId', symbol='$symbol'")
 
                             val token = state.data.find {
                                 it.id.equals(tokenId, ignoreCase = true) ||
@@ -42,25 +54,18 @@ class TokenDetailViewModel(
                             }
 
                             if (token != null) {
-                                Timber.tag(TAG).i("✅ Token found: ${token.name} (${token.symbol})")
+                                Timber.Forest.tag(TAG).i("✅ Token found: ${token.name} (${token.symbol})")
                                 LoadingState.Success(token)
                             } else {
-                                Timber.tag(TAG).e("❌ Token NOT FOUND in ${state.data.size} cached tokens")
-                                Timber.tag(TAG).d("Available tokens: ${state.data.map { "${it.symbol}(${it.id})" }}")
+                                Timber.Forest.tag(TAG).e("❌ Token NOT FOUND in ${state.data.size} cached tokens")
                                 LoadingState.Error(
                                     IllegalArgumentException("Token not found"),
                                     "Token '$symbol' not found in cache"
                                 )
                             }
                         }
-                        is LoadingState.Loading -> {
-                            Timber.tag(TAG).d("🔄 Loading tokens...")
-                            LoadingState.Loading
-                        }
-                        is LoadingState.Error -> {
-                            Timber.tag(TAG).e("❌ Error loading tokens: ${state.message}")
-                            state
-                        }
+                        is LoadingState.Loading -> LoadingState.Loading
+                        is LoadingState.Error -> state
                         else -> LoadingState.Loading
                     }
                 }
@@ -75,9 +80,45 @@ class TokenDetailViewModel(
 
     fun onTimeframeSelected(timeframe: String) {
         if (_selectedTimeframe.value == timeframe) return
-
         _selectedTimeframe.value = timeframe
         fetchChartData(timeframe)
+    }
+
+    fun refresh() {
+        _isRefreshing.value = true
+        viewModelScope.launch {
+            try {
+                 discoverRepository.refreshTokens()
+
+                // Re-fetch chart
+                fetchChartData(_selectedTimeframe.value)
+            } finally {
+                _isRefreshing.value = false
+            }
+        }
+    }
+
+    fun toggleWatchlist() {
+        viewModelScope.launch {
+            val token = (_tokenDetail.value as? LoadingState.Success)?.data ?: return@launch
+
+            _isInWatchlist.value = !_isInWatchlist.value
+            _toastMessage.value = if (_isInWatchlist.value) {
+                "${token.name} added to watchlist"
+            } else {
+                "${token.name} removed from watchlist"
+            }
+        }
+    }
+
+    fun setPriceAlert() {
+        val token = (_tokenDetail.value as? LoadingState.Success)?.data ?: return
+        // TODO: Show price alert dialog
+        _toastMessage.value = "Price alert feature coming soon"
+    }
+
+    fun clearToast() {
+        _toastMessage.value = null
     }
 
     private fun fetchChartData(timeframe: String) {
@@ -85,8 +126,9 @@ class TokenDetailViewModel(
             _chartData.value = LoadingState.Loading
 
             try {
-                kotlinx.coroutines.delay(1000)
+                delay(1000)
 
+                // TODO: Replace with real chart data from GetChartDataUseCase
                 val mockData = List(50) {
                     100.0 + (Math.random() * 20 - 10)
                 }
@@ -95,15 +137,6 @@ class TokenDetailViewModel(
             } catch (e: Exception) {
                 _chartData.value = LoadingState.Error(e, "Failed to load chart")
             }
-        }
-    }
-
-    fun formatPrice(priceUsd: Double): String {
-        return when {
-            priceUsd >= 1000 -> "$%.2fK".format(priceUsd / 1000)
-            priceUsd >= 1 -> "$%.2f".format(priceUsd)
-            priceUsd >= 0.01 -> "$%.4f".format(priceUsd)
-            else -> "$%.6f".format(priceUsd)
         }
     }
 }

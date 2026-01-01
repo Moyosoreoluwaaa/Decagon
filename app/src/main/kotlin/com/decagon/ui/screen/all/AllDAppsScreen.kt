@@ -1,21 +1,45 @@
 package com.decagon.ui.screen.all
 
-import androidx.compose.foundation.layout.*
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import com.wallet.core.util.LoadingState
-import com.octane.wallet.presentation.components.*
+import com.decagon.ui.components.SearchBarWithFilter
+import com.octane.wallet.presentation.components.SiteRow
 import com.octane.wallet.presentation.theme.AppColors
 import com.octane.wallet.presentation.theme.AppTypography
 import com.octane.wallet.presentation.theme.Dimensions
+import com.wallet.core.util.LoadingState
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 
@@ -24,116 +48,89 @@ import timber.log.Timber
 fun AllDAppsScreen(
     viewModel: AllDAppsViewModel = koinViewModel(),
     onNavigateBack: () -> Unit,
-    onNavigateToDAppBrowser: (String, String) -> Unit,
-    modifier: Modifier = Modifier
+    onNavigateToDAppBrowser: (String, String) -> Unit
 ) {
-    val dapps by viewModel.allDApps.collectAsState()
+    val dApps by viewModel.allDApps.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val showFilters by viewModel.showFilters.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
-    
-    val scrollState = rememberLazyListState()
-    
+
+    val density = LocalDensity.current
+    // SearchBar standard height is roughly 56dp, adding minimal padding
+    val searchBarVisibleHeight = 5.dp
+    val searchBarHeightPx = with(density) { searchBarVisibleHeight.toPx() }
+
+    var searchBarOffsetPx by remember { mutableFloatStateOf(0f) }
+
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y
+                searchBarOffsetPx = (searchBarOffsetPx + delta).coerceIn(-searchBarHeightPx, 0f)
+                return Offset.Zero
+            }
+        }
+    }
+
     Scaffold(
+        modifier = Modifier.nestedScroll(nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = { Text("All DApps", style = AppTypography.titleLarge) },
+                title = { Text("dApps", style = AppTypography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = AppColors.TextPrimary
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = AppColors.Surface
-                )
+                }
             )
         }
     ) { padding ->
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            // Search Bar
-            SearchInput(
-                query = searchQuery,
-                onQueryChange = viewModel::onSearchQueryChanged,
-                placeholder = "Search dApps...",
-                modifier = Modifier.padding(Dimensions.Padding.standard)
-            )
-            
-            // DApps List
-            when (dapps) {
-                is LoadingState.Loading -> {
+        Box(Modifier
+            .fillMaxSize()
+            .padding(top = padding.calculateTopPadding())) {
+            PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = viewModel::refreshDApps) {
+                if (dApps is LoadingState.Success) {
                     LazyColumn(
-                        contentPadding = PaddingValues(Dimensions.Padding.standard),
-                        verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.medium)
+                        contentPadding = PaddingValues(
+                            top = searchBarVisibleHeight,
+                            start = 16.dp,
+                            end = 16.dp,
+                            bottom = 16.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.standard)
                     ) {
-                        items(20) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(70.dp)
-                                    .shimmerEffect()
+                        items((dApps as LoadingState.Success).data) { dApp ->
+                            SiteRow(
+                                name = dApp.name,
+                                category = dApp.category.name.lowercase()
+                                    .replaceFirstChar { it.uppercase() },
+                                logoUrl = dApp.logoUrl,
+                                onClick = {
+                                    Timber.d("🎯 DApp clicked: ${dApp.name}")
+                                    onNavigateToDAppBrowser(dApp.url, dApp.name)
+                                }
                             )
                         }
                     }
                 }
-                
-                is LoadingState.Success -> {
-                    val dappList = (dapps as LoadingState.Success).data
-                    
-                    if (dappList.isEmpty()) {
-                        EmptyState(
-                            message = if (searchQuery.isNotBlank()) 
-                                "No dApps found" 
-                            else 
-                                "No dApps available"
-                        )
-                    } else {
-                        LazyColumn(
-                            state = scrollState,
-                            contentPadding = PaddingValues(Dimensions.Padding.standard),
-                            verticalArrangement = Arrangement.spacedBy(Dimensions.Spacing.medium)
-                        ) {
-                            items(dappList) { dapp ->
-                                SiteRow(
-                                    rank = dappList.indexOf(dapp) + 1,
-                                    name = dapp.name,
-                                    category = dapp.category.name.lowercase()
-                                        .replaceFirstChar { it.uppercase() },
-                                    logoUrl = dapp.logoUrl,
-                                    onClick = {
-                                        Timber.d("🎯 DApp clicked: ${dapp.name}")
-                                        onNavigateToDAppBrowser(dapp.url, dapp.name)
-                                    }
-                                )
-                            }
-                            
-                            // Footer
-                            item {
-                                Text(
-                                    "Showing ${dappList.size} dApps",
-                                    style = AppTypography.bodySmall,
-                                    color = AppColors.TextSecondary,
-                                    modifier = Modifier.padding(vertical = Dimensions.Spacing.medium)
-                                )
-                            }
-                        }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        translationY = searchBarOffsetPx
+                        alpha = 1f + (searchBarOffsetPx / searchBarHeightPx)
                     }
-                }
-                
-                is LoadingState.Error -> {
-                    ErrorScreen(
-                        message = (dapps as LoadingState.Error).message,
-                        onRetry = viewModel::refreshDApps
-                    )
-                }
-                
-                else -> {}
+            ) {
+                SearchBarWithFilter(
+                    searchQuery = searchQuery,
+                    onQueryChange = viewModel::onSearchQueryChanged,
+                    onResetSearch = { viewModel.onSearchQueryChanged("") },
+                    onToggleFilters = { },
+                    showFilters = showFilters,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
             }
         }
     }

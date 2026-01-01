@@ -1,19 +1,62 @@
 package com.decagon.ui.screen.settings
 
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Key
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
@@ -21,7 +64,10 @@ import androidx.navigation.NavHostController
 import com.decagon.domain.model.DecagonWallet
 import com.decagon.ui.components.CopyableAddress
 import com.decagon.ui.navigation.UnifiedBottomNavBar
+import com.decagon.util.ItemShape
+import com.octane.wallet.presentation.theme.AppTypography
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 
@@ -38,31 +84,21 @@ fun DecagonSettingsScreen(
 ) {
     val context = LocalContext.current
     val activity = context as? FragmentActivity
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     DisposableEffect(activity) {
-        Timber.d("SettingsScreen: Setting activity")
         activity?.let { viewModel.setActivity(it) }
-        onDispose {
-            viewModel.setActivity(null)
-            Timber.d("SettingsScreen: Cleared activity")
-        }
+        onDispose { viewModel.setActivity(null) }
     }
 
     var showRemoveDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
-    var showCopiedSnackbar by remember { mutableStateOf(false) }
-
-    LaunchedEffect(showCopiedSnackbar) {
-        if (showCopiedSnackbar) {
-            delay(2000)
-            showCopiedSnackbar = false
-        }
-    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Account Settings") },
+                title = { Text("Settings", style = AppTypography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -71,87 +107,80 @@ fun DecagonSettingsScreen(
             )
         },
         bottomBar = { UnifiedBottomNavBar(navController = navController) },
-        snackbarHost = {
-            if (showCopiedSnackbar) {
-                Snackbar(modifier = Modifier.padding(16.dp)) {
-                    Text("Address copied to clipboard")
-                }
-            }
-        }
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
+                .padding(20.dp), // Unified screen padding
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Account Info Card
-            OutlinedCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+            // Header Profile Section (Replaced OutlinedCard with Surface)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = ItemShape,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier = Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Surface(
-                            modifier = Modifier.size(60.dp),
-                            shape = MaterialTheme.shapes.extraLarge,
-                            color = MaterialTheme.colorScheme.primaryContainer
+                            modifier = Modifier.size(56.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
-                                    text = wallet.name.take(2).uppercase(),
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    text = wallet.name.take(1).uppercase(),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = wallet.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Active Wallet",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
 
-                        Text(
-                            text = wallet.name,
-                            style = MaterialTheme.typography.titleLarge
-                        )
+                        IconButton(onClick = { showEditDialog = true }) {
+                            Icon(Icons.Rounded.Edit, null, modifier = Modifier.size(20.dp))
+                        }
                     }
 
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        CopyableAddress(
-                            address = wallet.address,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(10.dp),
-                            truncated = true,
-                            onCopied = { showCopiedSnackbar = true }
-                        )
-                    }
+//                    CopyableAddress(
+//                        address = wallet.address,
+//                        modifier = Modifier.fillMaxWidth(),
+//                        truncated = true,
+//                        onCopied = {
+//                            scope.launch { snackbarHostState.showSnackbar("Address copied") }
+//                        }
+//                    )
                 }
             }
 
             // Account Actions
             SettingsSection(title = "Account") {
                 SettingsItem(
-                    icon = Icons.Default.Edit,
-                    title = "Edit Account Name",
-                    onClick = { showEditDialog = true }
-                )
-
-                SettingsItem(
-                    icon = Icons.Default.AccountBalance,
+                    icon = Icons.Rounded.AccountBalance,
                     title = "Supported Chains",
                     subtitle = "Manage blockchain networks",
                     onClick = onNavigateToChains
@@ -161,32 +190,44 @@ fun DecagonSettingsScreen(
             // Security Section
             SettingsSection(title = "Security") {
                 SettingsItem(
-                    icon = Icons.Default.Lock,
-                    title = "Show Recovery Phrase",
-                    subtitle = "View your 12-word recovery phrase",
-                    onClick = onShowRecoveryPhrase,
-                    destructive = false
+                    icon = Icons.Rounded.Lock,
+                    title = "Recovery Phrase",
+                    subtitle = "View your 12-word seed phrase",
+                    onClick = onShowRecoveryPhrase
                 )
-
                 SettingsItem(
-                    icon = Icons.Default.Key,
-                    title = "Show Private Key",
-                    subtitle = "Export private key (advanced)",
-                    onClick = onShowPrivateKey,
-                    destructive = false
+                    icon = Icons.Rounded.Key,
+                    title = "Private Key",
+                    subtitle = "Export for external use",
+                    onClick = onShowPrivateKey
                 )
 
-                Button(onClick = { viewModel.fixStuckTransactions(wallet.address) }) {
-                    Text("Fix Stuck Transactions")
+                // Advanced Action Button (Unified with Primary Style)
+                Surface(
+                    onClick = { viewModel.fixStuckTransactions(wallet.address) },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Color.Transparent
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Fix Stuck Transactions",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
 
             // Danger Zone
             SettingsSection(title = "Danger Zone") {
                 SettingsItem(
-                    icon = Icons.Default.Delete,
+                    icon = Icons.Rounded.Delete,
                     title = "Remove Account",
-                    subtitle = "Permanently remove from this device",
+                    subtitle = "Wipe this wallet from the device",
                     onClick = { showRemoveDialog = true },
                     destructive = true
                 )
@@ -194,7 +235,7 @@ fun DecagonSettingsScreen(
         }
     }
 
-    // Edit name dialog
+    // Dialogs updated with ItemShape
     if (showEditDialog) {
         EditNameDialog(
             currentName = wallet.name,
@@ -206,28 +247,21 @@ fun DecagonSettingsScreen(
         )
     }
 
-    // Remove confirmation dialog
     if (showRemoveDialog) {
         AlertDialog(
             onDismissRequest = { showRemoveDialog = false },
-            icon = { Icon(Icons.Default.Warning, null) },
+            shape = ItemShape,
+            icon = { Icon(Icons.Rounded.Warning, null, tint = MaterialTheme.colorScheme.error) },
             title = { Text("Remove Account?") },
-            text = {
-                Text("This will remove the account from the app. Make sure you have backed up your recovery phrase.")
-            },
+            text = { Text("This will remove the account from the app. Ensure you have your recovery phrase backed up.") },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showRemoveDialog = false
-                        viewModel.removeWallet(wallet.id) {
-                            onBackClick()
-                        }
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
+                        viewModel.removeWallet(wallet.id) { onBackClick() }
+                    }
                 ) {
-                    Text("Remove")
+                    Text("Remove", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -238,6 +272,7 @@ fun DecagonSettingsScreen(
         )
     }
 }
+
 
 @Composable
 private fun EditNameDialog(
@@ -283,26 +318,21 @@ private fun SettingsSection(
     title: String,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = title,
-            style = MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 4.dp),
+            fontWeight = FontWeight.Bold
         )
 
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = ItemShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
         ) {
-            Column {
-                content()
-            }
+            Column { content() }
         }
     }
 }
@@ -317,7 +347,7 @@ private fun SettingsItem(
 ) {
     Surface(
         onClick = onClick,
-        color = MaterialTheme.colorScheme.surface
+        color = Color.Transparent // Background handled by Section parent
     ) {
         Row(
             modifier = Modifier
@@ -328,10 +358,8 @@ private fun SettingsItem(
             Icon(
                 icon,
                 contentDescription = null,
-                tint = if (destructive)
-                    MaterialTheme.colorScheme.error
-                else
-                    MaterialTheme.colorScheme.onSurfaceVariant
+                tint = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp)
             )
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -340,10 +368,8 @@ private fun SettingsItem(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = if (destructive)
-                        MaterialTheme.colorScheme.error
-                    else
-                        MaterialTheme.colorScheme.onSurface
+                    color = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold
                 )
                 if (subtitle != null) {
                     Text(
@@ -355,10 +381,12 @@ private fun SettingsItem(
             }
 
             Icon(
-                Icons.Default.ChevronRight,
+                Icons.Rounded.ChevronRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.size(18.dp)
             )
         }
     }
 }
+

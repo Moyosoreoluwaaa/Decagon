@@ -43,6 +43,11 @@ fun PortfolioPerformanceChart(
     modifier: Modifier = Modifier
 ) {
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
+
+    // Resolve colors in the Composable context
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val dotColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+
     val animationProgress by animateFloatAsState(
         targetValue = 1f,
         animationSpec = tween(1200, easing = FastOutSlowInEasing),
@@ -58,13 +63,12 @@ fun PortfolioPerformanceChart(
         modifier = modifier
             .fillMaxWidth()
             .height(200.dp)
-            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .padding(vertical = 16.dp)
             .pointerInput(historyPoints) {
                 detectTapGestures { offset ->
                     val step = size.width / (historyPoints.size - 1).coerceAtLeast(1)
-                    val index = (offset.x / step).roundToInt()
+                    selectedIndex = (offset.x / step).roundToInt()
                         .coerceIn(0, historyPoints.lastIndex)
-                    selectedIndex = index
                 }
             }
     ) {
@@ -72,21 +76,35 @@ fun PortfolioPerformanceChart(
         val height = size.height
         val step = width / (historyPoints.size - 1).coerceAtLeast(1)
 
+        // Draw Dotted Background
+        val dotSpacing = 10.dp.toPx()
+        val horizontalDots = (width / dotSpacing).toInt()
+        val verticalDots = (height / dotSpacing).toInt()
+
+        for (i in 0..horizontalDots) {
+            for (j in 0..verticalDots) {
+                drawCircle(
+                    color = dotColor,
+                    radius = 1.dp.toPx(),
+                    center = Offset(i * dotSpacing, j * dotSpacing)
+                )
+            }
+        }
+
         val maxValue = historyPoints.maxOf { it.totalValueUsd }
         val minValue = historyPoints.minOf { it.totalValueUsd }
         val valueRange = (maxValue - minValue).coerceAtLeast(0.01)
 
-        // Create path for line and gradient
         val linePath = Path()
         val gradientPath = Path()
-
         val animatedPoints = historyPoints.take(
             (historyPoints.size * animationProgress).toInt().coerceAtLeast(1)
         )
 
         animatedPoints.forEachIndexed { index, point ->
             val x = index * step
-            val y = height - ((point.totalValueUsd - minValue) / valueRange * height * 0.85f).toFloat()
+            val y =
+                height - ((point.totalValueUsd - minValue) / valueRange * height * 0.85f).toFloat()
 
             if (index == 0) {
                 linePath.moveTo(x, y)
@@ -98,70 +116,31 @@ fun PortfolioPerformanceChart(
             }
         }
 
-        // Close gradient path
         gradientPath.lineTo(animatedPoints.lastIndex * step, height)
         gradientPath.close()
 
-        // Draw gradient fill
         drawPath(
             path = gradientPath,
             brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFF9945FF).copy(alpha = 0.35f),
-                    Color(0xFF9945FF).copy(alpha = 0.05f)
-                ),
-                startY = 0f,
-                endY = height
-            )
-        )
-
-        // Draw line with glow
-        drawPath(
-            path = linePath,
-            color = Color(0xFF9945FF).copy(alpha = 0.3f),
-            style = Stroke(
-                width = 6.dp.toPx(),
-                cap = StrokeCap.Round,
-                join = StrokeJoin.Round
+                colors = listOf(primaryColor.copy(alpha = 0.2f), Color.Transparent),
+                startY = 0f, endY = height
             )
         )
 
         drawPath(
             path = linePath,
-            color = Color(0xFF9945FF),
-            style = Stroke(
-                width = 2.5.dp.toPx(),
-                cap = StrokeCap.Round,
-                join = StrokeJoin.Round
-            )
+            color = primaryColor,
+            style = Stroke(width = 1.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
 
-        // Draw selected point indicator
         selectedIndex?.let { index ->
             if (index in historyPoints.indices) {
                 val x = index * step
-                val y = height - ((historyPoints[index].totalValueUsd - minValue) / valueRange * height * 0.85f).toFloat()
-
-                // Outer glow
-                drawCircle(
-                    color = Color(0xFF9945FF).copy(alpha = 0.2f),
-                    radius = 18.dp.toPx(),
-                    center = Offset(x, y)
-                )
-
-                // Inner dot
-                drawCircle(
-                    color = Color(0xFF9945FF),
-                    radius = 8.dp.toPx(),
-                    center = Offset(x, y)
-                )
-
-                // White center
-                drawCircle(
-                    color = Color.White,
-                    radius = 4.dp.toPx(),
-                    center = Offset(x, y)
-                )
+                val y =
+                    height - ((historyPoints[index].totalValueUsd - minValue) / valueRange * height * 0.85f).toFloat()
+                drawCircle(primaryColor.copy(alpha = 0.2f), 16.dp.toPx(), Offset(x, y))
+                drawCircle(primaryColor, 6.dp.toPx(), Offset(x, y))
+                drawCircle(Color.White, 3.dp.toPx(), Offset(x, y))
             }
         }
     }
@@ -179,77 +158,6 @@ private fun EmptyChartPlaceholder(modifier: Modifier) {
             "Loading chart data...",
             style = MaterialTheme.typography.bodyMedium,
             color = Color(0xFF7E7E8F)
-        )
-    }
-}
-
-//enum class TimeRange(val displayName: String) {
-//    ONE_DAY("1D"),
-//    ONE_WEEK("1W"),
-//    ONE_MONTH("1M"),
-//    ONE_YEAR("1Y"),
-//    ALL("ALL")
-//}
-
-@Composable
-fun TimeRangeSelector(
-    selected: TimeRange,
-    onSelect: (TimeRange) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        TimeRange.values().forEach { range ->
-            TimeRangeChip(
-                label = range.displayName,
-                isSelected = range == selected,
-                onClick = { onSelect(range) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun TimeRangeChip(
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .height(32.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(
-                if (isSelected) {
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF9945FF).copy(alpha = 0.3f),
-                            Color(0xFF9945FF).copy(alpha = 0.15f)
-                        )
-                    )
-                } else {
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF2A2A34).copy(alpha = 0.4f),
-                            Color(0xFF1A1A24).copy(alpha = 0.4f)
-                        )
-                    )
-                }
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        contentAlignment = androidx.compose.ui.Alignment.Center
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                color = if (isSelected) Color(0xFF9945FF) else Color(0xFFB4B4C6),
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-            )
         )
     }
 }

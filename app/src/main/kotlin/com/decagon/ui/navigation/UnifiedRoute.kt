@@ -33,7 +33,6 @@ sealed interface UnifiedRoute {
     @Serializable data object TransactionHistory : UnifiedRoute  // ← NEW: Moved out of bottom nav
 
     // ========== WALLET-SPECIFIC SETTINGS ==========
-    @Serializable data class WalletSettings(val walletId: String) : UnifiedRoute  // ← RENAMED
     @Serializable data class RevealRecovery(val walletId: String) : UnifiedRoute
     @Serializable data class RevealPrivateKey(val walletId: String) : UnifiedRoute
     @Serializable data class ManageChains(val walletId: String) : UnifiedRoute
@@ -44,10 +43,4 @@ sealed interface UnifiedRoute {
     @Serializable data object AllPerps : UnifiedRoute
     @Serializable data object AllDApps : UnifiedRoute
 
-    // ========== WALLET MANAGEMENT ==========
-    @Serializable data class SeedPhraseDisplay(
-        val walletId: String,
-        val walletName: String,
-        val seedPhrase: String
-    ) : UnifiedRoute
 }

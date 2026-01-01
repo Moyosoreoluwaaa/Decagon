@@ -2,6 +2,7 @@ package com.decagon.ui.screen.wallet
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.decagon.core.chains.ChainType
 import com.decagon.core.network.NetworkManager
 import com.decagon.core.network.RpcClientFactory
@@ -9,7 +10,9 @@ import com.decagon.core.util.DecagonLoadingState
 import com.decagon.data.remote.CoinPriceService
 import com.decagon.domain.model.DecagonWallet
 import com.decagon.domain.repository.DecagonWalletRepository
+import com.wallet.core.util.LoadingState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -30,6 +33,20 @@ class DecagonWalletViewModel(
 
     private val _fiatPrice = MutableStateFlow(0.0)
     val fiatPrice = _fiatPrice.asStateFlow()
+
+    // ✅ NEW: Pull-to-refresh state
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    // ✅ NEW: Toast message
+    private val _toastMessage = MutableStateFlow<String?>(null)
+    val toastMessage: StateFlow<String?> = _toastMessage.asStateFlow()
+
+    private val _selectedTimeframe = MutableStateFlow("1D")
+    val selectedTimeframe: StateFlow<String> = _selectedTimeframe.asStateFlow()
+
+    private val _chartData = MutableStateFlow<LoadingState<List<Double>>>(LoadingState.Idle)
+    val chartData: StateFlow<LoadingState<List<Double>>> = _chartData.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val walletState: StateFlow<DecagonLoadingState<DecagonWallet>> =
@@ -111,6 +128,43 @@ class DecagonWalletViewModel(
         viewModelScope.launch {
             repository.setActiveWallet(walletId)
         }
+    }
+
+    fun refresh() {
+        _isRefreshing.value = true
+        viewModelScope.launch {
+            try {
+                // TODO: Trigger repository refresh
+            } finally {
+                _isRefreshing.value = false
+            }
+        }
+    }
+
+    private fun fetchChartData(timeframe: String) {
+        viewModelScope.launch {
+            _chartData.value = LoadingState.Loading
+
+            try {
+                delay(1000)
+
+                val mockData = List(50) {
+                    1000.0 + (Math.random() * 100 - 50)
+                }
+
+                _chartData.value = LoadingState.Success(mockData)
+            } catch (e: Exception) {
+                _chartData.value = LoadingState.Error(e, "Failed to load chart")
+            }
+        }
+    }
+
+
+
+    fun onTimeframeSelected(timeframe: String) {
+        if (_selectedTimeframe.value == timeframe) return
+        _selectedTimeframe.value = timeframe
+        fetchChartData(timeframe)
     }
 
     fun setCurrency(currency: String) {

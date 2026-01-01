@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import com.octane.wallet.presentation.theme.AppColors
 import com.octane.wallet.presentation.theme.AppTypography
 import com.octane.wallet.presentation.theme.Dimensions
+import com.wallet.presentation.components.MetallicCard
 
 /**
  * Swap input/output card pair.

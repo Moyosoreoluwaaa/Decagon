@@ -1,4 +1,4 @@
-package com.wallet.presentation.viewmodel
+package com.decagon.ui.screen.perps
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,9 +31,20 @@ class PerpDetailViewModel(
     private val _selectedLeverage = MutableStateFlow(10)
     val selectedLeverage: StateFlow<Int> = _selectedLeverage.asStateFlow()
 
+    // ✅ NEW: Pull-to-refresh state
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    // ✅ NEW: Watchlist state
+    private val _isInWatchlist = MutableStateFlow(false)
+    val isInWatchlist: StateFlow<Boolean> = _isInWatchlist.asStateFlow()
+
+    // ✅ NEW: Toast message
+    private val _toastMessage = MutableStateFlow<String?>(null)
+    val toastMessage: StateFlow<String?> = _toastMessage.asStateFlow()
+
     fun loadPerp(perpSymbol: String) {
         viewModelScope.launch {
-            // ✅ CRITICAL FIX: Use observeAllPerps() to search entire cache
             discoverRepository.observeAllPerps()
                 .map { state ->
                     when (state) {
@@ -49,21 +60,14 @@ class PerpDetailViewModel(
                                 LoadingState.Success(perp)
                             } else {
                                 Timber.tag(TAG).e("❌ Perp NOT FOUND in ${state.data.size} cached perps")
-                                Timber.tag(TAG).d("Available perps: ${state.data.map { it.symbol }}")
                                 LoadingState.Error(
                                     IllegalArgumentException("Perp not found"),
                                     "Perp '$perpSymbol' not found in cache"
                                 )
                             }
                         }
-                        is LoadingState.Loading -> {
-                            Timber.tag(TAG).d("🔄 Loading perps...")
-                            LoadingState.Loading
-                        }
-                        is LoadingState.Error -> {
-                            Timber.tag(TAG).e("❌ Error loading perps: ${state.message}")
-                            state
-                        }
+                        is LoadingState.Loading -> LoadingState.Loading
+                        is LoadingState.Error -> state
                         else -> LoadingState.Loading
                     }
                 }
@@ -78,13 +82,51 @@ class PerpDetailViewModel(
 
     fun onTimeframeSelected(timeframe: String) {
         if (_selectedTimeframe.value == timeframe) return
-
         _selectedTimeframe.value = timeframe
         fetchChartData(timeframe)
     }
 
     fun onLeverageSelected(leverage: Int) {
         _selectedLeverage.value = leverage
+    }
+
+    fun refresh() {
+        _isRefreshing.value = true
+        viewModelScope.launch {
+            try {
+                // TODO: Trigger repository refresh
+                // discoverRepository.refreshPerps()
+                
+                // Re-fetch chart
+                fetchChartData(_selectedTimeframe.value)
+            } finally {
+                _isRefreshing.value = false
+            }
+        }
+    }
+
+    fun toggleWatchlist() {
+        viewModelScope.launch {
+            val perp = (_perpDetail.value as? LoadingState.Success)?.data ?: return@launch
+            
+            // TODO: Implement with WatchlistRepository
+            _isInWatchlist.value = !_isInWatchlist.value
+            _toastMessage.value = if (_isInWatchlist.value) {
+                "${perp.name} added to watchlist"
+            } else {
+                "${perp.name} removed from watchlist"
+            }
+        }
+    }
+
+    fun setPriceAlert() {
+        val perp = (_perpDetail.value as? LoadingState.Success)?.data ?: return
+        // TODO: Show price alert dialog
+        _toastMessage.value = "Price alert feature coming soon"
+    }
+
+    fun clearToast() {
+        _toastMessage.value = null
     }
 
     private fun fetchChartData(timeframe: String) {

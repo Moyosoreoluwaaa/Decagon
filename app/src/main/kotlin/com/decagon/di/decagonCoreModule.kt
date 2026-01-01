@@ -29,9 +29,9 @@ import com.octane.wallet.domain.usecases.wallet.ObserveActiveWalletUseCase
 import com.octane.wallet.domain.usecases.wallet.SwitchActiveWalletUseCase
 import com.octane.wallet.presentation.viewmodel.DAppBrowserViewModel
 import com.octane.wallet.presentation.viewmodel.DiscoverViewModel
-import com.wallet.presentation.viewmodel.PerpDetailViewModel
+import com.decagon.ui.screen.perps.PerpDetailViewModel
 import com.octane.wallet.presentation.viewmodel.SettingsViewModel
-import com.octane.wallet.presentation.viewmodel.TokenDetailViewModel
+import com.decagon.ui.screen.token.TokenDetailViewModel
 import com.wallet.data.repository.DiscoverRepositoryImpl
 import com.wallet.domain.repository.DiscoverRepository
 import com.wallet.domain.usecases.discover.ObserveAllTokensUseCase

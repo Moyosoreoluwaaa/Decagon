@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import com.octane.wallet.presentation.theme.AppColors
 import com.octane.wallet.presentation.theme.AppTypography
 import com.octane.wallet.presentation.theme.Dimensions
+import com.wallet.presentation.components.UtilMetallicCard
 
 /**
  * Utility card for token detail stats.

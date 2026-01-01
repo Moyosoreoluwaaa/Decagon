@@ -15,7 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
-import com.octane.wallet.presentation.components.MetallicCard
+import com.wallet.presentation.components.MetallicCard
 import com.octane.wallet.presentation.components.WideActionButton
 import com.octane.wallet.presentation.theme.*
 import com.octane.wallet.presentation.utils.UiFormatters

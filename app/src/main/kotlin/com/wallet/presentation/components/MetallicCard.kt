@@ -1,4 +1,4 @@
-package com.octane.wallet.presentation.components
+package com.wallet.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.Dp
 import com.octane.wallet.presentation.theme.AppColors
 import com.octane.wallet.presentation.theme.Dimensions
 import com.octane.wallet.presentation.utils.metallicBorder
@@ -19,7 +20,7 @@ import com.octane.wallet.presentation.utils.metallicBorder
 @Composable
 fun MetallicCard(
     modifier: Modifier = Modifier,
-    cornerRadius: androidx.compose.ui.unit.Dp = Dimensions.CornerRadius.extraLarge,
+    cornerRadius: Dp = Dimensions.CornerRadius.extraLarge,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(

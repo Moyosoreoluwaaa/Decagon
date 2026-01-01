@@ -38,27 +38,3 @@ fun QuickActionGrid(
         MetallicButton(text = "Buy", icon = Icons.Rounded.AttachMoney, onClick = onBuy)
     }
 }
-
-/**
- * Action grid for token detail screen.
- */
-@Composable
-fun ChartActionGrid(
-    onReceive: () -> Unit,
-    onCashBuy: () -> Unit,
-    onShare: () -> Unit,
-    onMore: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = Dimensions.Spacing.standard),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        ChartActionButton("Receive", Icons.Rounded.QrCode, onReceive)
-        ChartActionButton("Cash Buy", Icons.Rounded.AttachMoney, onCashBuy)
-        ChartActionButton("Share", Icons.Rounded.IosShare, onShare)
-        ChartActionButton("More", Icons.Rounded.MoreHoriz, onMore)
-    }
-}

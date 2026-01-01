@@ -1,4 +1,4 @@
-package com.octane.wallet.presentation.components
+package com.decagon.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AllInclusive
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,23 +17,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.octane.wallet.presentation.components.PriceChangeBadge
 import com.octane.wallet.presentation.theme.AppColors
 import com.octane.wallet.presentation.theme.AppTypography
 import com.octane.wallet.presentation.theme.Dimensions
-import com.octane.wallet.presentation.utils.metallicBorder
 
-/**
- * Perpetual futures row component.
- * Shows leverage badge and volume data.
- */
 @Composable
 fun PerpRow(
     symbol: String,
-    name: String, // Kept for data, but no longer used for main title
+    name: String,
     price: String,
     changePercent: Double,
     volume24h: String,
@@ -46,25 +44,18 @@ fun PerpRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(Dimensions.CornerRadius.standard))
-            .background(AppColors.Background)
-            .metallicBorder(
-                Dimensions.Border.standard,
-                RoundedCornerShape(Dimensions.CornerRadius.standard),
-                angleDeg = 90f
-            )
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(onClick = onClick)
-            .padding(Dimensions.Padding.small),
+            .padding(Dimensions.Padding.standard),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // LEFT: Badged Icon + Info
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.medium)
+            horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.medium),
+            modifier = Modifier.weight(1f)
         ) {
-            // Icon with Infinity Badge
             Box(contentAlignment = Alignment.BottomEnd) {
-                // Async Image Integration
                 var showFallback by remember { mutableStateOf(false) }
 
                 Box(
@@ -72,7 +63,7 @@ fun PerpRow(
                     modifier = Modifier
                         .size(Dimensions.Avatar.large)
                         .clip(CircleShape)
-                        .background(fallbackIconColor) // Fallback background color
+                        .background(fallbackIconColor)
                 ) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
@@ -81,24 +72,22 @@ fun PerpRow(
                             .build(),
                         contentDescription = "$symbol Logo",
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
                         onLoading = { showFallback = false },
                         onSuccess = { showFallback = false },
                         onError = { showFallback = true }
                     )
 
-                    // Conditional Fallback Content
                     if (showFallback || logoUrl.isNullOrBlank()) {
                         Text(
                             symbol.take(1),
                             style = AppTypography.labelLarge,
-                            color = Color.White
                         )
                     }
                 }
-                // End Async Image Integration
 
-                // Perp Badge
                 Box(
                     modifier = Modifier
                         .offset(x = 4.dp, y = 4.dp)
@@ -116,12 +105,13 @@ fun PerpRow(
                 }
             }
 
-            Column {
+            Column(modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    // ✅ FIXED: Use the symbol (e.g., WIP-USDC) as the main title for consistency
                     symbol.uppercase(),
                     style = AppTypography.titleSmall,
-                    color = AppColors.TextPrimary
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(Dimensions.Spacing.extraSmall),
@@ -130,28 +120,31 @@ fun PerpRow(
                     Text(
                         volume24h,
                         style = AppTypography.bodySmall,
-                        color = AppColors.TextSecondary
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         "•",
                         style = AppTypography.bodySmall,
-                        color = AppColors.TextSecondary
                     )
                     Text(
                         "${leverageMax}x",
                         style = AppTypography.bodySmall,
-                        color = AppColors.TextSecondary
                     )
                 }
             }
         }
 
-        // RIGHT: Price + Change
-        Column(horizontalAlignment = Alignment.End) {
+        Column(
+            horizontalAlignment = Alignment.End,
+            modifier = Modifier.widthIn(max = 100.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Text(
                 price,
                 style = AppTypography.titleSmall,
-                color = AppColors.TextPrimary
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             PriceChangeBadge(changePercent = changePercent)
         }

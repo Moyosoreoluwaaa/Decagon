@@ -65,49 +65,6 @@ class DiscoverViewModel(
     private val _showOnlyPositive = MutableStateFlow(false)
     val showOnlyPositive: StateFlow<Boolean> = _showOnlyPositive.asStateFlow()
 
-    // Search suggestions (live dropdown)
-    val searchSuggestions: StateFlow<List<SearchSuggestion>> = searchQuery
-        .debounce(200) // Faster response for suggestions
-        .distinctUntilChanged()
-        .flatMapLatest { query ->
-            if (query.isBlank()) {
-                flowOf(emptyList())
-            } else {
-                when (selectedMode.value) {
-                    DiscoverMode.TOKENS -> trendingTokens.map { state ->
-                        (state as? LoadingState.Success)?.data
-                            ?.filter {
-                                it.name.contains(query, ignoreCase = true) ||
-                                        it.symbol.contains(query, ignoreCase = true)
-                            }
-                            ?.take(5)
-                            ?.map { SearchSuggestion.TokenSuggestion(it) }
-                            ?: emptyList()
-                    }
-                    DiscoverMode.PERPS -> perps.map { state ->
-                        (state as? LoadingState.Success)?.data
-                            ?.filter {
-                                it.name.contains(query, ignoreCase = true) ||
-                                        it.symbol.contains(query, ignoreCase = true)
-                            }
-                            ?.take(5)
-                            ?.map { SearchSuggestion.PerpSuggestion(it) }
-                            ?: emptyList()
-                    }
-                    DiscoverMode.LISTS -> dapps.map { state ->
-                        (state as? LoadingState.Success)?.data
-                            ?.filter {
-                                it.name.contains(query, ignoreCase = true)
-                            }
-                            ?.take(5)
-                            ?.map { SearchSuggestion.DAppSuggestion(it) }
-                            ?: emptyList()
-                    }
-                }
-            }
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
     // ==================== TOKENS ====================
 
     val trendingTokens: StateFlow<LoadingState<List<Token>>> = observeTrendingTokensUseCase()
@@ -117,7 +74,10 @@ class DiscoverViewModel(
                 is LoadingState.Success -> {
                     Timber.tag(TAG).i("✅ Trending tokens - Success: ${state.data.size} items")
                 }
-                is LoadingState.Error -> Timber.tag(TAG).e("❌ Trending tokens - Error: ${state.message}")
+
+                is LoadingState.Error -> Timber.tag(TAG)
+                    .e("❌ Trending tokens - Error: ${state.message}")
+
                 else -> {}
             }
         }
@@ -149,7 +109,9 @@ class DiscoverViewModel(
         .onEach { state ->
             when (state) {
                 is LoadingState.Loading -> Timber.tag(TAG).d("🔵 Perps - Loading")
-                is LoadingState.Success -> Timber.tag(TAG).i("✅ Perps - Success: ${state.data.size} items")
+                is LoadingState.Success -> Timber.tag(TAG)
+                    .i("✅ Perps - Success: ${state.data.size} items")
+
                 is LoadingState.Error -> Timber.tag(TAG).e("❌ Perps - Error: ${state.message}")
                 else -> {}
             }
@@ -182,7 +144,9 @@ class DiscoverViewModel(
         .onEach { state ->
             when (state) {
                 is LoadingState.Loading -> Timber.tag(TAG).d("🔵 DApps - Loading")
-                is LoadingState.Success -> Timber.tag(TAG).i("✅ DApps - Success: ${state.data.size} items")
+                is LoadingState.Success -> Timber.tag(TAG)
+                    .i("✅ DApps - Success: ${state.data.size} items")
+
                 is LoadingState.Error -> Timber.tag(TAG).e("❌ DApps - Error: ${state.message}")
                 else -> {}
             }
@@ -324,7 +288,9 @@ class DiscoverViewModel(
                 val result = refreshTokensUseCase()
                 when (result) {
                     is LoadingState.Success -> Timber.tag(TAG).i("✅ Tokens refreshed")
-                    is LoadingState.Error -> Timber.tag(TAG).e("❌ Token refresh failed: ${result.message}")
+                    is LoadingState.Error -> Timber.tag(TAG)
+                        .e("❌ Token refresh failed: ${result.message}")
+
                     else -> {}
                 }
             } catch (e: Exception) {

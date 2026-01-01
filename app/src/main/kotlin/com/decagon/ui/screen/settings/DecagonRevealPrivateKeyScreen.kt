@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.decagon.core.util.DecagonLoadingState
+import com.octane.wallet.presentation.theme.AppTypography
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 
@@ -60,7 +61,7 @@ fun DecagonRevealPrivateKeyScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Private Key") },
+                title = { Text("Private Key", style = AppTypography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")

@@ -5,7 +5,8 @@ import com.wallet.presentation.viewmodel.BasePortfolioViewModel
 import com.wallet.presentation.viewmodel.BaseTransactionViewModel
 import com.wallet.presentation.viewmodel.BaseWalletViewModel
 import com.wallet.presentation.viewmodel.HomeViewModel
-import com.wallet.presentation.viewmodel.PerpDetailViewModel
+import com.decagon.ui.screen.perps.PerpDetailViewModel
+import com.decagon.ui.screen.token.TokenDetailViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 

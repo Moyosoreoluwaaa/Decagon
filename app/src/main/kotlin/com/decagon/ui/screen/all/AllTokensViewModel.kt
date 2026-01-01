@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.octane.wallet.domain.models.Token
 import com.octane.wallet.domain.usecases.discover.RefreshTokensUseCase
 import com.octane.wallet.domain.usecases.discover.SearchTokensUseCase
+import com.octane.wallet.presentation.viewmodel.SortType
 import com.wallet.core.util.LoadingState
 import com.wallet.domain.usecases.discover.ObserveAllTokensUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,6 +43,20 @@ class AllTokensViewModel(
             initialValue = LoadingState.Loading
         )
 
+    // In ViewModel class
+    private val _showScrollToTop = MutableStateFlow(false)
+    val showScrollToTop: StateFlow<Boolean> = _showScrollToTop.asStateFlow()
+
+    private val _showFilters = MutableStateFlow(false)
+    val showFilters: StateFlow<Boolean> = _showFilters.asStateFlow()
+
+    private val _sortType = MutableStateFlow(SortType.RANK)
+    val sortType: StateFlow<SortType> = _sortType.asStateFlow()
+
+    private val _showOnlyPositive = MutableStateFlow(false)
+    val showOnlyPositive: StateFlow<Boolean> = _showOnlyPositive.asStateFlow()
+
+
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
     }
@@ -57,5 +72,27 @@ class AllTokensViewModel(
                 _isRefreshing.value = false
             }
         }
+    }
+
+    fun onScrollStateChanged(firstVisibleIndex: Int, scrollOffset: Int) {
+        _showScrollToTop.value = firstVisibleIndex > 5 || scrollOffset > 500
+    }
+
+    fun onToggleFilters() {
+        _showFilters.value = !_showFilters.value
+    }
+
+    fun onSortTypeChanged(type: SortType) {
+        _sortType.value = type
+    }
+
+    fun onTogglePositiveOnly() {
+        _showOnlyPositive.value = !_showOnlyPositive.value
+    }
+
+    fun onResetFilters() {
+        _searchQuery.value = ""
+        _sortType.value = SortType.RANK
+        _showOnlyPositive.value = false
     }
 }

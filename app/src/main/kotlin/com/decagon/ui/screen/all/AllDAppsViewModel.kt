@@ -6,6 +6,7 @@ import com.wallet.core.util.LoadingState
 import com.octane.wallet.domain.models.DApp
 import com.octane.wallet.domain.usecases.discover.ObserveDAppsUseCase
 import com.octane.wallet.domain.usecases.discover.RefreshDAppsUseCase
+import com.octane.wallet.presentation.viewmodel.SortType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
@@ -54,6 +55,20 @@ class AllDAppsViewModel(
             initialValue = LoadingState.Loading
         )
 
+    private val _showScrollToTop = MutableStateFlow(false)
+    val showScrollToTop: StateFlow<Boolean> = _showScrollToTop.asStateFlow()
+
+    private val _showFilters = MutableStateFlow(false)
+    val showFilters: StateFlow<Boolean> = _showFilters.asStateFlow()
+
+    private val _sortType = MutableStateFlow(SortType.RANK)
+    val sortType: StateFlow<SortType> = _sortType.asStateFlow()
+
+    private val _showOnlyPositive = MutableStateFlow(false)
+    val showOnlyPositive: StateFlow<Boolean> = _showOnlyPositive.asStateFlow()
+
+
+
     fun onSearchQueryChanged(query: String) {
         Timber.tag(TAG).d("🔍 Search query: '$query'")
         _searchQuery.value = query
@@ -76,5 +91,27 @@ class AllDAppsViewModel(
                 _isRefreshing.value = false
             }
         }
+    }
+
+    fun onScrollStateChanged(firstVisibleIndex: Int, scrollOffset: Int) {
+        _showScrollToTop.value = firstVisibleIndex > 5 || scrollOffset > 500
+    }
+
+    fun onToggleFilters() {
+        _showFilters.value = !_showFilters.value
+    }
+
+    fun onSortTypeChanged(type: SortType) {
+        _sortType.value = type
+    }
+
+    fun onTogglePositiveOnly() {
+        _showOnlyPositive.value = !_showOnlyPositive.value
+    }
+
+    fun onResetFilters() {
+        _searchQuery.value = ""
+        _sortType.value = SortType.RANK
+        _showOnlyPositive.value = false
     }
 }

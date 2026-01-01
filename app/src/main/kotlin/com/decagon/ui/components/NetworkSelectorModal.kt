@@ -1,5 +1,6 @@
 package com.decagon.ui.components
 
+import android.graphics.Color.alpha
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,22 +17,38 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.decagon.core.network.NetworkEnvironment
 import com.decagon.domain.model.DecagonWallet
-import kotlin.collections.forEach
-
+import com.decagon.util.ContainerShape
+import com.decagon.util.ItemShape
+import com.decagon.util.SuccessGreen
+import com.octane.wallet.presentation.theme.AppTypography
 
 @Composable
 fun NetworkSelectorModal(
@@ -43,55 +60,35 @@ fun NetworkSelectorModal(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.75f))
+            .background(Color.Black.copy(alpha = 0.7f))
             .clickable(onClick = onDismiss),
         contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
-                .width(340.dp)
-                .clip(RoundedCornerShape(28.dp))
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF1E1E28),
-                            Color(0xFF12121A)
-                        )
-                    )
-                )
-                .border(
-                    width = 1.dp,
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF9945FF).copy(alpha = 0.35f),
-                            Color.Transparent
-                        )
-                    ),
-                    shape = RoundedCornerShape(28.dp)
-                )
-                .padding(28.dp)
-                .clickable(enabled = false) {} // Prevent click-through
+                .width(250.dp)
+                .clip(ContainerShape)
+                .background(MaterialTheme.colorScheme.background)
+                .padding(16.dp)
+                .clickable(enabled = false) {}
         ) {
             Text(
                 text = "Select Network",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                ),
-                modifier = Modifier.padding(bottom = 24.dp)
+                style = AppTypography.titleLarge,
             )
 
-            NetworkEnvironment.values().forEach { network ->
-                NetworkOption(
-                    network = network,
-                    isActive = network == currentNetwork,
-                    onClick = {
-                        onNetworkSelect(network)
-                        onDismiss()
-                    }
-                )
-                if (network != NetworkEnvironment.values().last()) {
-                    Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                NetworkEnvironment.entries.forEach { network ->
+                    NetworkOption(
+                        network = network,
+                        isActive = network == currentNetwork,
+                        onClick = {
+                            onNetworkSelect(network)
+                            onDismiss()
+                        }
+                    )
                 }
             }
         }
@@ -107,26 +104,13 @@ private fun NetworkOption(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(ItemShape)
             .background(
-                if (isActive) {
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF9945FF).copy(alpha = 0.2f),
-                            Color(0xFF9945FF).copy(alpha = 0.1f)
-                        )
-                    )
-                } else {
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF2A2A34).copy(alpha = 0.3f),
-                            Color(0xFF1A1A24).copy(alpha = 0.5f)
-                        )
-                    )
-                }
+                if (isActive) MaterialTheme.colorScheme.surfaceVariant
+                else MaterialTheme.colorScheme.background
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 16.dp),
+            .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -134,34 +118,111 @@ private fun NetworkOption(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Network indicator dot
             Box(
                 modifier = Modifier
-                    .size(12.dp)
+                    .size(10.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (isActive) Color(0xFF14F195) else Color(0xFF3A3A44)
-                    )
+                    .background(if (isActive) SuccessGreen else MaterialTheme.colorScheme.outline)
             )
-
             Text(
                 text = network.displayName,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (isActive) Color.White else Color(0xFFB4B4C6)
-                )
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isActive) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-
         if (isActive) {
-            Text(
-                text = "(Active)",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFF14F195)
-                )
-            )
+            Icon(Icons.Rounded.Check, null, modifier = Modifier.size(16.dp), tint = SuccessGreen)
         }
     }
+}
+
+
+@Composable
+internal fun SendForm(onSend: (String, Double) -> Unit) {
+    var toAddress by rememberSaveable { mutableStateOf("") }
+    var amount by rememberSaveable { mutableStateOf("") }
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        AppTextField(
+            value = toAddress,
+            onValueChange = { toAddress = it },
+            label = "Recipient Address",
+            placeholder = "Solana address",
+            trailingIcon = { DecagonQrScanner(onAddressScanned = { toAddress = it }) }
+        )
+
+        AppTextField(
+            value = amount,
+            onValueChange = { amount = it },
+            label = "Amount (SOL)",
+            placeholder = "0.0",
+            keyboardType = KeyboardType.Decimal
+        )
+
+        Button(
+            onClick = { onSend(toAddress, amount.toDoubleOrNull() ?: 0.0) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = ItemShape,
+            enabled = toAddress.isNotBlank() && amount.toDoubleOrNull() != null,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Text("Send", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun AppTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    placeholder: String,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    trailingIcon: @Composable (() -> Unit)? = null
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        placeholder = { Text(placeholder, modifier = Modifier.alpha(0.5f)) },
+        trailingIcon = trailingIcon,
+        modifier = Modifier.fillMaxWidth(),
+        shape = ItemShape,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.surfaceVariant,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+        ),
+        singleLine = true
+    )
+}
+
+@Composable
+internal fun HeaderRow(title: String, onDismiss: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        IconButton(onClick = onDismiss) {
+            Icon(Icons.Rounded.Close, "Close", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+internal fun BottomSheetDragHandle() {
+    Box(
+        modifier = Modifier
+            .padding(vertical = 12.dp)
+            .size(width = 40.dp, height = 4.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.outlineVariant)
+    )
 }
 
 @Composable
@@ -178,37 +239,21 @@ fun WalletSwitcherModal(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.75f))
             .clickable(onClick = onDismiss),
         contentAlignment = Alignment.TopStart
     ) {
         Column(
             modifier = Modifier
                 .padding(start = 16.dp, top = 72.dp)
-                .width(280.dp)
+                .width(200.dp)
                 .clip(RoundedCornerShape(20.dp))
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF1E1E28),
-                            Color(0xFF12121A)
-                        )
-                    )
-                )
-                .border(
-                    width = 1.dp,
-                    color = Color(0xFF9945FF).copy(alpha = 0.25f),
-                    shape = RoundedCornerShape(20.dp)
-                )
-                .padding(20.dp)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .padding(16.dp)
                 .clickable(enabled = false) {}
         ) {
             Text(
                 text = "Wallet Switcher",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                ),
+                style = AppTypography.titleLarge,
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
@@ -271,7 +316,7 @@ private fun WalletOptionItem(
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (isActive) {
-                    Color(0xFF9945FF).copy(alpha = 0.15f)
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
                 } else {
                     Color.Transparent
                 }
@@ -293,7 +338,6 @@ private fun WalletOptionItem(
                 text = wallet.name.take(1).uppercase(),
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
                 )
             )
         }
@@ -306,8 +350,7 @@ private fun WalletOptionItem(
                 Text(
                     text = wallet.name,
                     style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White
+                        fontWeight = FontWeight.Medium
                     )
                 )
                 if (isActive) {
@@ -332,7 +375,7 @@ private fun ActionMenuItem(
     Text(
         text = label,
         style = MaterialTheme.typography.bodyLarge.copy(
-            color = if (isDestructive) Color(0xFFFF6B6B) else Color(0xFFB4B4C6)
+            color = if (isDestructive) Color(0xFFFF6B6B) else MaterialTheme.colorScheme.onSurface
         ),
         modifier = Modifier
             .fillMaxWidth()

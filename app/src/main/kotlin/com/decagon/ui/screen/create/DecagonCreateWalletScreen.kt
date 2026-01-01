@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.ui.screen.onboarding.DecagonOnboardingViewModel
+import com.octane.wallet.presentation.theme.AppTypography
 import kotlinx.coroutines.delay // Added import
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
@@ -59,7 +60,7 @@ fun DecagonCreateWalletScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Create Wallet") },
+                title = { Text("Create Wallet", style = AppTypography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")

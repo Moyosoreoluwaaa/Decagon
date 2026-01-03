@@ -1,8 +1,8 @@
 package com.decagon.domain.usecase
 
-import com.wallet.core.util.LoadingState
-import com.octane.wallet.domain.models.Perp
-import com.wallet.domain.repository.DiscoverRepository
+import com.decagon.core.util.LoadingState
+import com.decagon.domain.model.Perp
+import com.decagon.domain.repository.DiscoverRepository
 import kotlinx.coroutines.flow.Flow
 
 /**

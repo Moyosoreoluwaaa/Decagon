@@ -90,6 +90,7 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
     implementation(libs.koin.compose)
+    implementation("io.insert-koin:koin-androidx-workmanager:4.0.1")
 
     // Networking, Data Scraping, Downloads
     implementation(libs.ktor.client.android)

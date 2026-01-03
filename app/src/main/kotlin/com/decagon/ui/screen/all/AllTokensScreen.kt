@@ -57,11 +57,11 @@ import androidx.wear.compose.material.swipeable
 import com.decagon.ui.components.FilterPanel
 import com.decagon.ui.components.RankedTokenRow
 import com.decagon.ui.components.SearchBarWithFilter
-import com.octane.wallet.domain.models.Token
-import com.octane.wallet.presentation.theme.AppColors
-import com.octane.wallet.presentation.theme.AppTypography
-import com.octane.wallet.presentation.theme.Dimensions
-import com.wallet.core.util.LoadingState
+import com.decagon.domain.model.Token
+import com.decagon.ui.theme.AppColors
+import com.decagon.ui.theme.AppTypography
+import com.decagon.ui.theme.Dimensions
+import com.decagon.core.util.LoadingState
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.roundToInt
 

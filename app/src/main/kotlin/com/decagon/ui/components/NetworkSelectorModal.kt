@@ -1,8 +1,6 @@
 package com.decagon.ui.components
 
-import android.graphics.Color.alpha
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,7 +46,7 @@ import com.decagon.domain.model.DecagonWallet
 import com.decagon.util.ContainerShape
 import com.decagon.util.ItemShape
 import com.decagon.util.SuccessGreen
-import com.octane.wallet.presentation.theme.AppTypography
+import com.decagon.ui.theme.AppTypography
 
 @Composable
 fun NetworkSelectorModal(

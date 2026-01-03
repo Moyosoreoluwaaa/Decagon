@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.octane.wallet.presentation.theme.AppTypography
+import com.decagon.ui.theme.AppTypography
 
 @Composable
 fun TimeframeRow(

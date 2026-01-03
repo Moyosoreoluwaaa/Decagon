@@ -3,7 +3,7 @@ package com.decagon.worker
 import android.content.Context
 import androidx.work.*
 import com.decagon.core.network.RpcClientFactory
-import com.decagon.data.remote.CoinPriceService
+import com.decagon.data.remote.api.CoinPriceService
 import com.decagon.domain.repository.DecagonWalletRepository
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent

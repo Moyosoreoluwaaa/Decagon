@@ -50,7 +50,7 @@ import com.decagon.core.util.DecagonExplorerUtil
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.domain.model.ChainWallet
 import com.decagon.domain.model.DecagonWallet
-import com.octane.wallet.presentation.theme.AppTypography
+import com.decagon.ui.theme.AppTypography
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber

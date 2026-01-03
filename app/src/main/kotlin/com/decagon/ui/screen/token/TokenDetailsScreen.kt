@@ -42,11 +42,11 @@ import com.decagon.ui.components.AssetDetailTopBar
 import com.decagon.ui.components.ChartActionGrid
 import com.decagon.ui.components.EnhancedPriceChart
 import com.decagon.ui.screen.perps.AssetInfoCard
-import com.octane.wallet.presentation.theme.AppColors
-import com.octane.wallet.presentation.theme.AppTypography
-import com.octane.wallet.presentation.theme.Dimensions
-import com.octane.wallet.presentation.utils.UiFormatters
-import com.wallet.core.util.LoadingState
+import com.decagon.ui.theme.AppColors
+import com.decagon.ui.theme.AppTypography
+import com.decagon.ui.theme.Dimensions
+import com.decagon.ui.utils.UiFormatters
+import com.decagon.core.util.LoadingState
 import org.koin.androidx.compose.koinViewModel
 
 

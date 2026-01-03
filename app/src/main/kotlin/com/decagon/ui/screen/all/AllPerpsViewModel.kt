@@ -3,10 +3,10 @@ package com.decagon.ui.screen.all
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.decagon.domain.usecase.ObserveAllPerpsUseCase
-import com.wallet.core.util.LoadingState
-import com.octane.wallet.domain.models.Perp
-import com.octane.wallet.domain.usecases.discover.RefreshPerpsUseCase
-import com.octane.wallet.presentation.viewmodel.SortType
+import com.decagon.core.util.LoadingState
+import com.decagon.domain.model.Perp
+import com.decagon.domain.usecase.discover.RefreshPerpsUseCase
+import com.decagon.ui.screen.discover.SortType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*

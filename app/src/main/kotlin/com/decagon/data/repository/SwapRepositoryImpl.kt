@@ -5,7 +5,7 @@ import com.decagon.data.local.dao.SwapHistoryDao
 import com.decagon.data.local.dao.TokenCacheDao
 import com.decagon.data.mapper.toDomain
 import com.decagon.data.mapper.toEntity
-import com.decagon.data.remote.JupiterUltraApiService
+import com.decagon.data.remote.api.JupiterUltraApiService
 import com.decagon.data.remote.dto.JupiterExecuteRequest
 import com.decagon.data.remote.dto.JupiterOrderRequest
 import com.decagon.domain.model.SecurityWarning

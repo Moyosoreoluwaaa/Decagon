@@ -62,8 +62,8 @@ import com.decagon.ui.components.TimeRange
 import com.decagon.ui.components.WalletSwitcherModal
 import com.decagon.ui.components.formatCurrency
 import com.decagon.ui.navigation.UnifiedBottomNavBar
-import com.octane.wallet.presentation.theme.AppColors
-import com.octane.wallet.presentation.theme.AppTypography
+import com.decagon.ui.theme.AppColors
+import com.decagon.ui.theme.AppTypography
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel

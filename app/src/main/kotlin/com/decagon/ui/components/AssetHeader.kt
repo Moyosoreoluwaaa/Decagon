@@ -15,8 +15,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.octane.wallet.presentation.theme.AppColors
-import com.octane.wallet.presentation.theme.AppTypography
+import com.decagon.ui.theme.AppColors
+import com.decagon.ui.theme.AppTypography
 
 @Composable
 fun AssetHeader(

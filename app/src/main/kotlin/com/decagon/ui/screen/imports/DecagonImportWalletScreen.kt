@@ -52,7 +52,7 @@ import androidx.fragment.app.FragmentActivity
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.ui.screen.onboarding.DecagonOnboardingViewModel
 import com.decagon.ui.screen.onboarding.ValidationState
-import com.octane.wallet.presentation.theme.AppTypography
+import com.decagon.ui.theme.AppTypography
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 

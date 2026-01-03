@@ -27,9 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.unit.dp
-import com.octane.wallet.presentation.theme.AppColors
-import com.octane.wallet.presentation.theme.AppTypography
-import com.octane.wallet.presentation.viewmodel.SortType
+import com.decagon.ui.theme.AppColors
+import com.decagon.ui.theme.AppTypography
+import com.decagon.ui.screen.discover.SortType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

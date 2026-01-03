@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.domain.model.DecagonTransaction
 import com.decagon.domain.model.TransactionStatus
-import com.octane.wallet.presentation.theme.AppTypography
+import com.decagon.ui.theme.AppTypography
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date

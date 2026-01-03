@@ -58,7 +58,7 @@ import com.decagon.ui.components.SwapPreviewCard
 import com.decagon.ui.components.TokenSelectorSheet
 import com.decagon.ui.navigation.UnifiedBottomNavBar
 import com.decagon.util.ItemShape
-import com.octane.wallet.presentation.theme.AppTypography
+import com.decagon.ui.theme.AppTypography
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.pow
 

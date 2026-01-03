@@ -22,6 +22,7 @@ import com.decagon.ui.screen.all.AllPerpsScreen
 import com.decagon.ui.screen.all.AllTokensScreen
 import com.decagon.ui.screen.chains.DecagonSupportedChainsScreen
 import com.decagon.ui.screen.create.DecagonCreateWalletScreen
+import com.decagon.ui.screen.dapp.DAppBrowserScreen
 import com.decagon.ui.screen.discover.DiscoverScreen
 import com.decagon.ui.screen.history.DecagonTransactionDetailScreen
 import com.decagon.ui.screen.history.DecagonTransactionHistoryScreen
@@ -37,7 +38,6 @@ import com.decagon.ui.screen.swap.SwapViewModel
 import com.decagon.ui.screen.token.TokenDetailsScreen
 import com.decagon.ui.screen.wallet.DecagonWalletScreen
 import com.decagon.ui.screen.wallet.DecagonWalletViewModel
-import com.octane.wallet.presentation.screens.DAppBrowserScreen
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
@@ -63,17 +63,23 @@ fun UnifiedNavHost(
         // ========== ONBOARDING ==========
         composable<UnifiedRoute.Onboarding> {
             DecagonWalletChoiceScreen(
-                onCreateWallet = { navController.navigate(UnifiedRoute.CreateWallet)
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)},
-                onImportWallet = { navController.navigate(UnifiedRoute.ImportWallet)
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)}
+                onCreateWallet = {
+                    navController.navigate(UnifiedRoute.CreateWallet)
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
+                onImportWallet = {
+                    navController.navigate(UnifiedRoute.ImportWallet)
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                }
             )
         }
 
         composable<UnifiedRoute.CreateWallet> {
             DecagonCreateWalletScreen(
-                onBackClick = { navController.popBackStack()
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)},
+                onBackClick = {
+                    navController.popBackStack()
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
                 onWalletCreated = { _, _ ->
                     navController.navigate(UnifiedRoute.Wallet) {
                         popUpTo<UnifiedRoute.Onboarding> { inclusive = true }
@@ -84,8 +90,10 @@ fun UnifiedNavHost(
 
         composable<UnifiedRoute.ImportWallet> {
             DecagonImportWalletScreen(
-                onBackClick = { navController.popBackStack()
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)},
+                onBackClick = {
+                    navController.popBackStack()
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
                 onWalletImported = {
                     navController.navigate(UnifiedRoute.Wallet) {
                         popUpTo<UnifiedRoute.Onboarding> { inclusive = true }
@@ -98,18 +106,26 @@ fun UnifiedNavHost(
         // ========== MAIN TABS ==========
         composable<UnifiedRoute.Wallet> {
             DecagonWalletScreen(
-                onNavigateToOnboarding = { navController.navigate(UnifiedRoute.Onboarding)
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)},
+                onNavigateToOnboarding = {
+                    navController.navigate(UnifiedRoute.Onboarding)
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
                 onNavigateToSettings = { walletId ->
                     navController.navigate(UnifiedRoute.Settings)
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 },
-                onNavigateToHistory = { navController.navigate(UnifiedRoute.TransactionHistory)
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)},
-                onNavigateToBuy = { navController.navigate(UnifiedRoute.Buy)
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)},
-                onNavigateToSwap = { navController.navigate(UnifiedRoute.Swap)
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)},
+                onNavigateToHistory = {
+                    navController.navigate(UnifiedRoute.TransactionHistory)
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
+                onNavigateToBuy = {
+                    navController.navigate(UnifiedRoute.Buy)
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
+                onNavigateToSwap = {
+                    navController.navigate(UnifiedRoute.Swap)
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
                 navController = navController
             )
         }
@@ -317,7 +333,6 @@ fun UnifiedNavHost(
         }
     }
 }
-
 
 
 // Extension

@@ -1,12 +1,20 @@
-package com.octane.wallet.presentation.viewmodel
+package com.decagon.ui.screen.discover
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.wallet.core.util.LoadingState
-import com.octane.wallet.domain.models.DApp
-import com.octane.wallet.domain.models.Perp
-import com.octane.wallet.domain.models.Token
-import com.octane.wallet.domain.usecases.discover.*
+import com.decagon.domain.usecase.discover.ObserveDAppsUseCase
+import com.decagon.domain.usecase.discover.ObservePerpsUseCase
+import com.decagon.domain.usecase.discover.ObserveTrendingTokensUseCase
+import com.decagon.domain.usecase.discover.RefreshDAppsUseCase
+import com.decagon.domain.usecase.discover.RefreshPerpsUseCase
+import com.decagon.domain.usecase.discover.RefreshTokensUseCase
+import com.decagon.domain.usecase.discover.SearchDAppsUseCase
+import com.decagon.domain.usecase.discover.SearchPerpsUseCase
+import com.decagon.domain.usecase.discover.SearchTokensUseCase
+import com.decagon.core.util.LoadingState
+import com.decagon.domain.model.DApp
+import com.decagon.domain.model.Perp
+import com.decagon.domain.model.Token
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*

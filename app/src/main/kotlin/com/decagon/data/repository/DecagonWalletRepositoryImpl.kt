@@ -179,6 +179,14 @@ class DecagonWalletRepositoryImpl(
         }
     }
 
+    override fun observeAllWallets(): Flow<List<DecagonWallet>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun observeActiveWallet(): Flow<DecagonWallet?> {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun decryptSeed(walletId: String): Result<ByteArray> {
         Timber.d("Attempting to decrypt seed for wallet: $walletId")
         return try {

@@ -10,9 +10,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.octane.wallet.presentation.theme.AppColors
-import com.octane.wallet.presentation.theme.AppTypography
-import com.octane.wallet.presentation.theme.Dimensions
+import com.decagon.ui.theme.AppColors
+import com.decagon.ui.theme.AppTypography
+import com.decagon.ui.theme.Dimensions
 
 
 @Composable

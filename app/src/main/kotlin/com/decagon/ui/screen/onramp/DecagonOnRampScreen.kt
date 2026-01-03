@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.decagon.domain.model.DecagonWallet
 import com.decagon.ui.components.DecagonProviderSelectionSheet
-import com.octane.wallet.presentation.theme.AppTypography
+import com.decagon.ui.theme.AppTypography
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 

@@ -1,7 +1,7 @@
 package com.decagon.core.network
 
 import com.decagon.core.chains.ChainRegistry
-import com.decagon.data.remote.SolanaRpcClient
+import com.decagon.data.remote.api.SolanaRpcClient
 import io.ktor.client.HttpClient
 import timber.log.Timber
 

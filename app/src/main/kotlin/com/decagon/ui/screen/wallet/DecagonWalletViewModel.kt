@@ -2,15 +2,14 @@ package com.decagon.ui.screen.wallet
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.decagon.core.chains.ChainType
 import com.decagon.core.network.NetworkManager
 import com.decagon.core.network.RpcClientFactory
 import com.decagon.core.util.DecagonLoadingState
-import com.decagon.data.remote.CoinPriceService
+import com.decagon.data.remote.api.CoinPriceService
 import com.decagon.domain.model.DecagonWallet
 import com.decagon.domain.repository.DecagonWalletRepository
-import com.wallet.core.util.LoadingState
+import com.decagon.core.util.LoadingState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*

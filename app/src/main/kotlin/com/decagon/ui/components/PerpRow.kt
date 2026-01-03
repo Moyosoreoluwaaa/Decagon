@@ -22,10 +22,8 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.octane.wallet.presentation.components.PriceChangeBadge
-import com.octane.wallet.presentation.theme.AppColors
-import com.octane.wallet.presentation.theme.AppTypography
-import com.octane.wallet.presentation.theme.Dimensions
+import com.decagon.ui.theme.AppTypography
+import com.decagon.ui.theme.Dimensions
 
 @Composable
 fun PerpRow(

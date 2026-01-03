@@ -2,9 +2,9 @@ package com.decagon.ui.screen.token
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.octane.wallet.domain.models.Token
-import com.wallet.core.util.LoadingState
-import com.wallet.domain.repository.DiscoverRepository
+import com.decagon.domain.model.Token
+import com.decagon.core.util.LoadingState
+import com.decagon.domain.repository.DiscoverRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

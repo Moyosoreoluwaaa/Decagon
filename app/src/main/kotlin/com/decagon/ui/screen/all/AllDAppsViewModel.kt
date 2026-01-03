@@ -2,11 +2,11 @@ package com.decagon.ui.screen.all
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.wallet.core.util.LoadingState
-import com.octane.wallet.domain.models.DApp
-import com.octane.wallet.domain.usecases.discover.ObserveDAppsUseCase
-import com.octane.wallet.domain.usecases.discover.RefreshDAppsUseCase
-import com.octane.wallet.presentation.viewmodel.SortType
+import com.decagon.core.util.LoadingState
+import com.decagon.domain.model.DApp
+import com.decagon.domain.usecase.discover.ObserveDAppsUseCase
+import com.decagon.domain.usecase.discover.RefreshDAppsUseCase
+import com.decagon.ui.screen.discover.SortType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*

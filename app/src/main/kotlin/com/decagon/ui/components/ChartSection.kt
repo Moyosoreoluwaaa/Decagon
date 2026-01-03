@@ -1,7 +1,6 @@
 package com.decagon.ui.components
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,9 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.octane.wallet.presentation.theme.AppColors
-import com.octane.wallet.presentation.theme.AppTypography
-import com.wallet.core.util.LoadingState
+import com.decagon.ui.theme.AppColors
+import com.decagon.ui.theme.AppTypography
+import com.decagon.core.util.LoadingState
 
 @Composable
 fun ChartSection(

@@ -1,0 +1,42 @@
+package com.decagon.data.mapper
+
+import com.decagon.data.local.entity.AssetEntity
+import com.decagon.domain.model.Asset
+
+fun AssetEntity.toDomain(): Asset = Asset(
+    id = id,
+    walletId = walletId,
+    chainId = chainId,
+    symbol = symbol,
+    name = name,
+    mintAddress = mintAddress,
+    balance = balance,
+    decimals = decimals,
+    priceUsd = priceUsd,
+    valueUsd = valueUsd,
+    priceChange24h = priceChange24h,
+    iconUrl = iconUrl,
+    isNative = isNative,
+    isHidden = isHidden,
+    costBasisUsd = costBasisUsd,
+    lastUpdated = lastUpdated
+)
+
+fun Asset.toEntity(): AssetEntity = AssetEntity(
+    id = id,
+    walletId = walletId,
+    chainId = chainId,
+    symbol = symbol,
+    name = name,
+    mintAddress = mintAddress,
+    balance = balance,
+    decimals = decimals,
+    priceUsd = priceUsd,
+    valueUsd = valueUsd,
+    priceChange24h = priceChange24h,
+    iconUrl = iconUrl,
+    isNative = isNative,
+    isHidden = isHidden,
+    costBasisUsd = costBasisUsd,
+    lastUpdated = lastUpdated
+)

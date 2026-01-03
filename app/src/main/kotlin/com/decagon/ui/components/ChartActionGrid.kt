@@ -20,9 +20,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
-import com.octane.wallet.presentation.theme.AppColors
-import com.octane.wallet.presentation.theme.AppTypography
-import com.octane.wallet.presentation.theme.Dimensions
+import com.decagon.ui.theme.AppTypography
+import com.decagon.ui.theme.Dimensions
 
 /**
  * Action grid for token/perp detail screens.

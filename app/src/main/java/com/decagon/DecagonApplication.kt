@@ -8,12 +8,6 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkRequest
-import com.decagon.di.decagonCoreModule
-import com.decagon.di.decagonNetworkModule
-import com.decagon.di.decagonOnRampModule
-import com.decagon.di.decagonSwapModule
-import com.decagon.di.decagonTransactionModule
-import com.decagon.di.decagonWalletModule
 import com.decagon.di.unifiedAppModule
 import com.decagon.worker.BalanceSyncManager
 import com.decagon.worker.TransactionCleanupWorker
@@ -21,6 +15,7 @@ import com.decagon.worker.TransactionHistoryWorker
 import com.decagon.worker.TransactionSyncManager
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
+import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 import timber.log.Timber
@@ -61,6 +56,7 @@ class DecagonApplication : Application() {
         startKoin {
             androidLogger(if (BuildConfig.DEBUG) Level.WARNING else Level.ERROR)
             androidContext(this@DecagonApplication)
+//            workManagerFactory()
             modules(unifiedAppModule)
         }
         Timber.d("Koin initialized with all modules including on-ramp")

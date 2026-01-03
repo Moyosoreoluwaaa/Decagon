@@ -71,4 +71,7 @@ interface DecagonWalletRepository {
     suspend fun decryptSeed(walletId: String): Result<ByteArray>
 
     suspend fun setActiveChain(walletId: String, chainId: String)
+
+    fun observeAllWallets(): Flow<List<DecagonWallet>>
+    fun observeActiveWallet(): Flow<DecagonWallet?>
 }

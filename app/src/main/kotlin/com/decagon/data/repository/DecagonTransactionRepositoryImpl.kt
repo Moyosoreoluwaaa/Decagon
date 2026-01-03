@@ -22,7 +22,7 @@ class DecagonTransactionRepositoryImpl(
         Timber.d("DecagonTransactionRepositoryImpl initialized")
     }
 
-    override suspend fun insertTransaction(tx: DecagonTransaction) = withContext(Dispatchers.IO) {
+    override suspend fun insertTransaction(tx: DecagonTransaction?) = withContext(Dispatchers.IO) {
         Timber.d("Inserting transaction: ${tx.id}")
         val entity = tx.toEntity()
         transactionDao.insert(entity)

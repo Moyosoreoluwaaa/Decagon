@@ -41,10 +41,10 @@ import androidx.compose.ui.unit.dp
 import com.decagon.ui.components.AssetDetailHeader
 import com.decagon.ui.components.AssetDetailTopBar
 import com.decagon.ui.components.EnhancedPriceChart
-import com.octane.wallet.presentation.theme.AppColors
-import com.octane.wallet.presentation.theme.AppTypography
-import com.octane.wallet.presentation.theme.Dimensions
-import com.wallet.core.util.LoadingState
+import com.decagon.ui.theme.AppColors
+import com.decagon.ui.theme.AppTypography
+import com.decagon.ui.theme.Dimensions
+import com.decagon.core.util.LoadingState
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

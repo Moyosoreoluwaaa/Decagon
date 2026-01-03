@@ -1,15 +1,17 @@
 package com.decagon.di
 
 import com.decagon.domain.provider.OnRampProviderFactory
-import com.decagon.domain.usecase.DecagonCreateWalletUseCase
-import com.decagon.domain.usecase.DecagonImportWalletUseCase
-import com.decagon.domain.usecase.DecagonSendTokenUseCase
-import com.decagon.domain.usecase.ExecuteSwapUseCase
-import com.decagon.domain.usecase.GetSwapHistoryUseCase
-import com.decagon.domain.usecase.GetSwapQuoteUseCase
-import com.decagon.domain.usecase.GetTokenBalancesUseCase
-import com.decagon.domain.usecase.ObserveAllPerpsUseCase
-import com.decagon.domain.usecase.ValidateTokenSecurityUseCase
+import com.decagon.domain.usecase.UpdateTokenBalancesUseCase
+import com.decagon.domain.usecase.UpdateWalletBalanceUseCase
+import com.decagon.domain.usecase.wallet.DecagonCreateWalletUseCase
+import com.decagon.domain.usecase.wallet.DecagonImportWalletUseCase
+import com.decagon.domain.usecase.send.DecagonSendTokenUseCase
+import com.decagon.domain.usecase.swap.ExecuteSwapUseCase
+import com.decagon.domain.usecase.swap.GetSwapHistoryUseCase
+import com.decagon.domain.usecase.swap.GetSwapQuoteUseCase
+import com.decagon.domain.usecase.swap.GetTokenBalancesUseCase
+import com.decagon.domain.usecase.perp.ObserveAllPerpsUseCase
+import com.decagon.domain.usecase.swap.ValidateTokenSecurityUseCase
 import com.decagon.domain.usecase.asset.ObservePortfolioUseCase
 import com.decagon.domain.usecase.asset.RefreshAssetsUseCase
 import com.decagon.domain.usecase.asset.ToggleAssetVisibilityUseCase
@@ -55,13 +57,16 @@ val domainModule = module {
     factory { ToggleAssetVisibilityUseCase(get()) }
     factory { DecagonSendTokenUseCase(get(), get(), get(), get(), get()) }
     factory { ValidateSolanaAddressUseCase() }
+    single { UpdateTokenBalancesUseCase(get(), get()) }
+    single { UpdateWalletBalanceUseCase(get(), get()) }
 
     // Swap Use Cases
     factory { GetSwapQuoteUseCase(get()) }
-    factory { ExecuteSwapUseCase(get(), get(), get(), get(), get()) }
+    factory { ExecuteSwapUseCase(get(), get(), get(), get(), get(), get()) }
     factory { GetTokenBalancesUseCase(get()) }
     factory { ValidateTokenSecurityUseCase(get()) }
     factory { GetSwapHistoryUseCase(get()) }
+
 
     // Discover Use Cases
     factory { ObserveTokensUseCase(get()) }

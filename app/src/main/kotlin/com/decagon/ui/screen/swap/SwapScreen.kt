@@ -77,6 +77,9 @@ fun DecagonSwapScreen(
     val slippageTolerance by viewModel.slippageTolerance.collectAsState()
     val currentWallet by viewModel.currentWallet.collectAsState()
     val tokenBalances by viewModel.tokenBalances.collectAsState()
+    // ✅ ADD: Check if current chain supports swaps
+    val isSwapSupported = currentWallet?.activeChain?.chainType?.id == "solana"
+
 
     var showInputTokenSelector by remember { mutableStateOf(false) }
     var showOutputTokenSelector by remember { mutableStateOf(false) }
@@ -236,13 +239,17 @@ fun DecagonSwapScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = ItemShape,
-                enabled = uiState is SwapUiState.QuoteReady || uiState is SwapUiState.QuoteWithWarnings,
+                enabled = uiState is SwapUiState.QuoteReady && isSwapSupported,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
-                SwapButtonLayout(uiState)
+                if (!isSwapSupported) {
+                    Text("Switch to Solana to swap")
+                } else {
+                    SwapButtonLayout(uiState)
+                }
             }
 
             if (uiState is SwapUiState.Error) {

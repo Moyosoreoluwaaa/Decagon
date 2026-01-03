@@ -9,6 +9,8 @@ import com.decagon.data.provider.ProviderInfoHelper
 import com.decagon.domain.model.DecagonWallet
 import com.decagon.domain.provider.OnRampProviderFactory
 import com.decagon.domain.repository.OnRampRepository
+import com.decagon.domain.usecase.UpdateTokenBalancesUseCase
+import com.decagon.domain.usecase.UpdateWalletBalanceUseCase
 import com.decagon.ui.components.ProviderInfo
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,8 +21,10 @@ import timber.log.Timber
 
 class DecagonOnRampViewModel(
     private val onRampRepository: OnRampRepository,
-    private val rpcFactory: RpcClientFactory,  // ← CHANGED: Factory instead of client
-    private val providerFactory: OnRampProviderFactory
+    private val rpcFactory: RpcClientFactory,
+    private val providerFactory: OnRampProviderFactory,
+    private val updateWalletBalanceUseCase: UpdateWalletBalanceUseCase,
+    private val updateTokenBalancesUseCase: UpdateTokenBalancesUseCase
 ) : ViewModel() {
 
     private val _onRampState = MutableStateFlow<OnRampState>(OnRampState.Idle)
@@ -243,6 +247,12 @@ class DecagonOnRampViewModel(
                         signature = "onramp_$txId",
                         actualAmount = solAmount
                     )
+
+//                    // ✅ NEW: Refresh balances
+//                    viewModelScope.launch {
+//                        updateWalletBalanceUseCase(wallet.id, chainId)
+//                        updateTokenBalancesUseCase(wallet.id)
+//                    }
 
                     _onRampState.value = OnRampState.Completed(solAmount)
                     return@launch

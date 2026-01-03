@@ -17,575 +17,44 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="90e32f5b-d68b-42b4-997c-b5b779bfa59e" name="Changes" comment="Refactor: Unify Koin modules and remove legacy `koin` and `octane` UI/data layers&#10;&#10;This commit performs a major architectural refactoring by deleting two obsolete UI and data layer implementations (`koin` and `octane`) and unifying the application's dependency injection under a single set of Koin modules (`coreModule`, `dataModule`, `domainModule`, `viewModelModule`).&#10;&#10;**Architecture &amp; Dependency Injection**&#10;*   **Unified Koin Modules**:&#10;    *   Introduces a `unifiedAppModule` that includes a new, single set of modules for `core`, `data`, `domain`, and `viewModels`.&#10;    *   `coreModule` now provides all essential cross-cutting dependencies like dispatchers, database DAOs, security utilities (Keystore, Biometrics), network monitoring, and analytics.&#10;    *   `dataModule` centralizes all repository implementations and API service definitions (Ktorfit, Jupiter, etc.).&#10;    *   `domainModule` provides all use cases for the entire application.&#10;    *   `viewModelModule` registers all ViewModels, including those for the new unified UI.&#10;*   **Application-Level Configuration**:&#10;    *   `DecagonApplication` is updated to load the new `unifiedAppModule`.&#10;    *   Adds `workManagerFactory()` to Koin setup for background worker support.&#10;&#10;**Code Cleanup &amp; Deletions**&#10;*   **Removed Legacy `koin` Project**:&#10;    *   Deleted the entire `com.decagon.koin` package and its sub-packages (`ui`, `domain`, `data`, `navigation`). This includes screens like `CoinListScreen`, `PortfolioScreen`, `AuthScreen`, `ProfileScreen`, and their corresponding ViewModels, repositories, and data models.&#10;*   **Removed Legacy `octane` Project**:&#10;    *   Deleted numerous files from the `com.wallet` and `com.octane` packages, including UI components (`MetallicCard`, `HomeHeader`, `QuickActionGrid`), screens (`HomeScreen`, `SwapScreen`, `SettingsScreen`, `DAppBrowserScreen`), ViewModels (`HomeViewModel`, `SwapViewModel`, etc.), and the underlying data/domain layers.&#10;*   **Consolidated DI Modules**:&#10;    *   Removed all old Koin modules (`decagonCoreModule`, `decagonNetworkModule`, `koinCoreModule`, `koinPortfolioModule`, `coreModule`, `networkModule`, `repositoryModule`, etc.) in favor of the new unified structure.&#10;&#10;**New &amp; Relocated Files**&#10;*   **Unified Core/Data/Domain**:&#10;    *   Consolidated and moved essential classes (models, repositories, use cases, networking, security) into a single, coherent `com.decagon` package structure.&#10;    *   Re-introduced cleaned versions of `Asset`, `Token`, `Perp`, `DApp`, `Transaction`, and other core models.&#10;    *   Re-introduced repositories like `AssetRepository`, `TransactionRepository`, and `DiscoverRepository`.&#10;*   **Unified UI/Theme**:&#10;    *   Added `AppColors`, `AppTypography`, and `Dimensions` to `com.decagon.ui.theme` to establish a single source for styling.&#10;    *   Moved utility composables like `shimmerEffect` and `metallicBorder` into `com.decagon.ui.utils`.&#10;*   **Re-introduced ViewModels**: Created a new `viewmodels` package under `com.decagon.ui` to house all ViewModels for the unified architecture.">
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/extension/formatRelativeTime.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/extension/formatSOL.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/extension/retryRpcCall.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/extension/shimmer.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/extension/truncateAddress.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/monitoring/AnalyticsLogger.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/monitoring/FakeAnalyticsLogger.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/monitoring/PerformanceTracker.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/network/ApiConfig.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/network/FakeNetworkMonitor.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/network/KtorClient.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/network/NetworkMonitor.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/network/NetworkMonitorImpl.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/network/SolanaNetworkMonitor.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/security/BiometricManager.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/security/KeystoreManager.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/security/MaliciousSignatureDetector.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/security/PhishingBlocklist.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/util/Constants.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/util/Formatters.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/util/LoadingState.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/util/Validators.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/dao/ApprovalDao.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/dao/AssetDao.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/dao/DiscoverDao.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/dao/StakingDao.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/dao/WalletDao.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/datastore/dappPreferencesDataStore.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/datastore/dataStore.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/entity/ApprovalEntity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/entity/AssetEntity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/entity/ContactEntity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/entity/DAppEntity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/entity/PerpEntity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/entity/StakingPositionEntity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/entity/TokenEntity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/entity/WalletEntity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/mapper/ApprovalEntitytoDomain.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/mapper/AssetEntitytoDomain.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/mapper/DAppsDtotoEntity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/mapper/EntityType.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/mapper/PerpDtotoEntity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/mapper/StakingPositiontoDomain.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/mapper/TokenDtotoEntity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/api/DeFiLlamaApi.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/api/DiscoverApi.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/api/DriftApi.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/api/PriceApi.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/api/SolanaRpcApi.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/api/SwapAggregatorApi.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/dto/DAppDto.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/dto/PerpDto.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/dto/TokenDto.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/dto/drift/DriftContractDto.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/dto/drift/DriftContractsResponse.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/dto/price/PriceResponse.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/dto/solana/RpcRequest.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/dto/swap/SwapQuoteResponse.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/ApprovalRepositoryImpl.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/AssetRepositoryImpl.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/DiscoverRepositoryImpl.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/NetworkMonitorImpl.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/PriceRepositoryImpl.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/StakingRepositoryImpl.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/service/JupiterSwapService.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/service/PerpLogoProvider.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/service/TokenLogoResolver.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/session/SessionManager.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/coreModule.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/dataModule.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/domainModule.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/viewModelModule.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/model/Approval.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/model/Asset.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/model/ConnectionOptions.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/model/Contact.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/model/DApp.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/model/NetworkHealth.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/model/Perp.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/model/StakingPosition.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/model/Token.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/model/Transaction.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/repository/ApprovalRepository.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/repository/AssetRepository.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/repository/DiscoverRepository.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/repository/StakingRepository.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/repository/TransactionRepository.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/asset/ObservePortfolioUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/asset/RefreshAssetsUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/asset/ToggleAssetVisibilityUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/discover/ObserveAllTokensUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/discover/ObserveDAppsByCategoryUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/discover/ObserveDAppsUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/discover/ObservePerpsUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/discover/ObserveTokensUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/discover/ObserveTrendingTokensUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/discover/RefreshDAppsUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/discover/RefreshPerpsUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/discover/RefreshTokensUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/discover/SearchDAppsUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/discover/SearchPerpsUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/discover/SearchTokensUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/network/ObserveNetworkStatusUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/preference/ObserveCurrencyPreferenceUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/preference/TogglePrivacyModeUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/preference/UpdateCurrencyPreferenceUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/security/AuthenticateWithBiometricsUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/security/CheckBiometricAvailabilityUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/security/ObserveApprovalsUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/security/RevokeApprovalUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/security/ValidateSolanaAddressUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/staking/ClaimRewardsUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/staking/ObserveStakingPositionsUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/staking/StakeTokensUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/staking/UnstakeTokensUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/wallet/ObserveActiveWalletUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/wallet/ObserveWalletsUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/wallet/SetActiveWalletUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/wallet/SwitchActiveWalletUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/wallet/UpdateWalletMetadataUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/wallet/UpdateWalletUseCase.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/PriceChangeBadge.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/ShimmerLoadingScreen.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/WalletSwitcherSheet.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/dapp/DAppBrowserScreen.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/settings/SettingsViewModel.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/theme/AppColors.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/theme/AppTypography.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/theme/Dimensions.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/utils/UiFormatters.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/utils/metallicBorder.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/BasePortfolioViewModel.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/DiscoverViewModel.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/ManageTokensViewModel.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/PerpDetailViewModel.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/SecurityViewModel.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/SessionViewModel.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/SettingsViewModel.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/StakingViewModel.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/TokenDetailViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/checksums/checksums.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.11.1/checksums/checksums.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/executionHistory/executionHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.11.1/executionHistory/executionHistory.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/executionHistory/executionHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.11.1/executionHistory/executionHistory.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/fileHashes.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/fileHashes.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/resourceHashesCache.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.11.1/fileHashes/resourceHashesCache.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/file-system.probe" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/file-system.probe" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/dao/TokenBalanceDao.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/entity/TokenBalanceEntity.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/mapper/toEntity.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/perp/ObserveAllPerpsUseCase.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/token/UpdateTokenBalancesUseCase.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/wallet/UpdateWalletBalanceUseCase.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/decagon/DecagonApplication.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/decagon/DecagonApplication.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/network/RpcClientFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/core/network/RpcClientFactory.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/DecagonDatabase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/database/DecagonDatabase.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/DecagonTypeConverters.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/database/DecagonTypeConverters.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/database/DecagonDatabase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/local/database/DecagonDatabase.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/provider/OnRampProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/provider/OnRampProvider.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/provider/OnRampProviderFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/provider/OnRampProviderFactory.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/CoinPriceService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/api/CoinPriceService.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/DecagonJupiterSwapService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/api/DecagonJupiterSwapService.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/JupiterUltraApiService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/api/JupiterUltraApiService.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/SolanaRpcClient.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/remote/api/SolanaRpcClient.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/DecagonSwapRepositoryImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/DecagonSwapRepositoryImpl.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/DecagonTransactionRepositoryImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/DecagonTransactionRepositoryImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/DecagonWalletRepositoryImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/DecagonWalletRepositoryImpl.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/SwapRepositoryImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/data/repository/SwapRepositoryImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/decagonCoreModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/decagonNetworkModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/decagonOnRampModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/decagonSwapModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/decagonTransactionModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/decagonWalletModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/unifiedAppModule.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/unifiedAppModule.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/repository/DecagonWalletRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/repository/DecagonWalletRepository.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/ObserveAllPerpsUseCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/ObserveAllPerpsUseCase.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/app/notification/NotificationService.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/components/BottomNavBar.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinChartEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinDao.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinDatabase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinDetailDto.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinGeckoApiService.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinMappers.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/CoinRepositoryImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/Mappers.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/NetworkUtil.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/TimeRange.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/coin/dto/CoinMarketChartResponse.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/notification/NotificationDao.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/notification/NotificationDatabase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/notification/NotificationRepository.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioBalanceEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioDao.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioHoldingEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioInitializer.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioMappers.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioRepositoryImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/portfolio/PortfolioTransactionEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/session/SessionManager.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/transaction/TransactionRepositoryImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/user/LocalUserRepository.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/user/Mappers.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/user/UserDao.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/user/UserDatabase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/user/UserEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/watchlist/WatchlistDao.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/watchlist/WatchlistEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/watchlist/WatchlistMappers.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/data/watchlist/WatchlistRepositoryImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/di/coinModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/di/koinCoreModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/di/koinPortfolioModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/di/koinTransactionModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/di/koinUserModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/di/koinWatchlistModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/coin/CoinRepository.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/coin/GetCoinByIdUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/coin/GetCoinsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/coin/RefreshCoinsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/model/Coin.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/model/Transaction.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/notification/Notification.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/portfolio/Portfolio.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/portfolio/PortfolioRepository.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/portfolio/PortfolioUseCases.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/transaction/GetTransactionsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/transaction/TransactionRepository.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/user/User.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/user/UserRepository.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/watchlist/WatchlistItem.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/domain/watchlist/WatchlistRepository.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/navigation/NavGraph.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/navigation/Screen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/auth/AuthScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/auth/AuthViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/base/BaseViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coindetail/CoinDetailScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coindetail/CoinDetailViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coindetail/PriceChart.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coindetail/SetPriceAlertDialog.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coinlist/BuyBottomSheet.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coinlist/BuySuccessBottomSheet.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coinlist/CoinListScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coinlist/CoinListStates.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coinlist/CoinListToolbar.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/coinlist/CoinListViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/notification/NotificationDetailScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/notification/NotificationDetailViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/notification/NotificationScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/notification/NotificationViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/BuyCoinDialog.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/BuySuccessBottomSheet.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/BuyTransactionDetails.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/PortfolioChart.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/PortfolioHoldingsBottomSheet.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/PortfolioPerformanceChart.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/PortfolioScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/PortfolioStates.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfolio/PortfolioViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfoliodetail/PortfolioDetailScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfoliodetail/PortfolioDetailUiEvent.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfoliodetail/PortfolioDetailUiState.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfoliodetail/PortfolioDetailViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/portfoliodetail/SellSuccessBottomSheet.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/profile/EditProfileScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/profile/ProfileScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/profile/ProfileViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/session/SessionViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/settings/SettingsScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/settings/SettingsViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/splash/SplashScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/theme/Color.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/theme/Theme.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/theme/Type.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactiondetail/TransactionDetailScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactiondetail/TransactionDetailUiState.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactiondetail/TransactionDetailViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactionhistory/TransactionCard.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactionhistory/TransactionHistoryScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactionhistory/TransactionHistoryViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/ui/transactionsuccess/TransactionSuccessScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/util/NetworkEntryPoint.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/koin/util/NetworkMonitor.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/AssetDetailHeader.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/AssetDetailHeader.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/AssetDetailScaffold.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/AssetDetailScaffold.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/AssetDetailTopBar.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/AssetDetailTopBar.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/AssetHeader.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/AssetHeader.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/ChartActionGrid.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/ChartActionGrid.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/ChartSection.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/ChartSection.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/MarketStatisticsCard.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/MarketStatisticsCard.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/NetworkSelectorModal.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/NetworkSelectorModal.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/PerpRow.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/PerpRow.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/PerpTradeActions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/PerpTradeActions.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/RankedTokenRow.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/RankedTokenRow.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/SearchBarWithFilter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/SearchBarWithFilter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/SiteRow.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/SiteRow.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/TimeframeRow.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/TimeframeRow.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/navigation/UnifiedNavHost.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/navigation/UnifiedNavHost.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/all/AllDAppsScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/all/AllDAppsScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/all/AllDAppsViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/all/AllDAppsViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/all/AllPerpsScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/all/AllPerpsScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/coreModule.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/coreModule.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/dataModule.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/dataModule.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/domainModule.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/domainModule.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/viewModelModule.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/di/viewModelModule.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/model/DecagonWallet.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/model/DecagonWallet.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/repository/DecagonTransactionRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/repository/DecagonTransactionRepository.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/DecagonCreateWalletUseCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/wallet/DecagonCreateWalletUseCase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/DecagonImportWalletUseCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/wallet/DecagonImportWalletUseCase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/DecagonSendTokenUseCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/send/DecagonSendTokenUseCase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/ExecuteSwapUseCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/swap/ExecuteSwapUseCase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/GetSwapQuoteUseCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/swap/GetSwapQuoteUseCase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/ObserveAllPerpsUseCase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/security/RevokeApprovalUseCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/security/RevokeApprovalUseCase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/staking/ClaimRewardsUseCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/staking/ClaimRewardsUseCase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/staking/StakeTokensUseCase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/domain/usecase/staking/StakeTokensUseCase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/TokenSelectorSheet.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/components/TokenSelectorSheet.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/all/AllPerpsViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/all/AllPerpsViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/all/AllTokensScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/all/AllTokensScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/all/AllTokensViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/all/AllTokensViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/chains/DecagonSupportedChainsScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/chains/DecagonSupportedChainsScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/create/DecagonCreateWalletScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/create/DecagonCreateWalletScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/discover/DAppBrowserViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/DAppBrowserViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/discover/DiscoverScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/discover/DiscoverScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/discover/DiscoverViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/discover/DiscoverViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/history/DecagonTransactionDetailScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/history/DecagonTransactionDetailScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/history/DecagonTransactionHistoryScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/history/DecagonTransactionHistoryScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/imports/DecagonImportWalletScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/imports/DecagonImportWalletScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/dapp/DAppBrowserScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/dapp/DAppBrowserScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/onboarding/DecagonOnboardingViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/onboarding/DecagonOnboardingViewModel.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/onramp/DecagonOnRampScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/onramp/DecagonOnRampScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/perps/PerpDetailScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/perps/PerpDetailScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/perps/PerpDetailViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/perps/PerpDetailViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/settings/DecagonRevealPrivateKeyScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/settings/DecagonRevealPrivateKeyScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/settings/DecagonRevealRecoveryScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/settings/DecagonRevealRecoveryScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/settings/DecagonSettingsScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/settings/DecagonSettingsScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/onramp/DecagonOnRampViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/onramp/DecagonOnRampViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/send/DecagonSendViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/send/DecagonSendViewModel.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/swap/SwapScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/swap/SwapScreen.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/swap/SwapViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/swap/SwapViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/token/TokenDetailViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/token/TokenDetailViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/token/TokenDetailsScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/token/TokenDetailsScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/wallet/DecagonWalletScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/wallet/DecagonWalletScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/wallet/DecagonWalletViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/screen/wallet/DecagonWalletViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/worker/BalanceSyncWorker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/worker/BalanceSyncWorker.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/blockchain/GasFeeEstimator.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/blockchain/JupiterApiService.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/blockchain/SolanaKeyGenerator.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/blockchain/SolanaRpcManager.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/blockchain/SolanaWalletAdapter.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/blockchain/TransactionBuilder.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/blockchain/TransactionSimulator.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/extension/formatRelativeTime.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/extension/formatSOL.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/extension/retryRpcCall.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/extension/shimmer.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/extension/truncateAddress.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/monitoring/AnalyticsLogger.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/monitoring/FakeAnalyticsLogger.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/monitoring/PerformanceTracker.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/network/ApiConfig.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/network/FakeNetworkMonitor.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/network/JupiterApiServiceImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/network/KtorClient.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/network/NetworkMonitor.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/network/NetworkMonitorImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/network/SolanaNetworkMonitor.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/security/BiometricManager.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/security/KeystoreManager.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/security/MaliciousSignatureDetector.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/security/PhishingBlocklist.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/testing/testCoreModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/util/Constants.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/util/Formatters.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/util/LoadingState.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/core/util/Validators.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/MIGRATION_1_2.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/OctaneDatabase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/converters/OctaneTypeConverters.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/dao/ApprovalDao.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/dao/AssetDao.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/dao/DiscoverDao.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/dao/StakingDao.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/dao/TransactionDao.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/dao/WalletDao.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/entities/ApprovalEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/entities/AssetEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/entities/ContactEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/entities/DAppEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/entities/PerpEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/entities/StakingPositionEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/entities/TokenEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/entities/TransactionEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/database/entities/WalletEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/datastore/dappPreferencesDataStore.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/local/datastore/dataStore.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/mappers/ApprovalEntitytoDomain.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/mappers/AssetEntitytoDomain.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/mappers/DAppsDtotoEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/mappers/EntityType.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/mappers/PerpDtotoEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/mappers/StakingPositiontoDomain.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/mappers/TokenDtotoEntity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/mappers/TransactionEntitytoDomain.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/mappers/TransactionMapper.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/mappers/WalletEntitytoDomain.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/api/DeFiLlamaApi.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/api/DiscoverApi.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/api/DriftApi.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/api/PriceApi.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/api/SolanaRpcApi.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/api/SwapAggregatorApi.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/dto/DAppDto.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/dto/PerpDto.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/dto/TokenDto.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/dto/drift/DriftContractDto.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/dto/drift/DriftContractsResponse.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/dto/price/PriceResponse.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/dto/solana/RpcRequest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/remote/dto/swap/SwapQuoteResponse.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/repository/ApprovalRepositoryImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/repository/AssetRepositoryImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/repository/DiscoverRepositoryImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/repository/NetworkMonitorImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/repository/PriceRepositoryImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/repository/SolanaKeyGeneratorImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/repository/StakingRepositoryImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/repository/TransactionRepositoryImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/repository/WalletRepositoryImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/service/JupiterSwapService.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/service/PerpLogoProvider.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/data/service/TokenLogoResolver.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/di/coreModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/di/dataModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/di/domainModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/di/networkModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/di/preferencesModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/di/repositoryModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/di/viewModelModule.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/models/Approval.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/models/Asset.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/models/ConnectionOptions.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/models/Contact.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/models/DApp.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/models/NetworkHealth.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/models/Perp.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/models/StakingPosition.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/models/Token.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/models/Transaction.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/models/Wallet.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/repository/ApprovalRepository.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/repository/AssetRepository.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/repository/DiscoverRepository.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/repository/StakingRepository.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/repository/TransactionRepository.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/repository/WalletRepository.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/asset/ObservePortfolioUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/asset/RefreshAssetsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/asset/ToggleAssetVisibilityUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/discover/ObserveAllTokensUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/discover/ObserveDAppsByCategoryUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/discover/ObserveDAppsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/discover/ObservePerpsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/discover/ObserveTokensUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/discover/ObserveTrendingTokensUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/discover/RefreshDAppsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/discover/RefreshPerpsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/discover/RefreshTokensUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/discover/SearchDAppsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/discover/SearchPerpsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/discover/SearchTokensUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/network/ObserveNetworkStatusUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/network/ObserveRpcStatusUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/network/SwitchRpcEndpointUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/preference/ObserveCurrencyPreferenceUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/preference/TogglePrivacyModeUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/preference/UpdateCurrencyPreferenceUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/security/AuthenticateWithBiometricsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/security/CheckBiometricAvailabilityUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/security/ObserveApprovalsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/security/RevokeApprovalUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/security/ValidateSolanaAddressUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/staking/ClaimRewardsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/staking/ObserveStakingPositionsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/staking/StakeTokensUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/staking/UnstakeTokensUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/transaction/BroadcastTransactionUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/transaction/EstimateTransactionFeeUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/transaction/GetTransactionByHashUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/transaction/MonitorPendingTransactionsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/transaction/ObserveTransactionHistoryUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/transaction/SendSolUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/transaction/SendTokenUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/transaction/SignTransactionUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/transaction/SwapTokensUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/wallet/CreateWalletUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/wallet/DeleteWalletUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/wallet/ExportSeedPhraseUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/wallet/ImportWalletUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/wallet/ObserveActiveWalletUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/wallet/ObserveWalletsUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/wallet/SetActiveWalletUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/wallet/SwitchActiveWalletUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/wallet/UpdateWalletMetadataUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/wallet/UpdateWalletUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/domain/usecases/wallet/ValidateSeedPhraseUseCase.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/AboutSection.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/BottomNavBar.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/ChartActionGrid.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/CreateWalletBottomSheet.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/DetailHeader.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/DetailUtilCard.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/DiscoverFilterPanel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/EditWalletBottomSheet.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/EmptyDiscoverScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/EmptyWalletHero.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/EmptyWalletsState.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/ErrorScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/HomeContentRouter.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/HomeHeader.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/ImportWalletBottomSheet.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/IndustrialSwitch.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/InfoRow.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/ListSectionHeader.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/ManageTokenRow.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/MetallicButton.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/MetallicCard.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/ModeSelectorTabs.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/NetworkStatusIndicator.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/NoWalletHero.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/OctaneDropdownMenu.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/OctaneFilterChip.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/OfflineBanner.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/PriceChangeBadge.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/QuickActionGrid.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/ReceiveNetworkRow.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/SearchInput.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/SeedPhraseSecurityDialog.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/ShimmerLoadingScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/StatusBadge.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/SwapCard.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/TabButton.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/TokenRow.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/TransactionApprovalDialog.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/TransactionList.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/TransactionPreviewRow.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/TransactionRow.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/TransactionStatusBadge.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/WalletActionBottomSheet.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/WalletCard.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/WalletScreenHeader.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/WalletSwitcherSheet.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/WalletsList.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/components/WideActionButton.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/navigation/AppRoute.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/ActivityScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/DAppBrowserScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/EmptyActivityScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/EmptyWalletsState.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/HomeScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/ImportWalletScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/LoadingScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/ManageTokensScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/ReceiveScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/SeedPhraseDisplayScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/SendScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/SettingsScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/SwapScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/TransactionDetailsScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/screens/WalletScreen.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/theme/AppColors.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/theme/AppTypography.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/theme/Dimensions.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/utils/UiFormatters.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/utils/metallicBorder.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/ActivityViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/BasePortfolioViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/BaseTransactionViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/BaseWalletViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/DAppTransactionHandler.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/HomeViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/ManageTokensViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/ReceiveViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/SecurityViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/SendViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/SettingsViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/StakingViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/SwapViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/TransactionDetailsViewModel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/wallet/presentation/viewmodel/WalletsViewModel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/SecurityViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/SecurityViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/StakingViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/kotlin/com/decagon/ui/viewmodels/StakingViewModel.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -595,7 +64,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=PhysicalDevice, isTemplate=false, identifier=serial=131205449A106725)]" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -631,7 +100,7 @@
   }
 }</component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="ProjectErrors" />
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
@@ -689,11 +158,11 @@
       <recent name="C:\Users\Mo\AndroidStudioProjects\Decagon\app\src\main\res\xml" />
     </key>
     <key name="K2MoveDeclarationsDialog.RECENT_PACKAGE_KEY">
+      <recent name="com.decagon.domain.usecase.send" />
+      <recent name="com.decagon.domain.usecase.perp" />
+      <recent name="com.decagon.domain.usecase.swap" />
       <recent name="com.decagon.domain.usecase.wallet" />
       <recent name="com.decagon.ui.viewmodels" />
-      <recent name="com.decagon.ui.screen.viewmodels" />
-      <recent name="com.decagon.data.local.database" />
-      <recent name="com.decagon.data.remote.api" />
     </key>
   </component>
   <component name="RunManager">
@@ -827,7 +296,15 @@
       <option name="project" value="LOCAL" />
       <updated>1767297680486</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Refactor: Unify Koin modules and remove legacy `koin` and `octane` UI/data layers&#10;&#10;This commit performs a major architectural refactoring by deleting two obsolete UI and data layer implementations (`koin` and `octane`) and unifying the application's dependency injection under a single set of Koin modules (`coreModule`, `dataModule`, `domainModule`, `viewModelModule`).&#10;&#10;**Architecture &amp; Dependency Injection**&#10;*   **Unified Koin Modules**:&#10;    *   Introduces a `unifiedAppModule` that includes a new, single set of modules for `core`, `data`, `domain`, and `viewModels`.&#10;    *   `coreModule` now provides all essential cross-cutting dependencies like dispatchers, database DAOs, security utilities (Keystore, Biometrics), network monitoring, and analytics.&#10;    *   `dataModule` centralizes all repository implementations and API service definitions (Ktorfit, Jupiter, etc.).&#10;    *   `domainModule` provides all use cases for the entire application.&#10;    *   `viewModelModule` registers all ViewModels, including those for the new unified UI.&#10;*   **Application-Level Configuration**:&#10;    *   `DecagonApplication` is updated to load the new `unifiedAppModule`.&#10;    *   Adds `workManagerFactory()` to Koin setup for background worker support.&#10;&#10;**Code Cleanup &amp; Deletions**&#10;*   **Removed Legacy `koin` Project**:&#10;    *   Deleted the entire `com.decagon.koin` package and its sub-packages (`ui`, `domain`, `data`, `navigation`). This includes screens like `CoinListScreen`, `PortfolioScreen`, `AuthScreen`, `ProfileScreen`, and their corresponding ViewModels, repositories, and data models.&#10;*   **Removed Legacy `octane` Project**:&#10;    *   Deleted numerous files from the `com.wallet` and `com.octane` packages, including UI components (`MetallicCard`, `HomeHeader`, `QuickActionGrid`), screens (`HomeScreen`, `SwapScreen`, `SettingsScreen`, `DAppBrowserScreen`), ViewModels (`HomeViewModel`, `SwapViewModel`, etc.), and the underlying data/domain layers.&#10;*   **Consolidated DI Modules**:&#10;    *   Removed all old Koin modules (`decagonCoreModule`, `decagonNetworkModule`, `koinCoreModule`, `koinPortfolioModule`, `coreModule`, `networkModule`, `repositoryModule`, etc.) in favor of the new unified structure.&#10;&#10;**New &amp; Relocated Files**&#10;*   **Unified Core/Data/Domain**:&#10;    *   Consolidated and moved essential classes (models, repositories, use cases, networking, security) into a single, coherent `com.decagon` package structure.&#10;    *   Re-introduced cleaned versions of `Asset`, `Token`, `Perp`, `DApp`, `Transaction`, and other core models.&#10;    *   Re-introduced repositories like `AssetRepository`, `TransactionRepository`, and `DiscoverRepository`.&#10;*   **Unified UI/Theme**:&#10;    *   Added `AppColors`, `AppTypography`, and `Dimensions` to `com.decagon.ui.theme` to establish a single source for styling.&#10;    *   Moved utility composables like `shimmerEffect` and `metallicBorder` into `com.decagon.ui.utils`.&#10;*   **Re-introduced ViewModels**: Created a new `viewmodels` package under `com.decagon.ui` to house all ViewModels for the unified architecture.">
+      <option name="closed" value="true" />
+      <created>1767432069868</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1767432069868</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.decagon.core.util.LoadingState
 import com.decagon.domain.model.DecagonTransaction
 import com.decagon.domain.model.StakingPosition
-import com.decagon.domain.model.Transaction
 import com.decagon.domain.usecase.staking.ClaimRewardsUseCase
 import com.decagon.domain.usecase.staking.ObserveStakingPositionsUseCase
 import com.decagon.domain.usecase.staking.StakeTokensUseCase
@@ -174,7 +173,7 @@ class StakingViewModel(
         viewModelScope.launch {
             unstakeTokensUseCase(positionId)
                 .onSuccess { transaction ->
-                    _events.emit(StakingEvent.UnstakeSuccess(transaction))
+                    _events.emit(StakingEvent.UnstakeSuccess(transaction!!))
                 }
                 .onFailure { e ->
                     _events.emit(StakingEvent.Error(e.message ?: "Unstake failed"))
@@ -189,7 +188,7 @@ class StakingViewModel(
         viewModelScope.launch {
             claimRewardsUseCase(positionId)
                 .onSuccess { transaction ->
-                    _events.emit(StakingEvent.ClaimSuccess(transaction))
+                    _events.emit(StakingEvent.ClaimSuccess(transaction!!))
                 }
                 .onFailure { e ->
                     _events.emit(StakingEvent.Error(e.message ?: "Claim failed"))
@@ -242,8 +241,8 @@ enum class StakingStep {
  * Staking events.
  */
 sealed interface StakingEvent {
-    data class StakeSuccess(val transaction: DecagonTransaction) : StakingEvent
+    data class StakeSuccess(val transaction: DecagonTransaction?) : StakingEvent
     data class UnstakeSuccess(val transaction: DecagonTransaction) : StakingEvent
-    data class ClaimSuccess(val transaction: Transaction) : StakingEvent
+    data class ClaimSuccess(val transaction: DecagonTransaction) : StakingEvent
     data class Error(val message: String) : StakingEvent
 }

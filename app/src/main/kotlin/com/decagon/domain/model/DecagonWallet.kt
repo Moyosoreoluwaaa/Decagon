@@ -26,10 +26,3 @@ data class DecagonWallet(
     val truncatedAddress: String
         get() = "${address.take(4)}...${address.takeLast(4)}"
 }
-//
-//data class ChainWallet(
-//    val chainId: String,
-//    val chainType: ChainType,
-//    val address: String,
-//    val balance: Double = 0.0
-//)

@@ -1,4 +1,4 @@
-package com.decagon.domain.usecase
+package com.decagon.domain.usecase.perp
 
 import com.decagon.core.util.LoadingState
 import com.decagon.domain.model.Perp

@@ -6,8 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.decagon.core.security.DecagonBiometricAuthenticator
 import com.decagon.core.util.DecagonLoadingState
-import com.decagon.domain.usecase.DecagonCreateWalletUseCase
-import com.decagon.domain.usecase.DecagonImportWalletUseCase
+import com.decagon.domain.usecase.wallet.DecagonCreateWalletUseCase
+import com.decagon.domain.usecase.wallet.DecagonImportWalletUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

@@ -1,8 +1,3 @@
-// ============================================================================
-// FILE: ui/screen/onramp/DecagonOnRampScreen.kt
-// COMPLETE: Multi-provider with manual selection support
-// ============================================================================
-
 package com.decagon.ui.screen.onramp
 
 import android.graphics.Bitmap

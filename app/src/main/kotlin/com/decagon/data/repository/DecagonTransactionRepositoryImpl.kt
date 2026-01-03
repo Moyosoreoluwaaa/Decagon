@@ -22,11 +22,18 @@ class DecagonTransactionRepositoryImpl(
         Timber.d("DecagonTransactionRepositoryImpl initialized")
     }
 
-    override suspend fun insertTransaction(tx: DecagonTransaction?) = withContext(Dispatchers.IO) {
-        Timber.d("Inserting transaction: ${tx.id}")
-        val entity = tx.toEntity()
-        transactionDao.insert(entity)
-        Timber.i("Transaction inserted: ${tx.id}")
+//    override suspend fun insertTransaction(tx: DecagonTransaction?) = withContext(Dispatchers.IO) {
+//        Timber.d("Inserting transaction: ${tx?.id}")
+//        val entity = tx?.toEntity()
+//        transactionDao.insert(entity)
+//        Timber.i("Transaction inserted: ${tx?.id}")
+//    }
+
+    override suspend fun insertTransaction(tx: DecagonTransaction?) {
+        Timber.d("Inserting transaction: ${tx?.id}")
+        val entity = tx?.toEntity()
+        transactionDao.insert(entity!!)
+        Timber.i("Transaction inserted: ${tx?.id}")
     }
 
     override suspend fun insertPendingTransaction(tx: DecagonTransaction) = withContext(Dispatchers.IO) {

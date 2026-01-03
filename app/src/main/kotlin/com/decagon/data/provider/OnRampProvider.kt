@@ -1,9 +1,3 @@
-// ============================================================================
-// FILE: domain/provider/OnRampProvider.kt
-// PURPOSE: Provider abstraction interface (Orchestrator Pattern)
-// PATTERN: Orchestration from complete_impl_logic.txt#orchestration-and-mediation
-// ============================================================================
-
 package com.decagon.data.provider
 
 import com.decagon.core.config.OnRampProviderType

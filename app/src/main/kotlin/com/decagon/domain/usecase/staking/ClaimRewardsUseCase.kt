@@ -16,7 +16,7 @@ class ClaimRewardsUseCase(
     private val stakingRepository: StakingRepository,
     private val transactionRepository: DecagonTransactionRepository
 ) {
-    suspend operator fun invoke(positionId: String): Result<DecagonTransaction> {
+    suspend operator fun invoke(positionId: String): Result<DecagonTransaction?> {
         return try {
             val transaction = stakingRepository.claimRewards(positionId)
             transactionRepository.insertTransaction(transaction)

@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.decagon.core.util.DecagonLoadingState
 import com.decagon.domain.model.DecagonTransaction
-import com.decagon.domain.usecase.DecagonSendTokenUseCase
+import com.decagon.domain.usecase.send.DecagonSendTokenUseCase
 import com.decagon.worker.TransactionSyncManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

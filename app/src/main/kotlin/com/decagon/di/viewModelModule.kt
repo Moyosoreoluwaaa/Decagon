@@ -23,7 +23,7 @@ val viewModelModule = module {
     viewModel { DecagonWalletViewModel(get(), get(), get(), get()) }
     viewModel { SwapViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { DecagonSendViewModel(get()) }
-    viewModel { DecagonOnRampViewModel(get(), get(), get()) }
+    viewModel { DecagonOnRampViewModel(get(), get(), get(), get(), get()) }
 
     // Discover & Details
     viewModel {

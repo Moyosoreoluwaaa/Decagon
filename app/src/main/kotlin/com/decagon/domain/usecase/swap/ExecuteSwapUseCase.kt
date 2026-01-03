@@ -1,4 +1,4 @@
-package com.decagon.domain.usecase
+package com.decagon.domain.usecase.swap
 
 import androidx.fragment.app.FragmentActivity
 import com.decagon.core.crypto.DecagonKeyDerivation
@@ -7,6 +7,7 @@ import com.decagon.core.security.DecagonBiometricAuthenticator
 import com.decagon.domain.model.*
 import com.decagon.domain.repository.DecagonWalletRepository
 import com.decagon.domain.repository.SwapRepository
+import com.decagon.domain.usecase.UpdateTokenBalancesUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -21,7 +22,8 @@ class ExecuteSwapUseCase(
     private val walletRepository: DecagonWalletRepository,
     private val keyDerivation: DecagonKeyDerivation,
     private val biometricAuthenticator: DecagonBiometricAuthenticator,
-    private val rpcFactory: RpcClientFactory  // ← CHANGED: Factory instead of client
+    private val rpcFactory: RpcClientFactory,
+    private val updateTokenBalancesUseCase: UpdateTokenBalancesUseCase
 ) {
     init {
         Timber.d("ExecuteSwapUseCase initialized with RpcClientFactory")
@@ -139,6 +141,10 @@ class ExecuteSwapUseCase(
                             signature = signature,
                             status = SwapStatus.CONFIRMED
                         )
+                    }
+                    // ✅ NEW: Refresh balances
+                    withContext(Dispatchers.IO) {
+                        updateTokenBalancesUseCase(walletId)
                     }
 
                     Result.success(signature)

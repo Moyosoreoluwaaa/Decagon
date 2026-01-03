@@ -1,22 +1,17 @@
-
 package com.decagon.data.repository
 
 import com.decagon.data.local.dao.SwapHistoryDao
+import com.decagon.data.local.dao.TokenBalanceDao
 import com.decagon.data.local.dao.TokenCacheDao
-import com.decagon.data.mapper.toDomain
-import com.decagon.data.mapper.toEntity
+import com.decagon.data.mapper.*
 import com.decagon.data.remote.api.JupiterUltraApiService
 import com.decagon.data.remote.dto.JupiterExecuteRequest
 import com.decagon.data.remote.dto.JupiterOrderRequest
-import com.decagon.domain.model.SecurityWarning
-import com.decagon.domain.model.SwapHistory
-import com.decagon.domain.model.SwapOrder
-import com.decagon.domain.model.SwapStatus
-import com.decagon.domain.model.TokenBalance
-import com.decagon.domain.model.TokenInfo
+import com.decagon.domain.model.*
 import com.decagon.domain.repository.SwapRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -25,11 +20,12 @@ import java.util.concurrent.TimeUnit
 class SwapRepositoryImpl(
     private val apiService: JupiterUltraApiService,
     private val swapHistoryDao: SwapHistoryDao,
-    private val tokenCacheDao: TokenCacheDao
+    private val tokenCacheDao: TokenCacheDao,
+    private val tokenBalanceDao: TokenBalanceDao  // ✅ NEW
 ) : SwapRepository {
 
     init {
-        Timber.d("SwapRepositoryImpl initialized")
+        Timber.d("SwapRepositoryImpl initialized with balance caching")
     }
 
     override suspend fun getSwapQuote(
@@ -142,25 +138,52 @@ class SwapRepositoryImpl(
     override suspend fun getTokenBalances(publicKey: String): Result<List<TokenBalance>> {
         return withContext(Dispatchers.IO) {
             try {
+                // ✅ Check cache first (offline-first)
+                val cachedBalances = tokenBalanceDao.getByWallet(publicKey).first()
+
+                if (cachedBalances.isNotEmpty()) {
+                    val cacheAge = System.currentTimeMillis() - cachedBalances.first().lastUpdated
+
+                    // If cache is fresh (< 5 min), return it immediately
+                    if (cacheAge < CACHE_DURATION) {
+                        Timber.d("Returning ${cachedBalances.size} cached balances (age: ${cacheAge}ms)")
+                        return@withContext Result.success(cachedBalances.map { it.toDomain() })
+                    }
+                }
+
+                // Fetch fresh data from API
                 val balancesResult = apiService.getBalances(publicKey)
 
                 balancesResult.map { response ->
-                    val holdings = response.actualBalances // ✅ Use helper property
+                    val holdings = response.actualBalances
                     val mints = holdings.map { it.mint }
 
-                    // Try to enrich with cached token info
+                    // Enrich with cached token info
                     val cachedTokens = tokenCacheDao.getByAddresses(mints)
                         .associateBy { it.address }
 
-                    holdings.map { holding ->
+                    val balances = holdings.map { holding ->
                         holding.toDomain(
                             tokenInfo = cachedTokens[holding.mint]?.toDomain()
                         )
                     }
+
+                    // ✅ Cache the fresh balances
+                    tokenBalanceDao.insertAll(balances.toEntities(publicKey))
+                    Timber.i("Cached ${balances.size} fresh token balances")
+
+                    balances
                 }
 
             } catch (e: Exception) {
-                Timber.e(e, "Failed to get balances")
+                // ✅ On error, return stale cache if available
+                val staleCache = tokenBalanceDao.getByWallet(publicKey).first()
+                if (staleCache.isNotEmpty()) {
+                    Timber.w(e, "API failed, returning ${staleCache.size} stale cached balances")
+                    return@withContext Result.success(staleCache.map { it.toDomain() })
+                }
+
+                Timber.e(e, "Failed to get balances (no cache available)")
                 Result.failure(e)
             }
         }
@@ -218,6 +241,6 @@ class SwapRepositoryImpl(
     }
 
     companion object {
-        private val CACHE_DURATION = TimeUnit.HOURS.toMillis(24)
+        private val CACHE_DURATION = TimeUnit.MINUTES.toMillis(5)  // 5 minutes
     }
 }

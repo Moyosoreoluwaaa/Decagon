@@ -1,4 +1,4 @@
-package com.decagon.domain.usecase
+package com.decagon.domain.usecase.wallet
 
 import androidx.fragment.app.FragmentActivity
 import com.decagon.core.crypto.DecagonMnemonic

@@ -2,7 +2,7 @@ package com.decagon.ui.screen.all
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.decagon.domain.usecase.ObserveAllPerpsUseCase
+import com.decagon.domain.usecase.perp.ObserveAllPerpsUseCase
 import com.decagon.core.util.LoadingState
 import com.decagon.domain.model.Perp
 import com.decagon.domain.usecase.discover.RefreshPerpsUseCase

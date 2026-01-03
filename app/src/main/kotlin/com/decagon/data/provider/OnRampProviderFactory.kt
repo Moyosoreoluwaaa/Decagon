@@ -1,9 +1,3 @@
-// ============================================================================
-// FILE: domain/provider/OnRampProviderFactory.kt
-// PURPOSE: Provider selection orchestrator (Mediator Pattern)
-// PATTERN: Orchestration from complete_impl_logic.txt
-// ============================================================================
-
 package com.decagon.domain.provider
 
 import com.decagon.core.config.OnRampConfig

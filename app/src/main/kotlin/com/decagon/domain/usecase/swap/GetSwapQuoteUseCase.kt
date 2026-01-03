@@ -1,4 +1,4 @@
-package com.decagon.domain.usecase
+package com.decagon.domain.usecase.swap
 
 import com.decagon.domain.model.CommonTokens
 import com.decagon.domain.model.SecurityWarning
@@ -49,25 +49,25 @@ class GetSwapQuoteUseCase(
             userPublicKey = userPublicKey,
             slippageBps = if (slippageBps > 0) slippageBps else null
         )
-            .mapCatching { order ->
-            // Validate the response
-            when {
-                order.transaction.isBlank() -> {
-                    throw IllegalStateException(
-                        "Jupiter API returned empty transaction. " +
-                                "This may indicate: insufficient liquidity, invalid token pair, " +
-                                "or the tokens are not available on Jupiter."
-                    )
-                }
-                order.outAmount.toDoubleOrNull() == null || order.outAmount.toDouble() <= 0 -> {
-                    throw IllegalStateException(
-                        "Invalid output amount received from Jupiter API. " +
-                                "The token pair may not have sufficient liquidity."
-                    )
-                }
-                else -> order
-            }
-        }
+//            .mapCatching { order ->
+//            // Validate the response
+//            when {
+//                order.transaction.isBlank() -> {
+//                    throw IllegalStateException(
+//                        "Jupiter API returned empty transaction. " +
+//                                "This may indicate: insufficient liquidity, invalid token pair, " +
+//                                "or the tokens are not available on Jupiter."
+//                    )
+//                }
+//                order.outAmount.toDoubleOrNull() == null || order.outAmount.toDouble() <= 0 -> {
+//                    throw IllegalStateException(
+//                        "Invalid output amount received from Jupiter API. " +
+//                                "The token pair may not have sufficient liquidity."
+//                    )
+//                }
+//                else -> order
+//            }
+//        }
     }
 }
 

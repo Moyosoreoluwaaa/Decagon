@@ -147,7 +147,7 @@ val dataModule = module {
     }
     single<DecagonTransactionRepository> { DecagonTransactionRepositoryImpl(get(), get()) }
     single<DiscoverRepository> { DiscoverRepositoryImpl(get(), get(), get(), get(), get()) }
-    single<SwapRepository> { SwapRepositoryImpl(get(), get(), get()) }
+    single<SwapRepository> { SwapRepositoryImpl(get(), get(), get(), get()) }
     single<OnRampRepository> { OnRampRepositoryImpl(get()) }
     single<DecagonSettingsRepository> { DecagonSettingsRepositoryImpl(get(), get(), get(), get()) }
     single<DecagonOnboardingStateRepository> { DecagonOnboardingStateRepositoryImpl(get()) }

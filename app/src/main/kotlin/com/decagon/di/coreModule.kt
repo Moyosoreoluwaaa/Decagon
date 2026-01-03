@@ -63,7 +63,8 @@ val coreModule = module {
                 DecagonDatabase.MIGRATION_1_2, DecagonDatabase.MIGRATION_2_3,
                 DecagonDatabase.MIGRATION_3_4, DecagonDatabase.MIGRATION_4_5,
                 DecagonDatabase.MIGRATION_5_6, DecagonDatabase.MIGRATION_6_7,
-                DecagonDatabase.MIGRATION_7_8, DecagonDatabase.MIGRATION_8_9
+                DecagonDatabase.MIGRATION_7_8, DecagonDatabase.MIGRATION_8_9,
+                DecagonDatabase.MIGRATION_9_10,
             ).build()
     }
     single { get<DecagonDatabase>().walletDao() }
@@ -77,6 +78,7 @@ val coreModule = module {
     single { get<DecagonDatabase>().onRampDao() }
     single { get<DecagonDatabase>().swapHistoryDao() }
     single { get<DecagonDatabase>().tokenCacheDao() }
+    single { get<DecagonDatabase>().tokenBalanceDao() }
 
     // Security & Crypto
     single { DecagonMnemonic() }

@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.decagon.core.util.LoadingState
 import com.decagon.domain.model.Approval
-import com.decagon.domain.model.Transaction
+import com.decagon.domain.model.DecagonTransaction
 import com.decagon.domain.usecase.security.ObserveApprovalsUseCase
 import com.decagon.domain.usecase.security.RevokeApprovalUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -109,7 +109,7 @@ class SecurityViewModel(
 
             revokeApprovalUseCase(approval.id)
                 .onSuccess { transaction ->
-                    _events.emit(SecurityEvent.RevocationSuccess(transaction))
+                    _events.emit(SecurityEvent.RevocationSuccess(transaction!!))
                     _revocationState.value = RevocationState()
                 }
                 .onFailure { e ->
@@ -178,6 +178,6 @@ data class RevocationState(
  * Security events.
  */
 sealed interface SecurityEvent {
-    data class RevocationSuccess(val transaction: Transaction) : SecurityEvent
+    data class RevocationSuccess(val transaction: DecagonTransaction) : SecurityEvent
     data class Error(val message: String) : SecurityEvent
 }

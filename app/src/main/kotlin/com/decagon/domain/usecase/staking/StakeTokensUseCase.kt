@@ -23,7 +23,7 @@ class StakeTokensUseCase(
         validatorAddress: String,
         validatorName: String,
         amountSol: Double
-    ): Result<DecagonTransaction> {
+    ): Result<DecagonTransaction?> {
         return try {
             val wallet = walletRepository.observeActiveWallet().first()
                 ?: return Result.failure(IllegalStateException("No active wallet"))

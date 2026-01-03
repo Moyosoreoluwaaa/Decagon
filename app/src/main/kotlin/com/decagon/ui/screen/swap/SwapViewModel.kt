@@ -9,12 +9,12 @@ import com.decagon.domain.model.TokenBalance
 import com.decagon.domain.model.TokenInfo
 import com.decagon.domain.model.WarningSeverity
 import com.decagon.domain.repository.DecagonWalletRepository
-import com.decagon.domain.usecase.ExecuteSwapUseCase
-import com.decagon.domain.usecase.GetSwapHistoryUseCase
-import com.decagon.domain.usecase.GetSwapQuoteUseCase
-import com.decagon.domain.usecase.GetTokenBalancesUseCase
+import com.decagon.domain.usecase.swap.ExecuteSwapUseCase
+import com.decagon.domain.usecase.swap.GetSwapHistoryUseCase
+import com.decagon.domain.usecase.swap.GetSwapQuoteUseCase
+import com.decagon.domain.usecase.swap.GetTokenBalancesUseCase
 import com.decagon.domain.usecase.discover.SearchTokensUseCase
-import com.decagon.domain.usecase.ValidateTokenSecurityUseCase
+import com.decagon.domain.usecase.swap.ValidateTokenSecurityUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -16,7 +16,7 @@ class RevokeApprovalUseCase(
     private val approvalRepository: ApprovalRepository,
     private val transactionRepository: DecagonTransactionRepository
 ) {
-    suspend operator fun invoke(approvalId: String): Result<DecagonTransaction> {
+    suspend operator fun invoke(approvalId: String): Result<DecagonTransaction?> {
         return try {
             // Get approval details
             val approval = approvalRepository.getApprovalById(approvalId)

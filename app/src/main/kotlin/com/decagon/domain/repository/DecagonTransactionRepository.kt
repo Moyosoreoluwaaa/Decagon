@@ -4,7 +4,7 @@ import com.decagon.domain.model.DecagonTransaction
 import kotlinx.coroutines.flow.Flow
 
 interface DecagonTransactionRepository {
-    suspend fun insertTransaction(tx: DecagonTransaction)
+    suspend fun insertTransaction(tx: DecagonTransaction?)
     suspend fun insertPendingTransaction(tx: DecagonTransaction)
     suspend fun deletePendingTransaction(txId: String)
     fun getPendingTransactions(walletId: String): Flow<List<DecagonTransaction>>

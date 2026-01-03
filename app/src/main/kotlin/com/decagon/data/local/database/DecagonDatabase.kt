@@ -14,6 +14,7 @@ import com.decagon.data.local.dao.OnRampDao
 import com.decagon.data.local.dao.PendingTxDao
 import com.decagon.data.local.dao.StakingDao
 import com.decagon.data.local.dao.SwapHistoryDao
+import com.decagon.data.local.dao.TokenBalanceDao
 import com.decagon.data.local.dao.TokenCacheDao
 import com.decagon.data.local.dao.TransactionDao
 import com.decagon.data.local.entity.ApprovalEntity
@@ -26,6 +27,7 @@ import com.decagon.data.local.entity.PendingTxEntity
 import com.decagon.data.local.entity.PerpEntity
 import com.decagon.data.local.entity.StakingPositionEntity
 import com.decagon.data.local.entity.SwapHistoryEntity
+import com.decagon.data.local.entity.TokenBalanceEntity
 import com.decagon.data.local.entity.TokenCacheEntity
 import com.decagon.data.local.entity.TokenEntity
 import com.decagon.data.local.entity.TransactionEntity
@@ -45,8 +47,9 @@ import com.decagon.data.local.entity.TransactionEntity
         TokenEntity::class,
         PerpEntity::class,
         DAppEntity::class,
+        TokenBalanceEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = true
 )
 @TypeConverters(DecagonTypeConverters::class)
@@ -62,7 +65,8 @@ abstract class DecagonDatabase : RoomDatabase() {
     abstract fun contactDao(): ContactDao
     abstract fun approvalDao(): ApprovalDao
     abstract fun stakingDao(): StakingDao
-    abstract fun discoverDao(): DiscoverDao // ✅ ADD THIS
+    abstract fun discoverDao(): DiscoverDao
+    abstract fun tokenBalanceDao(): TokenBalanceDao
 
     companion object {
         const val DATABASE_NAME = "decagon_database"
@@ -235,7 +239,8 @@ abstract class DecagonDatabase : RoomDatabase() {
         val MIGRATION_8_9 = object : Migration(8, 9) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // 1. Assets Table
-                db.execSQL("""
+                db.execSQL(
+                    """
             CREATE TABLE IF NOT EXISTS assets (
                 id TEXT PRIMARY KEY NOT NULL,
                 wallet_id TEXT NOT NULL,
@@ -255,10 +260,12 @@ abstract class DecagonDatabase : RoomDatabase() {
                 last_updated INTEGER NOT NULL,
                 FOREIGN KEY(wallet_id) REFERENCES decagon_wallets(id) ON UPDATE NO ACTION ON DELETE CASCADE 
             )
-        """)
+        """
+                )
 
                 // 2. Approvals Table
-                db.execSQL("""
+                db.execSQL(
+                    """
             CREATE TABLE IF NOT EXISTS approvals (
                 id TEXT PRIMARY KEY NOT NULL,
                 wallet_id TEXT NOT NULL,
@@ -273,10 +280,12 @@ abstract class DecagonDatabase : RoomDatabase() {
                 revoked_at INTEGER,
                 FOREIGN KEY(wallet_id) REFERENCES decagon_wallets(id) ON UPDATE NO ACTION ON DELETE CASCADE 
             )
-        """)
+        """
+                )
 
                 // 3. Staking Positions Table
-                db.execSQL("""
+                db.execSQL(
+                    """
             CREATE TABLE IF NOT EXISTS staking_positions (
                 id TEXT PRIMARY KEY NOT NULL,
                 wallet_id TEXT NOT NULL,
@@ -291,10 +300,12 @@ abstract class DecagonDatabase : RoomDatabase() {
                 unstaked_at INTEGER,
                 FOREIGN KEY(wallet_id) REFERENCES decagon_wallets(id) ON UPDATE NO ACTION ON DELETE CASCADE 
             )
-        """)
+        """
+                )
 
                 // 4. Contacts Table
-                db.execSQL("""
+                db.execSQL(
+                    """
             CREATE TABLE IF NOT EXISTS contacts (
                 id TEXT PRIMARY KEY NOT NULL,
                 name TEXT NOT NULL,
@@ -302,10 +313,12 @@ abstract class DecagonDatabase : RoomDatabase() {
                 memo TEXT,
                 added_at INTEGER NOT NULL
             )
-        """)
+        """
+                )
 
                 // 5. Discover Tables: Tokens
-                db.execSQL("""
+                db.execSQL(
+                    """
             CREATE TABLE IF NOT EXISTS tokens (
                 id TEXT PRIMARY KEY NOT NULL,
                 symbol TEXT NOT NULL,
@@ -316,10 +329,12 @@ abstract class DecagonDatabase : RoomDatabase() {
                 change_24h REAL NOT NULL,
                 is_trending INTEGER NOT NULL
             )
-        """)
+        """
+                )
 
                 // 6. Discover Tables: Perps
-                db.execSQL("""
+                db.execSQL(
+                    """
             CREATE TABLE IF NOT EXISTS perps (
                 id TEXT PRIMARY KEY NOT NULL,
                 symbol TEXT NOT NULL,
@@ -331,10 +346,12 @@ abstract class DecagonDatabase : RoomDatabase() {
                 volume_24h REAL NOT NULL,
                 open_interest REAL NOT NULL
             )
-        """)
+        """
+                )
 
                 // 7. Discover Tables: DApps
-                db.execSQL("""
+                db.execSQL(
+                    """
             CREATE TABLE IF NOT EXISTS dapps (
                 id TEXT PRIMARY KEY NOT NULL,
                 name TEXT NOT NULL,
@@ -343,12 +360,40 @@ abstract class DecagonDatabase : RoomDatabase() {
                 icon_url TEXT NOT NULL,
                 category TEXT NOT NULL
             )
-        """)
+        """
+                )
 
                 // Indices for performance
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_assets_wallet_id ON assets(wallet_id)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_approvals_wallet_id ON approvals(wallet_id)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_staking_positions_wallet_id ON staking_positions(wallet_id)")
+            }
+        }
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create the token_balances table with all fields from TokenBalanceEntity
+                db.execSQL("""
+            CREATE TABLE IF NOT EXISTS `token_balances` (
+                `id` TEXT NOT NULL, 
+                `walletAddress` TEXT NOT NULL, 
+                `mint` TEXT NOT NULL, 
+                `amount` TEXT NOT NULL, 
+                `decimals` INTEGER NOT NULL, 
+                `uiAmount` REAL NOT NULL, 
+                `symbol` TEXT NOT NULL, 
+                `name` TEXT NOT NULL, 
+                `logoUrl` TEXT, 
+                `isNative` INTEGER NOT NULL, 
+                `tokenAccount` TEXT, 
+                `valueUsd` REAL NOT NULL, 
+                `change24h` REAL, 
+                `lastUpdated` INTEGER NOT NULL, 
+                PRIMARY KEY(`id`)
+            )
+        """.trimIndent())
+
+                // Register the index for walletAddress performance
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_token_balances_walletAddress` ON `token_balances` (`walletAddress`)")
             }
         }
     }

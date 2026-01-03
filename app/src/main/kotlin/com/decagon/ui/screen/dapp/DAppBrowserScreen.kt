@@ -59,6 +59,7 @@ fun DAppBrowserScreen(
     val activeWallet by viewModel.activeWallet.collectAsState()
 
     var currentUrl by remember { mutableStateOf(initialUrl) }
+    var wallet by remember { mutableStateOf(activeWallet) }
     var currentTitle by remember { mutableStateOf(initialTitle) }
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
@@ -105,7 +106,7 @@ fun DAppBrowserScreen(
                                 }
                             }
                         } else {
-                            IconButton(onClick = { viewModel.connectWallet(currentUrl) }) {
+                            IconButton(onClick = { viewModel.connectWallet(currentUrl, wallet!!) }) {
                                 Icon(Icons.Rounded.AccountBalanceWallet, "Connect Wallet")
                             }
                         }

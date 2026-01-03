@@ -26,7 +26,9 @@ class UpdateTokenBalancesUseCase(
     private val swapRepository: SwapRepository,
     private val walletRepository: DecagonWalletRepository
 ) {
+    // ✅ CORRECT: Refreshes balances after swap
     suspend operator fun invoke(walletId: String): Result<List<TokenBalance>> {
+        val wallet = walletRepository.getWalletById(walletId).first() ?:
         return try {
             Timber.d("🔄 Updating token balances for wallet: $walletId")
 
@@ -54,5 +56,6 @@ class UpdateTokenBalancesUseCase(
             Timber.e(e, "❌ Exception updating token balances")
             Result.failure(e)
         }
+        return swapRepository.getTokenBalances(wallet.address)
     }
 }

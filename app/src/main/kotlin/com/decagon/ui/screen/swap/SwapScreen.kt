@@ -1,16 +1,7 @@
 package com.decagon.ui.screen.swap
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,39 +10,28 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.SwapVert
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavHostController
+import coil3.compose.AsyncImage
+import coil3.request.crossfade
 import com.decagon.domain.model.TokenInfo
 import com.decagon.ui.components.SlippageSettingsSheet
 import com.decagon.ui.components.SwapPreviewCard
@@ -59,6 +39,7 @@ import com.decagon.ui.components.TokenSelectorSheet
 import com.decagon.ui.navigation.UnifiedBottomNavBar
 import com.decagon.util.ItemShape
 import com.decagon.ui.theme.AppTypography
+import com.decagon.util.RoundedShape
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.pow
 
@@ -77,9 +58,10 @@ fun DecagonSwapScreen(
     val slippageTolerance by viewModel.slippageTolerance.collectAsState()
     val currentWallet by viewModel.currentWallet.collectAsState()
     val tokenBalances by viewModel.tokenBalances.collectAsState()
-    // ✅ ADD: Check if current chain supports swaps
     val isSwapSupported = currentWallet?.activeChain?.chainType?.id == "solana"
-
+    val availableTokens by viewModel.availableTokens.collectAsState()
+    val tokensLoading by viewModel.tokensLoading.collectAsState() // ✅ NEW
+    val commonTokens by viewModel.commonTokens.collectAsState() // ✅ NEW
 
     var showInputTokenSelector by remember { mutableStateOf(false) }
     var showOutputTokenSelector by remember { mutableStateOf(false) }
@@ -266,24 +248,40 @@ fun DecagonSwapScreen(
         }
     }
 
-    // Modal Sheet Management
+    // ✅ UPDATED: Input token selector with balances + all available tokens
     if (showInputTokenSelector) {
+        // Combine owned tokens with all available tokens, removing duplicates
+        val combinedTokens = remember(tokenBalances, availableTokens) {
+            val ownedTokenInfo = tokenBalances.mapNotNull { it.toTokenInfo() }
+            val allTokens = ownedTokenInfo + availableTokens
+            allTokens.distinctBy { it.address }
+        }
+
         TokenSelectorSheet(
-            tokens = tokenBalances.mapNotNull { it.toTokenInfo() },
+            tokens = combinedTokens,
             currentToken = inputToken,
+            ownedTokenMints = tokenBalances.map { it.mint }.toSet(),
+            commonTokens = commonTokens, // ✅ NEW: Pass common tokens
+            isLoading = tokensLoading, // ✅ NEW: Pass loading state
             onTokenSelected = {
-                viewModel.onInputTokenSelected(it); showInputTokenSelector = false
+                viewModel.onInputTokenSelected(it)
+                showInputTokenSelector = false
             },
             onDismiss = { showInputTokenSelector = false }
         )
     }
 
+    // ✅ Output token selector remains the same (all available tokens)
     if (showOutputTokenSelector) {
         TokenSelectorSheet(
-            tokens = tokenBalances.mapNotNull { it.toTokenInfo() },
+            tokens = availableTokens,
             currentToken = outputToken,
+            ownedTokenMints = tokenBalances.map { it.mint }.toSet(),
+            commonTokens = commonTokens, // ✅ NEW: Pass common tokens
+            isLoading = tokensLoading, // ✅ NEW: Pass loading state
             onTokenSelected = {
-                viewModel.onOutputTokenSelected(it); showOutputTokenSelector = false
+                viewModel.onOutputTokenSelected(it)
+                showOutputTokenSelector = false
             },
             onDismiss = { showOutputTokenSelector = false }
         )
@@ -336,16 +334,64 @@ private fun TokenSelectionCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // ✅ ENHANCED: Token selector with logo + badges
                 Surface(
                     onClick = onTokenClick,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedShape,
                     color = MaterialTheme.colorScheme.surface
                 ) {
+                    val context = LocalContext.current
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
+                        // ✅ Token Logo with loading state
+                        val imageModel = remember(token.logoURI) {
+                            coil3.request.ImageRequest.Builder(context = context)
+                                .data(token.logoURI ?: "https://via.placeholder.com/24")
+                                .crossfade(true)
+                                .build()
+                        }
+
+                        AsyncImage(
+                            model = imageModel,
+                            contentDescription = "${token.symbol} logo",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape),
+                            error = painterResource(com.decagon.R.drawable.ic_launcher_background)
+                        )
+
                         Text(token.symbol, fontWeight = FontWeight.ExtraBold)
+
+                        // Verified Badge
+                        if (token.isVerified) {
+                            Icon(
+                                imageVector = Icons.Default.Verified,
+                                contentDescription = "Verified",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+
+                        // Strict Badge (Jupiter strict list)
+                        if (token.isStrict) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f),
+                                modifier = Modifier.size(16.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        "⚡",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontSize = MaterialTheme.typography.labelSmall.fontSize * 0.8f
+                                    )
+                                }
+                            }
+                        }
+
                         Icon(Icons.Rounded.ArrowDropDown, null)
                     }
                 }
@@ -389,7 +435,6 @@ private fun SwapButtonLayout(state: SwapUiState) {
             color = MaterialTheme.colorScheme.onPrimary,
             strokeWidth = 2.dp
         )
-
         is SwapUiState.ExecutingSwap -> Text("Executing Transaction...")
         is SwapUiState.SwapSuccess -> Text("Swap Successful!")
         else -> Text("Swap Tokens", fontWeight = FontWeight.Bold)

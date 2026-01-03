@@ -1,5 +1,6 @@
 package com.decagon.data.repository
 
+import android.util.Base64
 import com.decagon.data.local.dao.SwapHistoryDao
 import com.decagon.data.local.dao.TokenBalanceDao
 import com.decagon.data.local.dao.TokenCacheDao
@@ -66,44 +67,14 @@ class SwapRepositoryImpl(
     override suspend fun executeSwap(
         swapOrder: SwapOrder,
         signedTransaction: ByteArray
-    ): Result<String> = withContext(Dispatchers.IO) {
-        try {
-            val base64Tx = android.util.Base64.encodeToString(
-                signedTransaction,
-                android.util.Base64.NO_WRAP
-            )
-
-            val executeRequest = JupiterExecuteRequest(
-                signedTransaction = base64Tx,
-                requestId = swapOrder.requestId
-            )
-
-            val executeResult = apiService.executeOrder(executeRequest)
-
-            executeResult.fold(
-                onSuccess = { response ->
-                    when {
-                        response.status == "Success" && response.signature != null -> {
-                            Timber.i("Swap executed: ${response.signature}")
-                            Result.success(response.signature)
-                        }
-                        response.status == "Failed" -> {
-                            val error = response.error ?: "Unknown error"
-                            Timber.e("Swap failed: $error")
-                            Result.failure(Exception("Swap failed: $error"))
-                        }
-                        else -> {
-                            Result.failure(Exception("Swap pending"))
-                        }
-                    }
-                },
-                onFailure = { Result.failure(it) }
-            )
-
-        } catch (e: Exception) {
-            Timber.e(e, "Swap execution exception")
-            Result.failure(e)
-        }
+    ): Result<String> {
+        val base64Tx = Base64.encodeToString(signedTransaction, Base64.NO_WRAP)
+        val executeRequest = JupiterExecuteRequest(
+            signedTransaction = base64Tx,
+            requestId = swapOrder.requestId
+        )
+        return apiService.executeOrder(executeRequest)
+            .map { it.signature!! }
     }
 
     override suspend fun searchTokens(query: String, limit: Int): Result<List<TokenInfo>> {

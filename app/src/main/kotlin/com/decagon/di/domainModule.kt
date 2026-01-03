@@ -36,6 +36,7 @@ import com.decagon.domain.usecase.security.ValidateSolanaAddressUseCase
 import com.decagon.domain.usecase.staking.ClaimRewardsUseCase
 import com.decagon.domain.usecase.staking.StakeTokensUseCase
 import com.decagon.domain.usecase.staking.UnstakeTokensUseCase
+import com.decagon.domain.usecase.swap.SearchTokensForSwapUseCase
 import com.decagon.domain.usecase.wallet.ObserveActiveWalletUseCase
 import com.decagon.domain.usecase.wallet.ObserveWalletsUseCase
 import com.decagon.domain.usecase.wallet.SetActiveWalletUseCase
@@ -66,6 +67,7 @@ val domainModule = module {
     factory { GetTokenBalancesUseCase(get()) }
     factory { ValidateTokenSecurityUseCase(get()) }
     factory { GetSwapHistoryUseCase(get()) }
+    single { SearchTokensForSwapUseCase(get()) }
 
 
     // Discover Use Cases

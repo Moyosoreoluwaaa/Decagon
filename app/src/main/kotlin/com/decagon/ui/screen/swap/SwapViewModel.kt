@@ -13,7 +13,7 @@ import com.decagon.domain.usecase.swap.ExecuteSwapUseCase
 import com.decagon.domain.usecase.swap.GetSwapHistoryUseCase
 import com.decagon.domain.usecase.swap.GetSwapQuoteUseCase
 import com.decagon.domain.usecase.swap.GetTokenBalancesUseCase
-import com.decagon.domain.usecase.discover.SearchTokensUseCase
+import com.decagon.domain.usecase.swap.SearchTokensForSwapUseCase
 import com.decagon.domain.usecase.swap.ValidateTokenSecurityUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -26,18 +26,14 @@ import timber.log.Timber
 class SwapViewModel(
     private val getSwapQuoteUseCase: GetSwapQuoteUseCase,
     private val executeSwapUseCase: ExecuteSwapUseCase,
-    private val searchTokensUseCase: SearchTokensUseCase,
+    private val searchTokensForSwapUseCase: SearchTokensForSwapUseCase,
     private val getTokenBalancesUseCase: GetTokenBalancesUseCase,
     private val validateSecurityUseCase: ValidateTokenSecurityUseCase,
     private val getSwapHistoryUseCase: GetSwapHistoryUseCase,
     private val walletRepository: DecagonWalletRepository
 ) : ViewModel() {
 
-    init {
-        Timber.d("SwapViewModel initialized")
-        loadWallet()
-    }
-
+    // ✅ CRITICAL: All MutableStateFlow must be initialized BEFORE init block
     // State
     private val _uiState = MutableStateFlow<SwapUiState>(SwapUiState.Idle)
     val uiState: StateFlow<SwapUiState> = _uiState.asStateFlow()
@@ -68,11 +64,29 @@ class SwapViewModel(
     private val _tokenBalances = MutableStateFlow<List<TokenBalance>>(emptyList())
     val tokenBalances: StateFlow<List<TokenBalance>> = _tokenBalances.asStateFlow()
 
+    // ✅ Loading state for tokens - initialized with true
+    private val _tokensLoading = MutableStateFlow(true)
+    val tokensLoading: StateFlow<Boolean> = _tokensLoading.asStateFlow()
+
+    // ✅ Common tokens (quick access) - initialized with default value
+    private val _commonTokens = MutableStateFlow<List<TokenInfo>>(CommonTokens.ALL)
+    val commonTokens: StateFlow<List<TokenInfo>> = _commonTokens.asStateFlow()
+
+    private val _availableTokens = MutableStateFlow<List<TokenInfo>>(emptyList())
+    val availableTokens: StateFlow<List<TokenInfo>> = _availableTokens.asStateFlow()
+
     // Activity reference for biometric auth
     private var currentActivity: FragmentActivity? = null
 
     // Debounce job
     private var quoteRefreshJob: Job? = null
+
+    // ✅ Init block AFTER all field declarations
+    init {
+        Timber.d("SwapViewModel initialized")
+        loadWallet()
+        loadAvailableTokens() // Safe to call now - all fields initialized
+    }
 
     fun setActivity(activity: FragmentActivity) {
         currentActivity = activity
@@ -98,6 +112,25 @@ class SwapViewModel(
             }.onFailure { error ->
                 Timber.e(error, "Failed to load balances")
             }
+        }
+    }
+
+    // ✅ UPDATED: Load full token list with loading state
+    private fun loadAvailableTokens() {
+        viewModelScope.launch {
+            _tokensLoading.value = true
+
+            val result = searchTokensForSwapUseCase("")
+            result.onSuccess { tokens ->
+                _availableTokens.value = tokens
+                Timber.i("Loaded ${tokens.size} available tokens")
+            }.onFailure { error ->
+                Timber.e(error, "Failed to load available tokens")
+                // Fallback to common tokens if full list fails
+                _availableTokens.value = CommonTokens.ALL
+            }
+
+            _tokensLoading.value = false
         }
     }
 

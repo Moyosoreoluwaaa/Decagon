@@ -54,6 +54,18 @@ fun TokenInfoDto.toDomain(): TokenInfo {
     )
 }
 
+fun Token.toTokenInfo(): TokenInfo {
+    return TokenInfo(
+        address = mintAddress ?: id,
+        name = name,
+        symbol = symbol,
+        decimals = 9, // Default (query chain for exact decimals in production)
+        logoURI = logoUrl,
+        tags = tags,
+        isVerified = isVerified
+    )
+}
+
 
 fun TokenHoldingDto.toDomain(tokenInfo: TokenInfo? = null): TokenBalance {
     return TokenBalance(
@@ -65,7 +77,8 @@ fun TokenHoldingDto.toDomain(tokenInfo: TokenInfo? = null): TokenBalance {
         isNative = isNative,
         tokenInfo = tokenInfo,
         symbol = tokenInfo?.symbol ?: "???",
-        name = tokenInfo?.name ?: "Unknown"
+        name = tokenInfo?.name ?: "Unknown",
+        logoUrl = tokenInfo?.logoURI,  // ← Only set if tokenInfo exists
     )
 }
 

@@ -4,6 +4,7 @@ import com.decagon.ui.screen.all.*
 import com.decagon.ui.screen.chains.DecagonSupportedChainsViewModel
 import com.decagon.ui.screen.discover.DiscoverViewModel
 import com.decagon.ui.screen.history.*
+import com.decagon.ui.screen.lock.BiometricLockViewModel
 import com.decagon.ui.screen.onboarding.DecagonOnboardingViewModel
 import com.decagon.ui.screen.onramp.DecagonOnRampViewModel
 import com.decagon.ui.screen.perps.PerpDetailViewModel
@@ -37,14 +38,17 @@ val viewModelModule = module {
 
     // Settings & History
     viewModel { DecagonSettingsViewModel(get(), get(), get(), get()) }
+    viewModel { WalletSettingsViewModel(get(), get(), get(), get()) }
     viewModel { DecagonTransactionHistoryViewModel(get(), get()) }
     viewModel { DecagonTransactionDetailViewModel(get()) }
     viewModel { DecagonSupportedChainsViewModel(get()) }
+    viewModel { UnifiedSettingsViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // Infrastructure ViewModels
     viewModel { DAppBrowserViewModel(get(), get(), get(), get()) }
     viewModel { DecagonOnboardingViewModel(get(), get(), get()) }
     viewModel { SessionViewModel(get()) }
+    viewModel { BiometricLockViewModel(get(), get()) }
 
     // Workers
     worker {

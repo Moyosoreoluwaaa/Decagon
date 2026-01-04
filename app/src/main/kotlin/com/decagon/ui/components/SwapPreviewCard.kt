@@ -60,14 +60,14 @@ fun SwapPreviewCard(quote: SwapOrder) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "You receive approximately",
+                    text = "You receive approx...",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "%.6f %s".format(outputUiAmount, outputToken.symbol),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = "%.4f %s".format(outputUiAmount, outputToken.symbol),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
@@ -81,7 +81,7 @@ fun SwapPreviewCard(quote: SwapOrder) {
                     text = "1 ${inputToken.symbol} ≈ %.6f ${outputToken.symbol}".format(
                         outputUiAmount / inputUiAmount
                     ),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.titleSmall
                 )
             }
 
@@ -93,7 +93,7 @@ fun SwapPreviewCard(quote: SwapOrder) {
                 Text("Max Slippage", style = MaterialTheme.typography.bodyMedium)
                 Text(
                     text = "%.2f%%".format(quote.slippageBps / 100.0),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.titleSmall
                 )
             }
 
@@ -106,7 +106,7 @@ fun SwapPreviewCard(quote: SwapOrder) {
                     Text("Price Impact", style = MaterialTheme.typography.bodyMedium)
                     Text(
                         text = "%.2f%%".format(quote.priceImpactPct),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         color = when {
                             quote.priceImpactPct < 1.0 -> MaterialTheme.colorScheme.onSurface
                             quote.priceImpactPct < 3.0 -> MaterialTheme.colorScheme.tertiary

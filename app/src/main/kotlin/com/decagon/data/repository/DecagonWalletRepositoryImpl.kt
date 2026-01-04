@@ -5,6 +5,7 @@ import com.decagon.core.chains.ChainType
 import com.decagon.core.crypto.DecagonKeyDerivation
 import com.decagon.core.crypto.DecagonMnemonic
 import com.decagon.core.crypto.DecagonSecureEnclaveManager
+import com.decagon.core.network.RpcClientFactory
 import com.decagon.core.security.DecagonBiometricAuthenticator
 import com.decagon.data.local.dao.DecagonWalletDao
 import com.decagon.data.mapper.toDomain
@@ -28,7 +29,8 @@ class DecagonWalletRepositoryImpl(
     private val enclaveManager: DecagonSecureEnclaveManager,
     private val mnemonicHelper: DecagonMnemonic,
     private val keyDerivation: DecagonKeyDerivation,
-    private val biometricAuthenticator: DecagonBiometricAuthenticator
+    private val biometricAuthenticator: DecagonBiometricAuthenticator,
+    private val rpcFactory: RpcClientFactory
 ) : DecagonWalletRepository {
 
     init {
@@ -152,6 +154,37 @@ class DecagonWalletRepositoryImpl(
     override fun getActiveWallet(): Flow<DecagonWallet?> {
         Timber.d("Getting active wallet.")
         return walletDao.getActive().map { it?.toDomain() }
+    }
+
+    // ✅ NEW: Instant cached balance
+    override fun getActiveWalletCached(): Flow<DecagonWallet?> {
+        return walletDao.getActive().map { it?.toDomain() }
+    }
+
+    // ✅ NEW: Background balance refresh
+    override suspend fun refreshBalance(walletId: String) {
+        try {
+            val entity = walletDao.getById(walletId).first() ?: return
+            val wallet = entity.toDomain()
+
+            val activeChain = wallet.activeChain ?: return
+            val rpcClient = rpcFactory.createSolanaClient(activeChain.chainId)
+
+            val balanceResult = rpcClient.getBalance(activeChain.address)
+            val balance = balanceResult.getOrNull()?.let { it / 1_000_000_000.0 } ?: 0.0
+
+            // Update cache in DB
+            walletDao.updateBalance(
+                walletId = walletId,
+                balance = balance,
+                timestamp = System.currentTimeMillis()
+            )
+
+            Timber.d("Balance refreshed: $balance for wallet $walletId")
+        } catch (e: Exception) {
+            Timber.e(e, "Balance refresh failed, keeping cached value")
+            // Don't throw - keep cached balance
+        }
     }
 
     override suspend fun setActiveWallet(walletId: String) {

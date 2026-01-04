@@ -48,6 +48,14 @@ interface DecagonWalletRepository {
      */
     fun getActiveWallet(): Flow<DecagonWallet?>
 
+    // ✅ NEW: Returns cached balance immediately
+    fun getActiveWalletCached(): Flow<DecagonWallet?>
+
+
+    // ✅ NEW: Background refresh
+    suspend fun refreshBalance(walletId: String)
+
+
     /**
      * Sets wallet as active.
      *

@@ -18,6 +18,7 @@ import com.octane.wallet.core.monitoring.PerformanceTracker
 import com.decagon.core.network.NetworkMonitor
 import com.decagon.core.network.NetworkMonitorImpl
 import com.decagon.core.network.SolanaNetworkMonitor
+import com.decagon.core.security.BiometricLockManager
 import com.decagon.core.security.BiometricManager
 import com.decagon.core.security.KeystoreManager
 import com.decagon.core.security.MaliciousSignatureDetector
@@ -64,7 +65,7 @@ val coreModule = module {
                 DecagonDatabase.MIGRATION_3_4, DecagonDatabase.MIGRATION_4_5,
                 DecagonDatabase.MIGRATION_5_6, DecagonDatabase.MIGRATION_6_7,
                 DecagonDatabase.MIGRATION_7_8, DecagonDatabase.MIGRATION_8_9,
-                DecagonDatabase.MIGRATION_9_10,
+                DecagonDatabase.MIGRATION_9_10, DecagonDatabase.MIGRATION_10_11
             ).build()
     }
     single { get<DecagonDatabase>().walletDao() }
@@ -107,4 +108,5 @@ val coreModule = module {
     single<UserPreferencesStore> { UserPreferencesStoreImpl(androidContext()) }
     single<DAppPreferencesStore> { DAppPreferencesStoreImpl(androidContext()) }
     single { SessionManager(get()) }
+    single { BiometricLockManager(get()) }
 }

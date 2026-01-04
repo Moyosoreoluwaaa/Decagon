@@ -28,6 +28,9 @@ import com.decagon.domain.usecase.discover.SearchDAppsUseCase
 import com.decagon.domain.usecase.discover.SearchPerpsUseCase
 import com.decagon.domain.usecase.discover.SearchTokensUseCase
 import com.decagon.domain.usecase.network.ObserveNetworkStatusUseCase
+import com.decagon.domain.usecase.preference.ObserveCurrencyPreferenceUseCase
+import com.decagon.domain.usecase.preference.TogglePrivacyModeUseCase
+import com.decagon.domain.usecase.preference.UpdateCurrencyPreferenceUseCase
 import com.decagon.domain.usecase.security.AuthenticateWithBiometricsUseCase
 import com.decagon.domain.usecase.security.CheckBiometricAvailabilityUseCase
 import com.decagon.domain.usecase.security.ObserveApprovalsUseCase
@@ -91,11 +94,16 @@ val domainModule = module {
     factory { UnstakeTokensUseCase(get(), get()) }
     factory { ClaimRewardsUseCase(get(), get()) }
     factory { AuthenticateWithBiometricsUseCase(get()) }
-    factory { CheckBiometricAvailabilityUseCase(get()) }
     factory { ObserveApprovalsUseCase(get(), get()) }
     factory { RevokeApprovalUseCase(get(), get()) }
     factory { ObserveNetworkStatusUseCase(get()) }
 
     // Factories
     single { OnRampProviderFactory() }
+
+    // Settings
+    single {UpdateCurrencyPreferenceUseCase(get())}
+    single {TogglePrivacyModeUseCase(get())}
+    single {ObserveCurrencyPreferenceUseCase(get())}
+    single {CheckBiometricAvailabilityUseCase(get())}
 }

@@ -2,39 +2,15 @@ package com.decagon.ui.screen.wallet
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.ContentCopy
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,18 +25,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.decagon.core.network.NetworkEnvironment
 import com.decagon.core.network.NetworkManager
-import com.decagon.core.util.DecagonLoadingState
 import com.decagon.domain.model.DecagonWallet
 import com.decagon.domain.model.PortfolioHistoryPoint
-import com.decagon.ui.components.DecagonQuickActionsBar
-import com.decagon.ui.components.DecagonReceiveSheet
-import com.decagon.ui.components.DecagonSendSheet
-import com.decagon.ui.components.FloatingTopBar
-import com.decagon.ui.components.NetworkSelectorModal
-import com.decagon.ui.components.PortfolioPerformanceChart
-import com.decagon.ui.components.TimeRange
-import com.decagon.ui.components.WalletSwitcherModal
-import com.decagon.ui.components.formatCurrency
+import com.decagon.ui.components.*
 import com.decagon.ui.navigation.UnifiedBottomNavBar
 import com.decagon.ui.theme.AppColors
 import com.decagon.ui.theme.AppTypography
@@ -73,7 +40,7 @@ import timber.log.Timber
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DecagonWalletScreen(
-    navController: NavController, // ✅ ADD
+    navController: NavController,
     viewModel: DecagonWalletViewModel = koinViewModel(),
     networkManager: NetworkManager = koinInject(),
     onNavigateToOnboarding: () -> Unit = {},
@@ -82,13 +49,16 @@ fun DecagonWalletScreen(
     onNavigateToBuy: () -> Unit = {},
     onNavigateToSwap: () -> Unit = {},
 ) {
-    val walletState by viewModel.walletState.collectAsState()
+    // ✅ Direct observation of nullable wallet (instant cached state)
+    val wallet by viewModel.walletState.collectAsState()
     val allWallets by viewModel.allWallets.collectAsState()
     val selectedCurrency by viewModel.selectedCurrency.collectAsState()
     val fiatPrice by viewModel.fiatPrice.collectAsState()
     val currentNetwork by networkManager.currentNetwork.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     val scope = rememberCoroutineScope()
+    val hapticFeedback = LocalHapticFeedback.current
 
     // UI State
     var showWalletSwitcher by remember { mutableStateOf(false) }
@@ -97,9 +67,6 @@ fun DecagonWalletScreen(
     var showReceiveSheet by remember { mutableStateOf(false) }
     var showCopiedSnackbar by remember { mutableStateOf(false) }
     var selectedTimeRange by remember { mutableStateOf(TimeRange.ONE_WEEK) }
-    val isRefreshing by viewModel.isRefreshing.collectAsState()
-    val hapticFeedback = LocalHapticFeedback.current
-
 
     LaunchedEffect(showCopiedSnackbar) {
         if (showCopiedSnackbar) {
@@ -120,59 +87,45 @@ fun DecagonWalletScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            when (val state = walletState) {
-                is DecagonLoadingState.Loading -> {
-                    LoadingView()
-                }
+            // ✅ Render content immediately if wallet is available in cache
+            wallet?.let { activeWallet ->
+                ModernWalletContent(
+                    wallet = activeWallet,
+                    currentNetwork = currentNetwork,
+                    selectedCurrency = selectedCurrency,
+                    fiatPrice = fiatPrice,
+                    selectedTimeRange = selectedTimeRange,
+                    onProfileClick = {
+                        showWalletSwitcher = true
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    },
+                    onNetworkClick = {
+                        showNetworkSelector = true
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    },
+                    onNotificationClick = onNavigateToHistory,
+                    onAddressCopy = {
+                        showCopiedSnackbar = true
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    },
+                    onCurrencyClick = { /* Implement currency selector */ },
+                    onSendClick = {
+                        showSendSheet = true
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    },
+                    onReceiveClick = {
+                        showReceiveSheet = true
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    },
+                    onBuyClick = onNavigateToBuy,
+                    onSwapClick = onNavigateToSwap,
+                    onTimeRangeChange = {
+                        selectedTimeRange = it
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    }
+                )
+            } ?: LoadingView() // Show only if truly null (first-time load)
 
-                is DecagonLoadingState.Success -> {
-                    ModernWalletContent(
-                        wallet = state.data,
-                        currentNetwork = currentNetwork,
-                        selectedCurrency = selectedCurrency,
-                        fiatPrice = fiatPrice,
-                        selectedTimeRange = selectedTimeRange,
-                        onProfileClick = {
-                            showWalletSwitcher = true
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        },
-                        onNetworkClick = {
-                            showNetworkSelector = true
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        },
-                        onNotificationClick = onNavigateToHistory,
-                        onAddressCopy = {
-                            showCopiedSnackbar = true
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        },
-                        onCurrencyClick = { /* TODO */
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        },
-                        onSendClick = {
-                            showSendSheet = true
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        },
-                        onReceiveClick = {
-                            showReceiveSheet = true
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        },
-                        onBuyClick = onNavigateToBuy,
-                        onSwapClick = onNavigateToSwap,
-                        onTimeRangeChange = {
-                            selectedTimeRange = it
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        }
-                    )
-                }
-
-                is DecagonLoadingState.Error -> {
-                    ErrorView(message = state.message)
-                }
-
-                is DecagonLoadingState.Idle -> {}
-            }
-
-            // Snackbar
             if (showCopiedSnackbar) {
                 Snackbar(
                     modifier = Modifier
@@ -188,23 +141,20 @@ fun DecagonWalletScreen(
         if (showWalletSwitcher) {
             WalletSwitcherModal(
                 wallets = allWallets,
-                activeWalletId = (walletState as? DecagonLoadingState.Success)?.data?.id ?: "",
+                activeWalletId = wallet?.id ?: "",
                 onWalletSelect = {
                     viewModel.switchWallet(it)
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 },
                 onAddWallet = onNavigateToOnboarding,
                 onSettings = {
-                    (walletState as? DecagonLoadingState.Success)?.data?.let {
+                    wallet?.let {
                         onNavigateToSettings(it.id)
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     }
                 },
                 onLogOut = { /* TODO */ },
-                onDismiss = {
-                    showWalletSwitcher = false
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                }
+                onDismiss = { showWalletSwitcher = false }
             )
         }
 
@@ -214,7 +164,6 @@ fun DecagonWalletScreen(
                 onNetworkSelect = { network ->
                     scope.launch {
                         networkManager.switchNetwork(network)
-                        Timber.d("Network switched to: $network")
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                     }
                 },
@@ -226,16 +175,15 @@ fun DecagonWalletScreen(
             DecagonSendSheet(onDismiss = { showSendSheet = false })
         }
 
-        if (showReceiveSheet && walletState is DecagonLoadingState.Success) {
+        if (showReceiveSheet && wallet != null) {
             DecagonReceiveSheet(
-                wallet = (walletState as DecagonLoadingState.Success).data,
+                wallet = wallet!!,
                 onDismiss = { showReceiveSheet = false }
             )
         }
     }
 }
 
-// Rest of the composables remain unchanged...
 @Composable
 private fun ModernWalletContent(
     wallet: DecagonWallet,
@@ -259,6 +207,7 @@ private fun ModernWalletContent(
     val clipboardManager = LocalClipboardManager.current
     val fiatValue = wallet.balance * fiatPrice
     val selectedTimeframe by viewModel.selectedTimeframe.collectAsState()
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -278,7 +227,6 @@ private fun ModernWalletContent(
         BalanceHeroSection(
             wallet = wallet,
             fiatValue = fiatValue,
-            fiatPrice = fiatPrice,
             selectedCurrency = selectedCurrency,
             onAddressCopy = {
                 clipboardManager.setText(AnnotatedString(wallet.address))
@@ -298,8 +246,7 @@ private fun ModernWalletContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
-            modifier = Modifier.fillMaxWidth()
-                .padding(horizontal = 10.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             listOf("1H", "1D", "1W", "1M", "YTD", "ALL").forEach { timeframe ->
@@ -335,16 +282,13 @@ private fun ModernWalletContent(
 private fun BalanceHeroSection(
     wallet: DecagonWallet,
     fiatValue: Double,
-    fiatPrice: Double,
     selectedCurrency: String,
     onAddressCopy: () -> Unit,
     onCurrencyClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp),
+        modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
@@ -374,8 +318,6 @@ private fun BalanceHeroSection(
             ),
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.clickable(onClick = onCurrencyClick)
@@ -390,8 +332,6 @@ private fun BalanceHeroSection(
                 modifier = Modifier.size(20.dp)
             )
         }
-
-        Spacer(modifier = Modifier.height(4.dp))
 
         Text(
             text = androidx.compose.ui.text.buildAnnotatedString {
@@ -415,13 +355,6 @@ private fun LoadingView(modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-private fun ErrorView(message: String, modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = message, style = MaterialTheme.typography.bodyLarge, color = Color(0xFFFF6B6B))
-    }
-}
-
 private fun generateMockPortfolioHistory(
     currentValue: Double,
     timeRange: TimeRange
@@ -437,14 +370,9 @@ private fun generateMockPortfolioHistory(
     return (0 until dataPoints).map { index ->
         val progress = index.toDouble() / (dataPoints - 1)
         val baseValue = currentValue * (0.8 + progress * 0.2)
-        val noise = kotlin.math.sin(progress * 20) * (currentValue * 0.05) *
-                kotlin.random.Random.nextDouble(-1.0, 1.0)
-
         PortfolioHistoryPoint(
             timestamp = System.currentTimeMillis() - ((dataPoints - index) * 3600000L),
-            totalValueUsd = if (index == dataPoints - 1) currentValue else (baseValue + noise).coerceAtLeast(
-                currentValue * 0.5
-            )
+            totalValueUsd = if (index == dataPoints - 1) currentValue else baseValue
         )
     }
 }

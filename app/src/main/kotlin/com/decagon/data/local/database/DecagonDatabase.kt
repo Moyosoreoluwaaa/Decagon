@@ -49,7 +49,7 @@ import com.decagon.data.local.entity.TransactionEntity
         DAppEntity::class,
         TokenBalanceEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 @TypeConverters(DecagonTypeConverters::class)
@@ -394,6 +394,26 @@ abstract class DecagonDatabase : RoomDatabase() {
 
                 // Register the index for walletAddress performance
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_token_balances_walletAddress` ON `token_balances` (`walletAddress`)")
+            }
+        }
+
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. Add cachedBalance (Double) -> NOT NULL, DEFAULT 0.0
+                db.execSQL("ALTER TABLE decagon_wallets ADD COLUMN cachedBalance REAL NOT NULL DEFAULT 0.0")
+
+                // 2. Add lastBalanceFetch (Long) -> NOT NULL, DEFAULT 0
+                db.execSQL("ALTER TABLE decagon_wallets ADD COLUMN lastBalanceFetch INTEGER NOT NULL DEFAULT 0")
+
+                // 3. Add balanceStale (Boolean) -> NOT NULL, DEFAULT 1 (true)
+                db.execSQL("ALTER TABLE decagon_wallets ADD COLUMN balanceStale INTEGER NOT NULL DEFAULT 1")
+
+                // 4. FIX FOR PREVIOUS MISMATCH: encryptedMnemonic
+                // The error log shows Room expects this to be NULLABLE (notNull = 'false').
+                // Since SQLite ALTER TABLE doesn't easily allow changing NOT NULL to NULL,
+                // ensure your Entity matches the DB or recreate the table if necessary.
+                // However, based on your log, the simplest fix to satisfy Room is making sure
+                // the entity matches the expected schema.
             }
         }
     }

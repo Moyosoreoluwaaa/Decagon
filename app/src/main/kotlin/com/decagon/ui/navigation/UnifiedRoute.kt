@@ -14,7 +14,8 @@ sealed interface UnifiedRoute {
     @Serializable data object Discover : UnifiedRoute
     @Serializable data object Perps : UnifiedRoute
     @Serializable data object DApps : UnifiedRoute
-    @Serializable data object Settings : UnifiedRoute  // ← CHANGED: Replaced Activity
+    @Serializable data object Settings : UnifiedRoute
+    @Serializable data object WalletSettings : UnifiedRoute
 
     // ========== ACTIONS ==========
     @Serializable data object Swap : UnifiedRoute
@@ -30,7 +31,7 @@ sealed interface UnifiedRoute {
     @Serializable data class PerpDetail(val perpSymbol: String) : UnifiedRoute
     @Serializable data class DAppBrowser(val url: String, val title: String) : UnifiedRoute
     @Serializable data class TransactionDetail(val txHash: String) : UnifiedRoute
-    @Serializable data object TransactionHistory : UnifiedRoute  // ← NEW: Moved out of bottom nav
+    @Serializable data object TransactionHistory : UnifiedRoute
 
     // ========== WALLET-SPECIFIC SETTINGS ==========
     @Serializable data class RevealRecovery(val walletId: String) : UnifiedRoute

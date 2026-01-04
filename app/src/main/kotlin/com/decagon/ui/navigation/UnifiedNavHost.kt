@@ -14,9 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.decagon.core.network.NetworkEnvironment
 import com.decagon.core.network.NetworkManager
-import com.decagon.core.util.DecagonLoadingState
 import com.decagon.ui.screen.all.AllDAppsScreen
 import com.decagon.ui.screen.all.AllPerpsScreen
 import com.decagon.ui.screen.all.AllTokensScreen
@@ -28,11 +26,11 @@ import com.decagon.ui.screen.history.DecagonTransactionDetailScreen
 import com.decagon.ui.screen.history.DecagonTransactionHistoryScreen
 import com.decagon.ui.screen.imports.DecagonImportWalletScreen
 import com.decagon.ui.screen.imports.DecagonWalletChoiceScreen
-import com.decagon.ui.screen.onramp.DecagonOnRampScreen
 import com.decagon.ui.screen.perps.PerpDetailScreen
 import com.decagon.ui.screen.settings.DecagonRevealPrivateKeyScreen
 import com.decagon.ui.screen.settings.DecagonRevealRecoveryScreen
-import com.decagon.ui.screen.settings.DecagonSettingsScreen
+import com.decagon.ui.screen.settings.UnifiedSettingsScreen
+import com.decagon.ui.screen.settings.WalletSettingsScreen
 import com.decagon.ui.screen.swap.DecagonSwapScreen
 import com.decagon.ui.screen.swap.SwapViewModel
 import com.decagon.ui.screen.token.TokenDetailsScreen
@@ -249,62 +247,26 @@ fun UnifiedNavHost(
         composable<UnifiedRoute.Buy> {
             val networkManager: NetworkManager = koinInject()
             val currentNetwork by networkManager.currentNetwork.collectAsState()
-
-            if (currentNetwork != NetworkEnvironment.MAINNET) {
-                androidx.compose.material3.AlertDialog(
-                    onDismissRequest = { navController.popBackStack() },
-                    title = { androidx.compose.material3.Text("Mainnet Required") },
-                    text = { androidx.compose.material3.Text("Buying crypto is only available on Mainnet.") },
-                    confirmButton = {
-                        androidx.compose.material3.TextButton(
-                            onClick = { navController.popBackStack() }
-                        ) { androidx.compose.material3.Text("OK") }
-                    }
-                )
-            } else {
-                val walletViewModel: DecagonWalletViewModel = koinViewModel()
-                val walletState by walletViewModel.walletState.collectAsState()
-
-                when (val state = walletState) {
-                    is DecagonLoadingState.Success -> {
-                        DecagonOnRampScreen(
-                            wallet = state.data,
-                            onBackClick = { navController.popBackStack() },
-                            onTransactionComplete = {
-                                navController.navigate(UnifiedRoute.Wallet) {
-                                    popUpTo<UnifiedRoute.Wallet> { inclusive = true }
-                                }
-                            }
-                        )
-                    }
-
-                    else -> {}
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { navController.popBackStack() },
+                title = { androidx.compose.material3.Text("Mainnet Required") },
+                text = { androidx.compose.material3.Text("Buying crypto is only available on Mainnet.") },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(
+                        onClick = { navController.popBackStack() }
+                    ) { androidx.compose.material3.Text("OK") }
                 }
-            }
+            )
         }
 
         // ========== SETTINGS ==========
         composable<UnifiedRoute.Settings> {
-            // ✅ Direct access - no loading check needed
-            // ✅ Use static wallet (no balance fetching)
-            val wallet by walletViewModel.activeWallet.collectAsState()
+            UnifiedSettingsScreen(navController = navController)
+        }
 
-            wallet?.let {
-                DecagonSettingsScreen(
-                    wallet = it,
-                    onBackClick = { /* handled by bottom nav */ },
-                    onShowRecoveryPhrase = {
-                        navController.navigate(UnifiedRoute.RevealRecovery(wallet!!.id))
-                    },
-                    onShowPrivateKey = {
-                        navController.navigate(UnifiedRoute.RevealPrivateKey(wallet!!.id))
-                    },
-                    onNavigateToChains = {
-                        navController.navigate(UnifiedRoute.ManageChains(wallet!!.id))
-                    },
-                    navController = navController
-                )
-            }
+        // ✅ WALLET SETTINGS (WALLET-SPECIFIC)
+        composable<UnifiedRoute.WalletSettings> {
+            WalletSettingsScreen(navController = navController)
         }
 
         composable<UnifiedRoute.RevealRecovery> { backStackEntry ->

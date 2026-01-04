@@ -14,7 +14,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.SettingsInputComponent
 import androidx.compose.material.icons.rounded.SwapVert
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -78,15 +80,11 @@ fun DecagonSwapScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Swap", style = AppTypography.titleLarge) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-                    }
-                },
+                title = { Text("Swap", style = AppTypography.titleLarge)
+                        },
                 actions = {
                     IconButton(onClick = { showSlippageSettings = true }) {
-                        Icon(Icons.Rounded.Settings, "Settings")
+                        Icon(Icons.Rounded.Tune, "Adjust slippage")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -101,7 +99,7 @@ fun DecagonSwapScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp),
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Active Wallet Info
@@ -312,7 +310,7 @@ private fun TokenSelectionCard(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
@@ -342,9 +340,9 @@ private fun TokenSelectionCard(
                 ) {
                     val context = LocalContext.current
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         // ✅ Token Logo with loading state
                         val imageModel = remember(token.logoURI) {
@@ -401,8 +399,8 @@ private fun TokenSelectionCard(
                     onValueChange = onAmountChange,
                     readOnly = readOnly,
                     modifier = Modifier.weight(1f),
-                    textStyle = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
+                    textStyle = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.End,
                         color = MaterialTheme.colorScheme.onSurface
                     ),

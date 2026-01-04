@@ -9,6 +9,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkRequest
 import com.decagon.di.unifiedAppModule
+import com.decagon.worker.BalanceRefreshWorker
 import com.decagon.worker.BalanceSyncManager
 import com.decagon.worker.TransactionCleanupWorker
 import com.decagon.worker.TransactionHistoryWorker
@@ -28,7 +29,7 @@ class DecagonApplication : Application() {
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
         }
-
+        scheduleBalanceRefresh()
         BalanceSyncManager(this).schedulePeriodicSync()
         TransactionSyncManager(this).schedulePeriodic()
 
@@ -60,6 +61,25 @@ class DecagonApplication : Application() {
             modules(unifiedAppModule)
         }
         Timber.d("Koin initialized with all modules including on-ramp")
+    }
+
+    private fun scheduleBalanceRefresh() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val refreshRequest = PeriodicWorkRequestBuilder<BalanceRefreshWorker>(
+            repeatInterval = 5,
+            repeatIntervalTimeUnit = TimeUnit.MINUTES
+        )
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "balance_refresh",
+            ExistingPeriodicWorkPolicy.KEEP,
+            refreshRequest
+        )
     }
 
     // ✅ ADD THIS METHOD

@@ -23,12 +23,14 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.decagon.core.network.NetworkEnvironment
 import com.decagon.core.network.NetworkManager
 import com.decagon.domain.model.DecagonWallet
 import com.decagon.domain.model.PortfolioHistoryPoint
 import com.decagon.ui.components.*
 import com.decagon.ui.navigation.UnifiedBottomNavBar
+import com.decagon.ui.navigation.UnifiedRoute
 import com.decagon.ui.theme.AppColors
 import com.decagon.ui.theme.AppTypography
 import kotlinx.coroutines.delay
@@ -122,7 +124,8 @@ fun DecagonWalletScreen(
                     onTimeRangeChange = {
                         selectedTimeRange = it
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                    }
+                    },
+                    navController = navController as NavHostController
                 )
             } ?: LoadingView() // Show only if truly null (first-time load)
 
@@ -200,6 +203,7 @@ private fun ModernWalletContent(
     onReceiveClick: () -> Unit,
     onBuyClick: () -> Unit,
     onSwapClick: () -> Unit,
+    navController: NavHostController,
     onTimeRangeChange: (TimeRange) -> Unit,
     viewModel: DecagonWalletViewModel = koinViewModel(),
     modifier: Modifier = Modifier
@@ -207,6 +211,11 @@ private fun ModernWalletContent(
     val clipboardManager = LocalClipboardManager.current
     val fiatValue = wallet.balance * fiatPrice
     val selectedTimeframe by viewModel.selectedTimeframe.collectAsState()
+//    val wallet by viewModel.walletState.collectAsState()
+    val tokenBalances by viewModel.tokenBalances.collectAsState()
+    val isRefreshingBalances by viewModel.isRefreshingBalances.collectAsState()
+
+
 
     Column(
         modifier = modifier
@@ -273,6 +282,25 @@ private fun ModernWalletContent(
             onBuyClick = onBuyClick,
             onSwapClick = onSwapClick
         )
+
+        TokenAssetsPreview(
+            balances = tokenBalances.take(3), // Show top 3
+            isRefreshing = isRefreshingBalances,
+            onViewAllClick = {
+                navController.navigate(UnifiedRoute.Assets)
+            },
+            onTokenClick = { balance ->
+                navController.navigate(
+                    UnifiedRoute.TokenDetails(
+                        tokenId = balance.mint,
+                        symbol = balance.symbol
+                    )
+                )
+            },
+            onRefresh = { viewModel.refreshTokenBalances() }
+        )
+
+//        TransactionHistorySection(navController, viewModel)
 
         Spacer(modifier = Modifier.height(32.dp))
     }

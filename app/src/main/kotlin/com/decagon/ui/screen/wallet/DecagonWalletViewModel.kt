@@ -5,8 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.decagon.core.network.NetworkManager
 import com.decagon.core.network.RpcClientFactory
 import com.decagon.core.util.LoadingState
+import com.decagon.data.local.dao.TokenBalanceDao
+import com.decagon.data.mapper.toDomain
 import com.decagon.data.remote.api.CoinPriceService
+import com.decagon.data.repository.TokenReceiveManager
 import com.decagon.domain.model.DecagonWallet
+import com.decagon.domain.model.TokenBalance
 import com.decagon.domain.repository.DecagonWalletRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -17,7 +21,9 @@ class DecagonWalletViewModel(
     private val repository: DecagonWalletRepository,
     private val rpcFactory: RpcClientFactory,
     private val networkManager: NetworkManager,
-    private val priceService: CoinPriceService
+    private val priceService: CoinPriceService,
+    private val tokenBalanceDao: TokenBalanceDao,
+    private val tokenReceiveManager: TokenReceiveManager,
 ) : ViewModel() {
 
     private val _selectedCurrency = MutableStateFlow("usd")
@@ -52,6 +58,19 @@ class DecagonWalletViewModel(
                 initialValue = emptyList()
             )
 
+    // ✅ NEW: Token balances (reactive from Room)
+    val tokenBalances: StateFlow<List<TokenBalance>> = walletState
+        .filterNotNull()
+        .flatMapLatest { wallet ->
+            tokenBalanceDao.getByWallet(wallet.address)
+                .map { entities -> entities.map { it.toDomain() } }
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    // ✅ NEW: Refresh indicator
+    private val _isRefreshingBalances = MutableStateFlow(false)
+    val isRefreshingBalances = _isRefreshingBalances.asStateFlow()
+
     init {
         Timber.d("DecagonWalletViewModel initialized.")
         // ✅ Background refresh on init
@@ -60,6 +79,26 @@ class DecagonWalletViewModel(
                 repository.refreshBalance(wallet.id)
                 fetchFiatPrice(wallet)
             }
+        }
+    }
+
+    // ✅ NEW: Manual refresh
+    fun refreshTokenBalances() {
+        val wallet = walletState.value ?: return
+
+        viewModelScope.launch {
+            _isRefreshingBalances.value = true
+
+            tokenReceiveManager.discoverNewTokens(wallet.address)
+                .onSuccess { balances ->
+                    Timber.i("✅ Token balances refreshed: ${balances.size} tokens")
+                }
+                .onFailure { error ->
+                    Timber.e(error, "❌ Failed to refresh token balances")
+                }
+
+            delay(500) // Show indicator briefly
+            _isRefreshingBalances.value = false
         }
     }
 

@@ -1,7 +1,5 @@
 package com.decagon.ui.navigation
 
-import android.content.Context
-import android.content.ContextWrapper
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -18,6 +16,7 @@ import com.decagon.core.network.NetworkManager
 import com.decagon.ui.screen.all.AllDAppsScreen
 import com.decagon.ui.screen.all.AllPerpsScreen
 import com.decagon.ui.screen.all.AllTokensScreen
+import com.decagon.ui.screen.assets.AssetsScreen
 import com.decagon.ui.screen.chains.DecagonSupportedChainsScreen
 import com.decagon.ui.screen.create.DecagonCreateWalletScreen
 import com.decagon.ui.screen.dapp.DAppBrowserScreen
@@ -35,7 +34,6 @@ import com.decagon.ui.screen.swap.DecagonSwapScreen
 import com.decagon.ui.screen.swap.SwapViewModel
 import com.decagon.ui.screen.token.TokenDetailsScreen
 import com.decagon.ui.screen.wallet.DecagonWalletScreen
-import com.decagon.ui.screen.wallet.DecagonWalletViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
@@ -45,14 +43,6 @@ fun UnifiedNavHost(
 ) {
     val navController = rememberNavController()
     val hapticFeedback = LocalHapticFeedback.current
-
-    val activity = LocalContext.current.findActivity()
-
-    // ✅ Create Activity-scoped ViewModel ONCE
-    val walletViewModel: DecagonWalletViewModel = koinViewModel(
-        viewModelStoreOwner = activity
-    )
-
 
     NavHost(
         navController = navController,
@@ -128,6 +118,10 @@ fun UnifiedNavHost(
             )
         }
 
+        composable<UnifiedRoute.Assets> {
+            AssetsScreen(navController = navController)
+        }
+
         composable<UnifiedRoute.Discover> {
             DiscoverScreen(
                 viewModel = koinViewModel(),
@@ -198,7 +192,6 @@ fun UnifiedNavHost(
             }
 
             DecagonSwapScreen(
-                onNavigateBack = { navController.popBackStack() },
                 viewModel = swapViewModel,
                 navController = navController
             )
@@ -294,15 +287,4 @@ fun UnifiedNavHost(
             )
         }
     }
-}
-
-
-// Extension
-private fun Context.findActivity(): FragmentActivity {
-    var context = this
-    while (context is ContextWrapper) {
-        if (context is FragmentActivity) return context
-        context = context.baseContext
-    }
-    throw IllegalStateException("No FragmentActivity found")
 }

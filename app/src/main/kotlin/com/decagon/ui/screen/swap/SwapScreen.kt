@@ -1,20 +1,19 @@
 package com.decagon.ui.screen.swap
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.rounded.ArrowDropDown
-import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.SettingsInputComponent
 import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.*
@@ -48,7 +47,6 @@ import kotlin.math.pow
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DecagonSwapScreen(
-    onNavigateBack: () -> Unit = {},
     viewModel: SwapViewModel = koinViewModel(),
     navController: NavHostController
 ) {
@@ -56,19 +54,19 @@ fun DecagonSwapScreen(
     val inputToken by viewModel.inputToken.collectAsState()
     val outputToken by viewModel.outputToken.collectAsState()
     val inputAmount by viewModel.inputAmount.collectAsState()
+    val inputError by viewModel.inputError.collectAsState()  // ✅ NEW
     val currentQuote by viewModel.currentQuote.collectAsState()
     val slippageTolerance by viewModel.slippageTolerance.collectAsState()
     val currentWallet by viewModel.currentWallet.collectAsState()
     val tokenBalances by viewModel.tokenBalances.collectAsState()
     val isSwapSupported = currentWallet?.activeChain?.chainType?.id == "solana"
     val availableTokens by viewModel.availableTokens.collectAsState()
-    val tokensLoading by viewModel.tokensLoading.collectAsState() // ✅ NEW
-    val commonTokens by viewModel.commonTokens.collectAsState() // ✅ NEW
+    val tokensLoading by viewModel.tokensLoading.collectAsState()
+    val commonTokens by viewModel.commonTokens.collectAsState()
 
     var showInputTokenSelector by remember { mutableStateOf(false) }
     var showOutputTokenSelector by remember { mutableStateOf(false) }
     var showSlippageSettings by remember { mutableStateOf(false) }
-    var showSecurityWarning by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     LaunchedEffect(Unit) {
@@ -80,8 +78,7 @@ fun DecagonSwapScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Swap", style = AppTypography.titleLarge)
-                        },
+                title = { Text("Swap", style = AppTypography.titleLarge) },
                 actions = {
                     IconButton(onClick = { showSlippageSettings = true }) {
                         Icon(Icons.Rounded.Tune, "Adjust slippage")
@@ -132,15 +129,44 @@ fun DecagonSwapScreen(
                 }
             }
 
-            // Pay Card
+            // ✅ Pay Card with error state
             TokenSelectionCard(
                 label = "You Pay",
                 token = inputToken,
                 amount = inputAmount,
                 onAmountChange = { viewModel.onInputAmountChanged(it) },
                 onTokenClick = { showInputTokenSelector = true },
-                balance = tokenBalances.find { it.mint == inputToken.address }?.uiAmount
+                balance = tokenBalances.find { it.mint == inputToken.address }?.uiAmount,
+                hasError = inputError != null  // ✅ NEW
             )
+
+            // ✅ NEW: Input error display
+            AnimatedVisibility(visible = inputError != null) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = ItemShape,
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ErrorOutline,
+                            contentDescription = "Error",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = inputError ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
 
             // Swap Switcher Node
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -169,7 +195,8 @@ fun DecagonSwapScreen(
                 onAmountChange = {},
                 onTokenClick = { showOutputTokenSelector = true },
                 balance = tokenBalances.find { it.mint == outputToken.address }?.uiAmount,
-                readOnly = true
+                readOnly = true,
+                hasError = false
             )
 
             // Quote Details
@@ -209,46 +236,72 @@ fun DecagonSwapScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Swap Execution Button
+            // ✅ ENHANCED: Error Display Card (only for API/network errors)
+            if (uiState is SwapUiState.Error) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    shape = ItemShape,
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = "Error",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(24.dp)
+                        )
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Unable to Quote",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+
+                            Text(
+                                text = (uiState as SwapUiState.Error).message,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+            }
+
+            // ✅ Swap Execution Button (disabled for insufficient balance)
             Button(
-                onClick = {
-                    if (uiState is SwapUiState.QuoteWithWarnings) showSecurityWarning = true
-                    else viewModel.executeSwap()
-                },
+                onClick = { viewModel.executeSwap() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = ItemShape,
-                enabled = uiState is SwapUiState.QuoteReady && isSwapSupported,
+                enabled = uiState is SwapUiState.QuoteReady &&
+                        isSwapSupported &&
+                        inputError == null,  // ✅ NEW
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
-                if (!isSwapSupported) {
-                    Text("Switch to Solana to swap")
-                } else {
-                    SwapButtonLayout(uiState)
+                when {
+                    !isSwapSupported -> Text("Switch to Solana to swap")
+                    inputError != null -> Text("Cannot swap")  // ✅ NEW
+                    else -> SwapButtonLayout(uiState)
                 }
-            }
-
-            if (uiState is SwapUiState.Error) {
-                Text(
-                    text = (uiState as SwapUiState.Error).message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                )
             }
         }
     }
 
-    // ✅ UPDATED: Input token selector with balances + all available tokens
+    // Token selector sheets (unchanged)
     if (showInputTokenSelector) {
-        // Combine owned tokens with all available tokens, removing duplicates
         val combinedTokens = remember(tokenBalances, availableTokens) {
             val ownedTokenInfo = tokenBalances.mapNotNull { it.toTokenInfo() }
             val allTokens = ownedTokenInfo + availableTokens
@@ -259,8 +312,8 @@ fun DecagonSwapScreen(
             tokens = combinedTokens,
             currentToken = inputToken,
             ownedTokenMints = tokenBalances.map { it.mint }.toSet(),
-            commonTokens = commonTokens, // ✅ NEW: Pass common tokens
-            isLoading = tokensLoading, // ✅ NEW: Pass loading state
+            commonTokens = commonTokens,
+            isLoading = tokensLoading,
             onTokenSelected = {
                 viewModel.onInputTokenSelected(it)
                 showInputTokenSelector = false
@@ -269,14 +322,13 @@ fun DecagonSwapScreen(
         )
     }
 
-    // ✅ Output token selector remains the same (all available tokens)
     if (showOutputTokenSelector) {
         TokenSelectorSheet(
             tokens = availableTokens,
             currentToken = outputToken,
             ownedTokenMints = tokenBalances.map { it.mint }.toSet(),
-            commonTokens = commonTokens, // ✅ NEW: Pass common tokens
-            isLoading = tokensLoading, // ✅ NEW: Pass loading state
+            commonTokens = commonTokens,
+            isLoading = tokensLoading,
             onTokenSelected = {
                 viewModel.onOutputTokenSelected(it)
                 showOutputTokenSelector = false
@@ -294,6 +346,7 @@ fun DecagonSwapScreen(
     }
 }
 
+// ✅ ENHANCED: Token card with error border
 @Composable
 private fun TokenSelectionCard(
     label: String,
@@ -302,12 +355,23 @@ private fun TokenSelectionCard(
     onAmountChange: (String) -> Unit,
     onTokenClick: () -> Unit,
     balance: Double?,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+    hasError: Boolean = false
 ) {
+    // ✅ Animated border color
+    val borderColor by animateColorAsState(
+        targetValue = if (hasError)
+            MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+        else
+            Color.Transparent,
+        label = "border_color"
+    )
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = ItemShape,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = if (hasError) BorderStroke(1.dp, borderColor) else null  // ✅ NEW
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -320,10 +384,20 @@ private fun TokenSelectionCard(
                 Text(
                     label,
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (hasError)
+                        MaterialTheme.colorScheme.error
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 balance?.let {
-                    Text("Balance: %.4f".format(it), style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "Balance: %.4f".format(it),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (it == 0.0 && !readOnly)
+                            MaterialTheme.colorScheme.error
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
@@ -332,7 +406,6 @@ private fun TokenSelectionCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // ✅ ENHANCED: Token selector with logo + badges
                 Surface(
                     onClick = onTokenClick,
                     shape = RoundedShape,
@@ -344,7 +417,6 @@ private fun TokenSelectionCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        // ✅ Token Logo with loading state
                         val imageModel = remember(token.logoURI) {
                             coil3.request.ImageRequest.Builder(context = context)
                                 .data(token.logoURI ?: "https://via.placeholder.com/24")
@@ -363,7 +435,6 @@ private fun TokenSelectionCard(
 
                         Text(token.symbol.uppercase(), fontWeight = FontWeight.ExtraBold)
 
-                        // Verified Badge
                         if (token.isVerified) {
                             Icon(
                                 imageVector = Icons.Default.Verified,
@@ -371,23 +442,6 @@ private fun TokenSelectionCard(
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
-                        }
-
-                        // Strict Badge (Jupiter strict list)
-                        if (token.isStrict) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f),
-                                modifier = Modifier.size(16.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        "⚡",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontSize = MaterialTheme.typography.labelSmall.fontSize * 0.8f
-                                    )
-                                }
-                            }
                         }
 
                         Icon(Icons.Rounded.ArrowDropDown, null)
@@ -402,10 +456,18 @@ private fun TokenSelectionCard(
                     textStyle = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.End,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = if (hasError)
+                            MaterialTheme.colorScheme.error
+                        else
+                            MaterialTheme.colorScheme.onSurface
                     ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    cursorBrush = SolidColor(
+                        if (hasError)
+                            MaterialTheme.colorScheme.error
+                        else
+                            MaterialTheme.colorScheme.primary
+                    ),
                     decorationBox = { innerTextField ->
                         Box(contentAlignment = Alignment.CenterEnd) {
                             if (amount.isEmpty()) {

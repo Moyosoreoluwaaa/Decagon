@@ -1,6 +1,7 @@
 package com.decagon.di
 
 import com.decagon.ui.screen.all.*
+import com.decagon.ui.screen.assets.AssetsViewModel
 import com.decagon.ui.screen.chains.DecagonSupportedChainsViewModel
 import com.decagon.ui.screen.discover.DiscoverViewModel
 import com.decagon.ui.screen.history.*
@@ -21,10 +22,11 @@ import org.koin.dsl.module
 
 val viewModelModule = module {
     // Main Feature ViewModels
-    viewModel { DecagonWalletViewModel(get(), get(), get(), get()) }
+    viewModel { DecagonWalletViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { SwapViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { DecagonSendViewModel(get()) }
     viewModel { DecagonOnRampViewModel(get(), get(), get(), get(), get()) }
+    viewModel { AssetsViewModel(get(), get(), get()) }
 
     // Discover & Details
     viewModel {

@@ -443,6 +443,49 @@ class SolanaRpcClient(
             }
         }
     }
+    suspend fun getAccountInfo(address: String): Result<String?> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = httpClient.post(rpcUrl) {
+                    contentType(ContentType.Application.Json)
+                    setBody(buildJsonObject {
+                        put("jsonrpc", "2.0")
+                        put("id", UUID.randomUUID().toString())
+                        put("method", "getAccountInfo")
+                        put("params", buildJsonArray {
+                            add(address)
+                            add(buildJsonObject {
+                                put("encoding", "base64")
+                            })
+                        })
+                    })
+                }
+
+                val body = response.bodyAsText()
+                val json = Json.parseToJsonElement(body).jsonObject
+
+                json["error"]?.let {
+                    val errorMsg = it.jsonObject["message"]?.jsonPrimitive?.content
+                        ?: "Unknown error"
+                    return@withContext Result.failure(IOException(errorMsg))
+                }
+
+                val result = json["result"]?.jsonObject
+                val value = result?.get("value")
+
+                if (value is JsonNull || value == null) {
+                    Result.success(null)
+                } else {
+                    val data = value.jsonObject["data"]?.jsonArray?.firstOrNull()
+                        ?.jsonPrimitive?.content
+                    Result.success(data)
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to get account info")
+                Result.failure(e)
+            }
+        }
+    }
 }
 
 data class SimulationResult(

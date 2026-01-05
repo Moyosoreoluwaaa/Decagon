@@ -6,6 +6,7 @@ import androidx.room.Room
 import com.decagon.core.crypto.DecagonKeyDerivation
 import com.decagon.core.crypto.DecagonMnemonic
 import com.decagon.core.crypto.DecagonSecureEnclaveManager
+import com.decagon.core.crypto.DecagonSplTokenProgram
 import com.decagon.core.network.NetworkManager
 import com.decagon.core.network.NetworkManagerImpl
 import com.decagon.core.network.RpcClientFactory
@@ -26,6 +27,8 @@ import com.decagon.core.security.MaliciousSignatureDetectorImpl
 import com.decagon.core.security.PhishingBlocklist
 import com.decagon.data.local.datastore.UserPreferencesStore
 import com.decagon.data.local.datastore.UserPreferencesStoreImpl
+import com.decagon.data.repository.TokenReceiveManager
+import com.decagon.data.repository.TokenReceiveManagerImpl
 import com.wallet.core.monitoring.AnalyticsLogger
 import com.wallet.core.monitoring.FakeAnalyticsLogger
 import kotlinx.coroutines.Dispatchers
@@ -103,6 +106,14 @@ val coreModule = module {
     }
     // Simplified for example
     single { RpcClientFactory(get(), get()) }
+    single<TokenReceiveManager> {
+        TokenReceiveManagerImpl(
+            jupiterApi = get(),
+            tokenBalanceDao = get(),
+            splTokenProgram = DecagonSplTokenProgram, // Singleton object
+            rpcFactory = get()
+        )
+    }
 
     // Session & Preferences
     single<UserPreferencesStore> { UserPreferencesStoreImpl(androidContext()) }

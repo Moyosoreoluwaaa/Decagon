@@ -84,14 +84,23 @@ data class JupiterBalancesResponse(
         get() = balances ?: tokens ?: emptyList()
 }
 
+// :data:remote:dto:JupiterDtos.kt - UPDATE TokenHoldingDto
+
 @Serializable
 data class TokenHoldingDto(
     val mint: String,
-    val amount: String,                  // Raw amount in smallest unit
+    val amount: String,
     val decimals: Int,
-    val uiAmount: Double,                // Human-readable amount
-    val tokenAccount: String? = null,    // ✅ FIX: Made optional
-    val isNative: Boolean = false        // ✅ FIX: Default to false
+    val uiAmount: Double,
+    val tokenAccount: String? = null,
+    val isNative: Boolean = false,
+
+    // ✅ ADD THESE for UI display
+    val symbol: String? = null,
+    val name: String? = null,
+    val logoUrl: String? = null,
+    val valueUsd: Double? = null,
+    val change24h: Double? = null
 )
 
 // ==================== SEARCH ENDPOINT ====================

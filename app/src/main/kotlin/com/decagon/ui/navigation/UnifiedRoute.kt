@@ -38,6 +38,7 @@ sealed interface UnifiedRoute {
     @Serializable data class RevealPrivateKey(val walletId: String) : UnifiedRoute
     @Serializable data class ManageChains(val walletId: String) : UnifiedRoute
     @Serializable data object ManageTokens : UnifiedRoute
+    @Serializable data object Assets : UnifiedRoute
 
     // ========== FULL LIST SCREENS ==========
     @Serializable data object AllTokens : UnifiedRoute

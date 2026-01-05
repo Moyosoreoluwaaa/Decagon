@@ -9,12 +9,7 @@ import com.decagon.domain.model.TokenBalance
 import com.decagon.domain.model.TokenInfo
 import com.decagon.domain.model.WarningSeverity
 import com.decagon.domain.repository.DecagonWalletRepository
-import com.decagon.domain.usecase.swap.ExecuteSwapUseCase
-import com.decagon.domain.usecase.swap.GetSwapHistoryUseCase
-import com.decagon.domain.usecase.swap.GetSwapQuoteUseCase
-import com.decagon.domain.usecase.swap.GetTokenBalancesUseCase
-import com.decagon.domain.usecase.swap.SearchTokensForSwapUseCase
-import com.decagon.domain.usecase.swap.ValidateTokenSecurityUseCase
+import com.decagon.domain.usecase.swap.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +28,6 @@ class SwapViewModel(
     private val walletRepository: DecagonWalletRepository
 ) : ViewModel() {
 
-    // ✅ CRITICAL: All MutableStateFlow must be initialized BEFORE init block
     // State
     private val _uiState = MutableStateFlow<SwapUiState>(SwapUiState.Idle)
     val uiState: StateFlow<SwapUiState> = _uiState.asStateFlow()
@@ -41,51 +35,44 @@ class SwapViewModel(
     private val _currentWallet = MutableStateFlow<com.decagon.domain.model.DecagonWallet?>(null)
     val currentWallet: StateFlow<com.decagon.domain.model.DecagonWallet?> = _currentWallet.asStateFlow()
 
-    // Token selection
     private val _inputToken = MutableStateFlow(CommonTokens.SOL)
     val inputToken: StateFlow<TokenInfo> = _inputToken.asStateFlow()
 
     private val _outputToken = MutableStateFlow(CommonTokens.USDC)
     val outputToken: StateFlow<TokenInfo> = _outputToken.asStateFlow()
 
-    // Amount
     private val _inputAmount = MutableStateFlow("")
     val inputAmount: StateFlow<String> = _inputAmount.asStateFlow()
 
-    // Quote
     private val _currentQuote = MutableStateFlow<SwapOrder?>(null)
     val currentQuote: StateFlow<SwapOrder?> = _currentQuote.asStateFlow()
 
-    // Settings
-    private val _slippageTolerance = MutableStateFlow(0.5) // 0.5% (Jupiter recommended)
+    private val _slippageTolerance = MutableStateFlow(0.5)
     val slippageTolerance: StateFlow<Double> = _slippageTolerance.asStateFlow()
 
-    // Balances
     private val _tokenBalances = MutableStateFlow<List<TokenBalance>>(emptyList())
     val tokenBalances: StateFlow<List<TokenBalance>> = _tokenBalances.asStateFlow()
 
-    // ✅ Loading state for tokens - initialized with true
     private val _tokensLoading = MutableStateFlow(true)
     val tokensLoading: StateFlow<Boolean> = _tokensLoading.asStateFlow()
 
-    // ✅ Common tokens (quick access) - initialized with default value
     private val _commonTokens = MutableStateFlow<List<TokenInfo>>(CommonTokens.ALL)
     val commonTokens: StateFlow<List<TokenInfo>> = _commonTokens.asStateFlow()
 
     private val _availableTokens = MutableStateFlow<List<TokenInfo>>(emptyList())
     val availableTokens: StateFlow<List<TokenInfo>> = _availableTokens.asStateFlow()
 
-    // Activity reference for biometric auth
-    private var currentActivity: FragmentActivity? = null
+    // ✅ NEW: Validation state for input
+    private val _inputError = MutableStateFlow<String?>(null)
+    val inputError: StateFlow<String?> = _inputError.asStateFlow()
 
-    // Debounce job
+    private var currentActivity: FragmentActivity? = null
     private var quoteRefreshJob: Job? = null
 
-    // ✅ Init block AFTER all field declarations
     init {
         Timber.d("SwapViewModel initialized")
         loadWallet()
-        loadAvailableTokens() // Safe to call now - all fields initialized
+        loadAvailableTokens()
     }
 
     fun setActivity(activity: FragmentActivity) {
@@ -109,13 +96,15 @@ class SwapViewModel(
             result.onSuccess { balances ->
                 _tokenBalances.value = balances
                 Timber.i("Loaded ${balances.size} token balances")
+
+                // ✅ Revalidate current input after balance update
+                validateInputAmount(_inputAmount.value)
             }.onFailure { error ->
                 Timber.e(error, "Failed to load balances")
             }
         }
     }
 
-    // ✅ UPDATED: Load full token list with loading state
     private fun loadAvailableTokens() {
         viewModelScope.launch {
             _tokensLoading.value = true
@@ -126,7 +115,6 @@ class SwapViewModel(
                 Timber.i("Loaded ${tokens.size} available tokens")
             }.onFailure { error ->
                 Timber.e(error, "Failed to load available tokens")
-                // Fallback to common tokens if full list fails
                 _availableTokens.value = CommonTokens.ALL
             }
 
@@ -134,29 +122,100 @@ class SwapViewModel(
         }
     }
 
+    // ✅ ENHANCED: Validate before allowing input
     fun onInputAmountChanged(amount: String) {
-        // Validate input (numbers and decimal only)
+        // Only allow valid number input
         if (amount.isEmpty() || amount.matches(Regex("^\\d*\\.?\\d*$"))) {
             _inputAmount.value = amount
-            debounceQuoteRefresh()
+
+            // Clear error immediately when typing
+            _inputError.value = null
+
+            // Validate and debounce quote
+            if (validateInputAmount(amount)) {
+                debounceQuoteRefresh()
+            }
         }
+    }
+
+    // ✅ NEW: Comprehensive input validation
+    private fun validateInputAmount(amountStr: String): Boolean {
+        // Clear previous errors
+        _inputError.value = null
+        _uiState.value = SwapUiState.Idle
+
+        // Empty input is valid (no error)
+        if (amountStr.isBlank()) {
+            _currentQuote.value = null
+            return false
+        }
+
+        // Parse amount
+        val amount = amountStr.toDoubleOrNull()
+        if (amount == null || amount <= 0) {
+            _inputError.value = "Enter a valid amount"
+            _currentQuote.value = null
+            return false
+        }
+
+        // ✅ CRITICAL: Check balance BEFORE API call
+        val balance = _tokenBalances.value
+            .find { it.mint == _inputToken.value.address }
+            ?.uiAmount ?: 0.0
+
+        when {
+            balance == 0.0 -> {
+                _inputError.value = "You have no ${_inputToken.value.symbol} to swap"
+                _currentQuote.value = null
+                _uiState.value = SwapUiState.InsufficientBalance(
+                    token = _inputToken.value.symbol,
+                    required = amount,
+                    available = 0.0
+                )
+                return false
+            }
+
+            amount > balance -> {
+                _inputError.value = "Insufficient balance. Max: %.4f %s".format(
+                    balance,
+                    _inputToken.value.symbol
+                )
+                _currentQuote.value = null
+                _uiState.value = SwapUiState.InsufficientBalance(
+                    token = _inputToken.value.symbol,
+                    required = amount,
+                    available = balance
+                )
+                return false
+            }
+
+            // ✅ Minimum swap amount check (e.g., 0.0001 SOL)
+            amount < 0.0001 && _inputToken.value.symbol == "SOL" -> {
+                _inputError.value = "Minimum swap: 0.0001 SOL"
+                _currentQuote.value = null
+                return false
+            }
+        }
+
+        return true
     }
 
     fun onInputTokenSelected(token: TokenInfo) {
         if (token.address == _outputToken.value.address) {
-            // Auto-flip if selecting same token
             val temp = _outputToken.value
             _outputToken.value = _inputToken.value
             _inputToken.value = temp
         } else {
             _inputToken.value = token
         }
+
+        // ✅ Revalidate with new token
+        validateInputAmount(_inputAmount.value)
         refreshQuote()
     }
 
     fun onOutputTokenSelected(token: TokenInfo) {
         if (token.address == _inputToken.value.address) {
-            // Auto-flip if selecting same token
             val temp = _inputToken.value
             _inputToken.value = _outputToken.value
             _outputToken.value = temp
@@ -171,7 +230,9 @@ class SwapViewModel(
         _inputToken.value = _outputToken.value
         _outputToken.value = temp
         _inputAmount.value = ""
+        _inputError.value = null
         _currentQuote.value = null
+        _uiState.value = SwapUiState.Idle
     }
 
     fun onSlippageToleranceChanged(tolerance: Double) {
@@ -184,19 +245,12 @@ class SwapViewModel(
         val output = _outputToken.value
         val amountStr = _inputAmount.value
 
-        if (amountStr.isBlank() || amountStr.toDoubleOrNull() == null) {
-            _currentQuote.value = null
-            _uiState.value = SwapUiState.Idle
+        // ✅ Pre-validate before API call
+        if (!validateInputAmount(amountStr)) {
             return
         }
 
         val amount = amountStr.toDouble()
-        if (amount <= 0) {
-            _currentQuote.value = null
-            _uiState.value = SwapUiState.Idle
-            return
-        }
-
         val userPublicKey = _currentWallet.value?.address ?: run {
             _uiState.value = SwapUiState.Error("Wallet not connected")
             return
@@ -228,9 +282,32 @@ class SwapViewModel(
                     }
                 },
                 onFailure = { error ->
-                    _uiState.value = SwapUiState.Error(
-                        error.message ?: "Failed to get quote"
-                    )
+                    _currentQuote.value = null
+
+                    // ✅ Enhanced error mapping (balance errors already caught above)
+                    val errorMessage = when {
+                        error.message?.contains("No trading route", ignoreCase = true) == true ||
+                                error.message?.contains("No routes found", ignoreCase = true) == true ->
+                            "No trading route available for ${input.symbol} → ${output.symbol}"
+
+                        error.message?.contains("Insufficient liquidity", ignoreCase = true) == true ->
+                            "Insufficient liquidity. Try a smaller amount or different token."
+
+                        error.message?.contains("Invalid response", ignoreCase = true) == true ->
+                            "This token pair may not be supported. Try different tokens."
+
+                        error.message?.contains("Network error", ignoreCase = true) == true ||
+                                error.message?.contains("Unable to connect", ignoreCase = true) == true ->
+                            "Network error. Please check your connection."
+
+                        else -> {
+                            Timber.e(error, "Unexpected swap error: ${error.message}")
+                            error.message ?: "Unable to get quote for this token pair"
+                        }
+                    }
+
+                    _uiState.value = SwapUiState.Error(errorMessage)
+                    Timber.w("Quote failed: ${input.symbol} → ${output.symbol}: $errorMessage")
                 }
             )
         }
@@ -253,7 +330,7 @@ class SwapViewModel(
                 inputToken = _inputToken.value,
                 outputToken = _outputToken.value,
                 activity = activity,
-                priorityFeeLamports = 0 // TODO: Add priority fee UI
+                priorityFeeLamports = 0
             )
 
             result.fold(
@@ -261,7 +338,8 @@ class SwapViewModel(
                     _uiState.value = SwapUiState.SwapSuccess(signature)
                     _currentQuote.value = null
                     _inputAmount.value = ""
-                    loadBalances() // Refresh balances
+                    _inputError.value = null
+                    loadBalances()
                 },
                 onFailure = { error ->
                     _uiState.value = SwapUiState.Error(
@@ -275,12 +353,13 @@ class SwapViewModel(
     private fun debounceQuoteRefresh() {
         quoteRefreshJob?.cancel()
         quoteRefreshJob = viewModelScope.launch {
-            delay(500) // 500ms debounce
+            delay(500)
             refreshQuote()
         }
     }
 }
 
+// ✅ ENHANCED: New state for insufficient balance
 sealed interface SwapUiState {
     data object Idle : SwapUiState
     data object LoadingQuote : SwapUiState
@@ -289,4 +368,11 @@ sealed interface SwapUiState {
     data object ExecutingSwap : SwapUiState
     data class SwapSuccess(val signature: String) : SwapUiState
     data class Error(val message: String) : SwapUiState
+
+    // ✅ NEW: Specific state for balance errors
+    data class InsufficientBalance(
+        val token: String,
+        val required: Double,
+        val available: Double
+    ) : SwapUiState
 }
